@@ -1,0 +1,83 @@
+/*!
+\page install Installation instructions
+
+<OL> 
+<LI> Install the external libraries </LI>
+    <UL>
+    <LI> <a href="http://heasarc.gsfc.nasa.gov/docs/software/fitsio/fitsio.html"> CFITSIO</a> </LI>
+    <LI> <a href="http://www.fftw.org/"> FFTW</a> </LI>
+    <LI> <a href="http://lesstif.sourceforge.net/"> LessTif (if you want to use spiapp; see below)</a> </LI><BR>
+
+    Perform the usual <CODE>./configure</CODE>, <CODE>make</CODE>, <CODE>make install</CODE>. 
+    Type <CODE>./configure -h</CODE> to check the configure options.  Make sure <CODE>--prefix=[INSTALLDIR]</CODE> 
+    if you don't want to use the default install directory.
+    If you want to use double precision with FFTW (which you will!) you need to do this twice,
+    a second time adding the <CODE>--enable-float</CODE> argument to <CODE>./configure</CODE>
+    </UL>
+
+<LI> Install <a href="http://www.sophya.org/"> SOPHYA</a> </LI>
+
+    <UL> 
+    <LI> Configure Sophya </LI>
+        <UL> 
+        <LI> <CODE> cd BuildMgr/ </CODE> </LI>
+        <LI> Create the target installation directory (if not already existing):&nbsp;&nbsp; <CODE> mkdir $WHEREVER/SObjs </CODE></LI>
+        <LI> Define the SOPHYABASE environment variable:&nbsp;&nbsp; <CODE> setenv $SOPHYABASE $WHEREVER/SObjs/ </CODE></LI>
+        <LI> Run the configure script:&nbsp;&nbsp; <CODE>./configure -sbase $SOPHYABASE -scxx g++ -extp /usr/local 
+        -noext lapack -noext astro </CODE><BR>
+        (or include lapack by removing <CODE>-noext lapack</CODE> [recommended])</LI>
+        </UL>
+    <LI> Compile and build the libraries </LI>
+        <UL> 
+        <LI> <CODE> make libs extlibs slb slbext </CODE> </LI>
+        <LI> Or if you want to also compile spiapp (need LessTif):&nbsp;&nbsp; <CODE> make all slball </CODE></LI>
+        </UL>
+    <LI> If compiling spiapp ... </LI>
+        <UL>
+        <LI> You should change the path for Motif/Lesstif include files and libraries in the file 
+        <CODE>$SOPHYABASE/include/sophyamake.inc</CODE>. </LI>
+        <LI> Locate the two lines:&nbsp;&nbsp; <CODE>PIINC = -I/usr/X11R6/include/ -I/sw/include</CODE> and 
+        <CODE>PILIBS = -L/sw/lib -lXm -L/usr/X11R6/lib  -lXt -lX11</CODE></LI>
+        <LI> Change these to:&nbsp;&nbsp; <CODE>PIINC = -I/usr/X11R6/include/ -I/usr/local/Sophya/ExtLibs/include</CODE> and 
+        <CODE>PILIBS = -L/usr/local/Sophya/ExtLibs/lib -lXm -L/usr/X11R6/lib -lXt -lX11 </CODE></LI>
+        <LI> spiapp should then compile.</LI>
+        </UL>
+    <LI> Compile some test and utility programs </LI>
+        <UL>
+        <LI> <CODE>make basetests prgutil</CODE> </LI>
+        <LI> To compile spiapp:&nbsp;&nbsp; <CODE>make piapp</CODE></LI>
+        </UL>
+    <LI> Clean <CODE>.o</CODE> files if not going to recompile after:&nbsp;&nbsp; <CODE>make cleanobj</CODE></LI>
+    </UL>
+    
+<LI> SOPHYA set up </LI>
+
+    <UL>
+    <LI> Set the Sophya environment variable, the repository where the libraries and the programs stand, 
+    for example: <BR>
+    <CODE> setenv SOPHYABASE /home/.../SObjs/</CODE></LI>
+    <LI> Using Sophya shared libraries: as you would do for any software, add the repository name of
+    Sophya shared libraries to <CODE>LD_LIBRARY_PATH</CODE>:&nbsp;&nbsp; <BR>
+    <CODE>setenv LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:${SOPHYABASE}/slb</CODE></LI>
+    <LI> Using Sophya programs: as you would do for any software, add the repository name of 
+    Sophya programs to <CODE>PATH</CODE>:<BR>
+    <CODE>setenv PATH ${PATH}:${SOPHYABASE}/exe</CODE></LI>
+    <LI> Making your own programs: if you are writing code using Sophya you may like to put<BR>
+    <CODE>"include $(SOPHYABASE)/include/sophyamake.inc"</CODE><BR>
+    in your own Makefile. That will provide you with default variables for the libraries repositories
+    and names as well as standard compilation and link options for various current OS and compilers.
+    (please see:&nbsp;&nbsp; <CODE> more $SOPHYABASE/include/sophyamake.inc</CODE>)</LI>
+    </UL>
+    
+<LI> Download the git repo </LI>
+
+    <UL>
+    <LI> [instructions to get repo] </LI>
+    <LI> cd <CODE>DirectSim</CODE> </LI>
+    <LI> type <CODE>make</CODE></LI>
+    </UL>
+
+</OL>
+
+
+*/

@@ -1,0 +1,37 @@
+/*!
+\page BaseSimulation How to simulate basic galaxy properties: <CODE>baseSimulation</CODE>
+
+This program draws redshifts, absolute magnitudes (i.e. luminosity) and galaxy
+types values using input luminosity functions.  The luminosity functions describe
+the number density of galaxies as a function of redshift, absolute magnitude 
+and galaxy type.
+
+If options -z and/or -m are not selected the cumulative distributions
+are calculated instead of being read from files: this can take
+a while
+
+If reading in one or both cumulative distributions, make sure that
+the zmin and zmax of the cumulative distributions match the survey
+that you wish to simulate 
+
+Output: (to output/)
+    - a FITS file containing redshift, absolute magnitude and broad galaxy type
+Optionally:
+    - a FITS binary table containing the cumulative redshift distribution
+    - a FITS file containting the 2D cumulative magnitude distribution at a series of redshifts
+
+
+  
+Below are the usage instructions
+
+<CODE>Usage: baseSimulation [...options...]
+
+ -o : outfileroot: root filename of outputs (DEFAULT=baseSimulation)<BR>
+ -z : zfile: read cumulative redshift distribution from FITS binary table file  [ZFILE]<BR>
+ -m : mfile: read cumulative mag distribution array from FITS file [MFILE]<BR>
+ -a : skyarea: area of sky in square degrees (DEFAULT=2)<BR>
+ -Z : zMin,zMax: minimum,maximum redshift to simulate from, up to (DEFAULT=0.01,3)<BR>
+ -M : mMin,mMAx,zmMin,zmMax: minimum,maximum magnitude, redshift used to calculate<BR>
+      the magnitude, redshift CDF with (DEFAULT=-24,-13,0,6) </CODE><BR>
+
+*/
