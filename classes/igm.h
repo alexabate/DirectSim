@@ -36,7 +36,7 @@
 
 
 /** AtomicCalcs
- *
+  *
   * Class that holds basic atomic calculations and constants mostly to do with
   * the Lyman series
   * 

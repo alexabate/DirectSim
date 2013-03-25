@@ -42,6 +42,7 @@ struct modelGaussian {
     // length of number of iterations performed
     vector<double> llhs; 
     // length of data
+    
     vector<int> labels;
     int convNum;
     
