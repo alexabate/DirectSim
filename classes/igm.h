@@ -1,5 +1,3 @@
-// -*- LSST-C++ -*-
-
 /**
  * @file  igm.h
  * @brief Contains classes that provide functions to Monte Carlo simulate the IGM
@@ -329,13 +327,14 @@ public:
                             DopplerParDistribution& dopplerParDist
         );
     
-    /** Simulate a line of sight distribution of absorbers
+    /** Simulate a line of sight distribution of absorbers, returns number of 
+        absorbers
         @param zStart           Starting redshift of line of sight distribution
         @param zMax             Max redshift along line of sight
         @param redshifts        Vector of absorber redshifts (sorted in ascending order)
         @param dopplerPars      Vector of absorber doppler parameters 
         @param columnDensity    Vector of absorber column densities **/
-    void simulateLineOfSight(double zStart,double zMax, 
+    int simulateLineOfSight(double zStart,double zMax, 
                     vector<double>& redshifts, vector<double>& dopplerPars,
                                vector<double>& columnDensities, string outfile);
             
@@ -809,8 +808,8 @@ class Madau:
 public:
     /** Constructor
         @param nLineMax     Maximum Lyman-series to include                   */
-    Madau(int nLineMax=5)
-    : nLineMax_(nLineMax)
+    Madau(int nLineMax=5, bool isLyC=true)
+    : nLineMax_(nLineMax) , isLyC_(isLyC)
         { setAbsorptionStrengths(); };
     
     /** Return the transmission in the observer's frame along a line of sight
@@ -849,6 +848,7 @@ protected:
     int nLineMax_;          /**< Maximum Lyman series to include              */
     int nLineMaxMadau_;     /**< Maximum Lyman series can include             */
     vector<double> Avals_;  /**< Absorption strength of Lyman-alpha to delta  */
+    bool isLyC_;            /**< Include Lyman continuum absorption           */
 
 
 };

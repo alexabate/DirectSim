@@ -385,8 +385,8 @@ public:
 		{ ebvmax_=ebvmax; ebvmaxEl_=ebvmaxEl; };
 		
     /** Set if applying Madau absorption */
-    void setMadau(bool isAddMadau)
-        { isAddMadau_ = isAddMadau; };
+    void setMadau(bool isAddMadau, bool isLyC=true)
+        { isAddMadau_ = isAddMadau; isLyC_ = isLyC; };
 			
 	
 	// INTERNAL FUNCTIONS: THESE SHOULD BE PROTECTED? //
@@ -467,6 +467,7 @@ protected:
     int nStarbursts_;               /**< number of starbursts in sedArray =   //
     nStarbursts_ = nsed_ - nEllipticals_ - nSpirals_                          */
     bool isAddMadau_;               /**< add Madau absorption                 */
+    bool isLyC_;                    /**< include Lyman continuum in Madau absorption */
     bool isReadKcorr_;              /**< read k corrections from file         */
 	int nsed_;                      /**< number of SEDs                       */
 	int nFilters_;                  /**< number of filters                    */

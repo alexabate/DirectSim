@@ -1,4 +1,3 @@
-// -*- LSST-C++ -*-
 #include "igm.h"
 
 /******* AtomicCalcs methods **************************************************/
@@ -362,7 +361,7 @@ ProbabilityDistAbsorbers::ProbabilityDistAbsorbers(RandomGeneratorInterface& rg,
 
 /******* ProbabilityDistAbsorbers methods *************************************/
 
-void ProbabilityDistAbsorbers::simulateLineOfSight(double zStart,double zMax,
+int ProbabilityDistAbsorbers::simulateLineOfSight(double zStart,double zMax,
     vector<double>& redshifts, vector<double>& dopplerPars,
                                   vector<double>& columnDensities, string outfile)
 {
@@ -388,6 +387,7 @@ void ProbabilityDistAbsorbers::simulateLineOfSight(double zStart,double zMax,
 	
 	writeToFile(outfile, redshifts, dopplerPars, columnDensities);
 
+    return nAbsorbers;
 };
 
 void ProbabilityDistAbsorbers::simulateAbsorber(double zCurrent, 
@@ -1096,7 +1096,7 @@ double Madau::returnObserverFrameOpticalDepth(double lambdaObs, double zSource)
 		cas = 1;
 	}
 	// If emission wavelength is BELOW lyman limit
-	else if (lambdaEm <= WAVE_LYMANLIM_METERS) { //eq 16
+	else if (lambdaEm <= WAVE_LYMANLIM_METERS && isLyC_) { //eq 16
 
         // Do Lyman series first
 		for (int n = 2; n<=nLineMax_; n++) {

@@ -339,13 +339,13 @@ class SEDMadau : public GenericFunc
 {
 public:
     /** Constructor */
-    SEDMadau(GenericFunc& S, double zSED)
-    : sed_(S) , zSED_(zSED) { };
+    SEDMadau(GenericFunc& S, double zSED, bool isLyC=true)
+    : sed_(S) , zSED_(zSED) , isLyC_(isLyC) { };
     
     /** 
         @param lambda   rest-frame wavelength */
     virtual double operator()(double lambda) {
-        Madau madau;
+        Madau madau(5,isLyC_);
         // THINK THIS SHOULD BE RETURNING THE REST FRAME TRANSMISSION
 	    double trans = madau.returnRestFrameTransmission(lambda, zSED_);
 	    return (sed_(lambda)*trans);
@@ -353,7 +353,8 @@ public:
 
 protected:
     GenericFunc& sed_;      /**< SED to add Madau absorption to               */
-    double zSED_;           /**< redshift of SED                              */        
+    double zSED_;           /**< redshift of SED                              */ 
+    bool isLyC_;            /**< include Lyman continuum                      */       
 };
 
 /** @class SEDIGM class

@@ -123,7 +123,9 @@ void SInterp1D::DefinePoints(vector<double>& xs,vector<double>& ys,double xmin,
 		{
 		if (xs[k-1]>=xs[k])  
 			{ 
-			string emsg =  "SInterp1D::DefinePoints()  unsorted xs";
+			stringstream ss;
+			ss << k;
+			string emsg =  "SInterp1D::DefinePoints()  unsorted xs (k=" + ss.str() +")";
 			throw range_error(emsg);
 			}
 		}
