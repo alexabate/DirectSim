@@ -1,4 +1,3 @@
-// -*- LSST-C++ -*-
 #include "machdefs.h"
 #include "sopnamsp.h"
 #include <iostream>
@@ -177,22 +176,22 @@ int main(int narg, char* arg[]) {
 	
 	// Look at ranges of magnitude and redshift columns
     double mMin,mMax;
-    dt.GetMinMax(uCol,mMin,mMax);
+    dt.GetMinMax(dt.ColumnIndex(uCol),mMin,mMax);
     cout <<"     Range of "<<dt.NomIndex(iU)<<" ("<<iU<<"th) column is "<<mMin<<"<m<"<<mMax<<endl;
-    dt.GetMinMax(gCol,mMin,mMax);
+    dt.GetMinMax(dt.ColumnIndex(gCol),mMin,mMax);
     cout <<"     Range of "<<dt.NomIndex(iG)<<" ("<<iG<<"th) column is "<<mMin<<"<m<"<<mMax<<endl;
-    dt.GetMinMax(rCol,mMin,mMax);
+    dt.GetMinMax(dt.ColumnIndex(rCol),mMin,mMax);
     cout <<"     Range of "<<dt.NomIndex(iR)<<" ("<<iR<<"th) column is "<<mMin<<"<m<"<<mMax<<endl;
-    dt.GetMinMax(iCol,mMin,mMax);
+    dt.GetMinMax(dt.ColumnIndex(iCol),mMin,mMax);
     cout <<"     Range of "<<dt.NomIndex(iI)<<" ("<<iI<<"th) column is "<<mMin<<"<m<"<<mMax<<endl;
-    dt.GetMinMax(zCol,mMin,mMax);
+    dt.GetMinMax(dt.ColumnIndex(zCol),mMin,mMax);
     cout <<"     Range of "<<dt.NomIndex(iZ)<<" ("<<iZ<<"th) column is "<<mMin<<"<m<"<<mMax<<endl;
     if (nFilter>5) {
-        dt.GetMinMax(yCol,mMin,mMax);
+        dt.GetMinMax(dt.ColumnIndex(yCol),mMin,mMax);
         cout <<"     Range of "<<dt.NomIndex(iY)<<" ("<<iY<<"th) column is "<<mMin<<"<m<"<<mMax<<endl;
         }
     double zMin,zMax;
-    dt.GetMinMax(zsCol,zMin,zMax);
+    dt.GetMinMax(dt.ColumnIndex(zsCol),zMin,zMax);
     cout <<"     Range of "<<dt.NomIndex(iZs)<<" ("<<iZs<<"th) column is "<<zMin<<"<z<"<<zMax<<endl;
     cout << endl;
     

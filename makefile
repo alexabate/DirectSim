@@ -60,9 +60,9 @@ pcaTemplates photoZdist priorFitter projectTemplates rdlss simdensity \
 simulateAbsorberLinesOfSight simulateLSSTobsFromTruth simulateLSSTobs
 
 tests : test2Dinterp testbasesim testErrors testEMalgorithm testgoodsmagsim    \
-testKcorrColors testKcorrMethod testLF testMadau testMeiksin testSimReadKcorr   \
-testsimulateIGM testTemplateFitting testsimdensity testSimulation
-
+testKcorrColors testKcorrMethod testLF testMadau testMeiksin \
+ testTemplateFitting testsimdensity 
+#testSimReadKcorr testsimulateIGM testSimulation
 
 clean : 
 	rm  $(OBJ)/* $(EXE)/*
