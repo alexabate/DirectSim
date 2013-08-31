@@ -25,7 +25,7 @@ void usage(void);
 void usage(void) {
 	cout << endl<<" Usage: lineOfSightLymanAlpha [...options...]" << endl<<endl;
 	
-	cout << " Simulates absorber distributions along NLINES lines of sight to a 
+	cout << " Simulates absorber distributions along NLINES lines of sight to a "<<endl;
 	cout << " galaxy at redshift ZSOURCE. The transmission as a function of "<<endl;
 	cout << " wavelength with resolution NL after absorption by just "<<endl;
 	cout << " Lyman-alpha and by the whole Lyman series is calculated"<< endl;
