@@ -105,7 +105,8 @@ int main(int narg, char* arg[]) {
 	    double trans2 = madau.returnObserverFrameTransmission(lambda, zSource2);
 	    double trans3 = madau.returnObserverFrameTransmission(lambda, zSource3);
 	    
-	    outp << lambda <<"  "<< lambda/(1+zSource1) <<"  "<< lambda/(1+zSource2) <<"  "<< lambda/(1+zSource3);
+	    outp << lambda <<"  "<< lambda/(1+zSource1) <<"  "<< lambda/(1+zSource2);
+	    outp <<"  "<< lambda/(1+zSource3);
 	    outp <<"  "<< trans1 <<"  "<< trans2 <<"  "<< trans3 << endl;
 	    }
 	outp.close();

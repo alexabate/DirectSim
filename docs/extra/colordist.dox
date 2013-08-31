@@ -1,0 +1,34 @@
+/*!
+\page color_distributions Color histograms 
+
+<CODE>colorDistributions</CODE>
+
+This program makes histograms of colors vs redshift from an input catalog of 
+ugriz[y] observational data, with redshifts.
+	
+It also plots theoretical color vs redshift tracks according to the spectra given in 
+the supplied SED list file, and the filters given in the supplied filter list file
+	
+The input catalog file must be a FITS bintable format and the column names of the 
+ugriz[y] and redshift columns must be given.  If a column name for the y-filter 
+is NOT supplied it is assumed there is only ugriz data in the catalog.
+
+Output: (to output/)
+    - [rootname]_colordist_[COL#].txt
+    - [rootname]_colortrackSED_[SED#].txt
+   
+Below are the usage instructions
+
+<CODE>Usage: colorDistributions [...options...]
+
+ -i INCAT:  name of file containing observed catalog (must be FITS bintable)<BR>
+ -o OUTFILE: root name of file to output distributions to<BR>
+ -s SPECTRAFILE: name of SED list file [DEFAULT=CWWKSB.list]<BR>
+ -f FILTERFILE: name of filter list file [DEFAULT=LSST.filters]<BR>
+ -c COLS: column names of zs, ugriz or ugrizy magnitudes<BR>
+ -l ZL,CL: set the lower limits of the redshift (ZL) and color (CL) bins [DEFAULT ZL=0,CL=-2]<BR>
+ -u ZU,CU: set the upper limits of the redshift (ZU) and color (CU) bins [DEFAULT ZU=4,CU=3]<BR>
+ -n NZ,NC: set the number of redshift (NZ) and color (NC) bins [DEFAULT NZ=50,NC=50]<BR> </CODE>
+
+
+*/

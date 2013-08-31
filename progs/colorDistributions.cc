@@ -24,16 +24,17 @@ void usage(void) {
 	cout << endl<<" Usage: colorDistributions [...options...]" << endl<<endl;
 	
 	cout << " Makes histograms of colors vs redshift from an input catalog of "<<endl;
-	cout << " of observational data.  The observational data is ugriz[y] AB "<<endl;
-	cout << " magnitudes plus redshifts. "<<endl<<endl;
+	cout << " ugriz[y] observational data, with redshifts "<<endl<<endl;
 	
-	cout << " Color vs redshift tracks for the spectra given in the supplied SED "<<endl;
-	cout << " list file are also calculated"<<endl<<endl;
+	cout << " Theoretical color vs redshift tracks for the spectra are also"<<endl;
+	cout << " plotted according to the spectra given in the supplied SED list"<<endl;
+	cout << " file list file, and the filters given in the supplied filter list"<<endl;
+	cout << " file" <<endl<<endl;
 	
-	cout << " The input catalog file must be a FITS bintable and you must know the "<<endl;
-	cout << " column names of the ugriz[y] and redshift columns.  If a column name "<<endl;
-	cout << " for the y-filter is NOT supplied it is assumed there are only ugriz "<<endl;
-	cout << " magnitudes in the catalog "<<endl<<endl;
+	cout << " The input catalog file must be a FITS bintable format and the"<<endl;
+	cout << " column names of the ugriz[y] and redshift columns must be given."<<endl;
+	cout << " If a column name for the y-filter is NOT supplied it is assumed"<<endl;
+	cout << " there is only ugriz data in the catalog."<<endl<<endl;
 
 	cout << " -i INCAT:       Name of file containing observed catalog (must be FITS) "<<endl;
 	cout << " -o OUTFILE:     Name of file to output distributions to (will be saved in output/) "<<endl;
@@ -268,6 +269,7 @@ int main(int narg, char* arg[]) {
                 
         }
         
+    // output color histograms 
     for (int ic=0; ic<nFilter-1; ic++){    
         stringstream ss;
         ss << ic+1;

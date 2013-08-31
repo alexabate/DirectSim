@@ -1,4 +1,3 @@
-// -*- LSST-C++ -*-
 #include "machdefs.h"
 #include "sopnamsp.h"
 #include <iostream>
@@ -25,7 +24,18 @@
 void usage(void);
 void usage(void) {
 	cout << endl<<" Usage: lineOfSightLymanAlpha [...options...]" << endl<<endl;
-	cout << " -o: OUTFILEROOT: write files to filename beginning OUTROOT (saved to output/)"<<endl;
+	
+	cout << " Simulates absorber distributions along NLINES lines of sight to a 
+	cout << " galaxy at redshift ZSOURCE. The transmission as a function of "<<endl;
+	cout << " wavelength with resolution NL after absorption by just "<<endl;
+	cout << " Lyman-alpha and by the whole Lyman series is calculated"<< endl;
+	
+	cout << " -o: OUTFILEROOT: write files to filename beginning OUTROOT"<<endl;
+	cout << "     (saved to output/)"<<endl;
+	cout << " -z: ZSOURCE: redshift of source galaxy [DEFAULT=3.5] "<<endl;
+	cout << " -n: NLINES: number lines of sight [DEFAULT=20]"<<endl; 
+	cout << " -w: NL: wavelength resolution [DEFAULT=10000]"<<endl;
+	
 	cout << endl;
 };
 

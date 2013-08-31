@@ -1,0 +1,33 @@
+/*!
+\page prior_fit Fit prior to distribution
+
+<CODE>priorFitter</CODE>
+
+Fit a prior using a spectroscopic sub-sample of galaxies
+
+Output: (to output/)
+    - [rootname]_magdist.txt: magnitude histograms
+    - [rootname]_margprobk.txt: marginalized probabilty of parameter k
+    - [rootname]_margprobz.txt: marginalized probabilty of parameter z0
+    - [rootname]_margproba.txt: marginalized probabilty of parameter alpha
+    
+<B> No idea if this actually works! </B>
+    
+Below are the usage instructions
+
+<CODE>Usage: priorFitter [...options...]
+
+ -t : INFILE: input filename (if text format) <BR>
+ -f : INFILE: input filename (if FITS format) <BR>
+ -o : OUTFILEROOT: output filename for prior fit parameter values etc <BR>
+ -z : ZSCOL: column number of INFILE containing the redshifts [DEFAULT ZSCOL=0] <BR>
+ -m : MAGCOL: column number of INFILE containing the magnitudes [DEFAULT MAGCOL=4] 
+      (note column numbers will be zero indexed) <BR>
+ -l : ZL,ML: set the lower limits of the redshift (ZL) and magnitude (ML) bins 
+      [DEFAULT ZL=0,ML=10]<BR>
+ -u : ZU,MU: set the upper limits of the redshift (ZU) and magnitude (MU) bins 
+      [DEFAULT ZU=1,MU=30]<BR>
+ -n : NZ,MZ: set the number of redshift (NZ) and magnitude (MZ) bins [DEFAULT NZ=20,MZ=20] </CODE>
+
+
+*/

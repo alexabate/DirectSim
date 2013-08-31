@@ -1,0 +1,18 @@
+/*!
+\page test_madau Madau absorption
+
+<CODE>testMadau</CODE>
+
+Tests class that calculates Madau absorption
+
+Output: 
+    - [rootname]_madauTrans.txt: transmission functions for 3 different source galaxy redshifts
+    - [rootname]_SB3.txt: add Madau absorption to SB3 galaxy at a range of redshifts
+    - [rootname]_IGMdiffs.txt: LSST u,g mags w/ and wo/ Madau absorption at a range of redshifts
+    
+    
+Below are the usage instructions
+
+<CODE>Usage: testMadau -o rootname </CODE>
+
+*/

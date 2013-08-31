@@ -1,5 +1,7 @@
 /*!
-\page kcorr Calculating k-correction tables <CODE>calculateKcorrections</CODE>
+\page kcorr Calculating k-correction tables
+
+<CODE>calculateKcorrections</CODE>
 
 This program calculates k-correction tables for a particular SED library and 
 set of filters.  The files containing SED libraries and filter sets are found

@@ -1,4 +1,3 @@
-// -*- LSST-C++ -*-
 #include "machdefs.h"
 #include "sopnamsp.h"
 #include <iostream>
@@ -25,10 +24,14 @@
 void usage(void);
 void usage(void) {
 	cout << endl<<" Usage: simulateAbsorberLinesOfSight [...options...]" << endl<<endl;
+	
+	cout << " Simulate absorber distributions along lines of sight according"<<endl;
+	cout << " to the Meiksin prescription "<<endl;
+
 	cout << " -o: OUTFILEROOT: write files to filename beginning OUTROOT (saved to output/)"<<endl;
-	cout << " -n: NLINES: simulate [NLINES] lines of sight "<<endl;
-	cout << " -z: ZSOURCE: redshift to simulate line of sight to"<<endl;
-	cout << " -w: RES: wavelength resolution "<<endl;
+	cout << " -n: NLINES: simulate [NLINES] lines of sight [DEFAULT=1000]"<<endl;
+	cout << " -z: ZSOURCE: redshift to simulate line of sight to [DEFAULT=3.5]"<<endl;
+	cout << " -w: RES: wavelength resolution [DEFAULT=1000]"<<endl;
 	cout << endl;
 };
 
