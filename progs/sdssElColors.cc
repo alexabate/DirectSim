@@ -38,9 +38,7 @@ int main(int narg, char* arg[])
   cout<<endl<<endl;
 
   //--- decoding command line arguments 
-  string outfile="testfiles/";
-  string fname=arg[1];
-  outfile+=fname;
+  string outfile=arg[1];
   
   //-- end command line arguments
   
