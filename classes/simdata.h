@@ -28,6 +28,7 @@
 #include "fitsioserver.h"
 #include "swfitsdtable.h"
 #include "tarray.h"
+#include "igm.h"
 
 #include "sinterp.h"
 #include "gftdist.h"
