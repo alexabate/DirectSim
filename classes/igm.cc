@@ -1,33 +1,61 @@
 // -*- LSST-C++ -*-
 #include "igm.h"
+//#include <string>
+//#include <cmath>
+
+/******* AtomicCalcs **********************************************************/
+
+AtomicCalcs::AtomicCalcs()
+{
+    setGammas();
+    setOscillatorStrength();
+    setConsants();
+};
 
 /******* AtomicCalcs methods **************************************************/
 
-double AtomicCalcs::returnDampingParameter(int nLine, double dopplerPar)
-{   
+void AtomicCalcs::setGammas()
+{
+        // Found in Table 2 of Morton 2003
+    gammaSeries_.push_back(6.265e8);// 2
+    gammaSeries_.push_back(1.897e8);// 3
+    gammaSeries_.push_back(8.127e7);// 4
+    gammaSeries_.push_back(4.204e7);// 5
+    gammaSeries_.push_back(2.450e7);// 6
     
-    double lambdaN = returnWavelengthLymanSeries(nLine);
+    // Backed out of a file containg values of the damping parameter a assuming 
+    // b=36km/s from Tepper-Garcia.  See Fig 1 in Tepper-Garcia 2006
+    gammaSeries_.push_back(1.236e7);// 7
+    gammaSeries_.push_back(8.252e6);// 8
+    gammaSeries_.push_back(5.781e6);// 9
+    gammaSeries_.push_back(4.209e6);// 10
+    gammaSeries_.push_back(3.159e6);// 11
     
-    int iSeries = nLine - 2;
-    double gammaLine = gammaSeries_[iSeries];
+    gammaSeries_.push_back(2.431e6);// 12
+    gammaSeries_.push_back(1.91e6); 
+    gammaSeries_.push_back(4.522e5);// 21 
     
-    double a = (lambdaN*lambdaN*gammaLine)/
-                    (4*PI*SPEED_OF_LIGHT_MS*returnDopplerWidthWL(nLine, dopplerPar));
-                    
-    return a; 
+    gammaSeries_.push_back(3.932e5);// 22
+    gammaSeries_.push_back(3.442e5);// 23
+    gammaSeries_.push_back(3.029e5);// 24
+    gammaSeries_.push_back(2.678e5);// 25
+    gammaSeries_.push_back(2.381e5);// 26
+    
+    gammaSeries_.push_back(2.127e5);// 27
+    gammaSeries_.push_back(1.906e5);// 28
+    gammaSeries_.push_back(1.716e5);// 29
+    gammaSeries_.push_back(1.549e5);// 30
+    gammaSeries_.push_back(1.405e5);// 31
 
+    gammaSeries_.push_back(1.277e5);// 32
+    // size of gammaSeries =  31
+
+    return;
 };
 
-// To set the distributions and the constants
-void AtomicCalcs::setConstants()
+void AtomicCalcs::setOscillatorStrength()
 {
-
-    freqLymanLimInvSecs_ = SPEED_OF_LIGHT_MS/WAVE_LYMANLIM_METERS; // in s^-1
-    sigLymanLimCM2_  = 6.30e-18; // in cm^2
-    nLymanAlpha_ = 2;
-    
-   
-    // Absorption oscillator strength of ith Lyman line (unitless)
+        // Absorption oscillator strength of ith Lyman line (unitless)
     // Taken from Wiese et al 1966
     fSeries_.push_back(0.4162); 
     fSeries_.push_back(7.910e-2);  
@@ -77,972 +105,758 @@ void AtomicCalcs::setConstants()
     fSeries_.push_back(2.446e-5);
     
     // size of fSeries = 39
-    
+
+    return;
 };
 
-void AtomicCalcs::setGammas()
+void AtomicCalcs::setConsants()
 {
+    sigmaLymanLimitCM2_ = 6.30e-18;              //In cm^2
+    freqLymanLimitInvSec_ = SPEED_OF_LIGHT_MS/WAVE_LYMANLIM_METERS;
+    nLymanAlpha_ = 2;
+    nLineMaxMax_ = 31;
 
-    // Found in Table 2 of Morton 2003
-    gammaSeries_.push_back(6.265e8);// 2
-    gammaSeries_.push_back(1.897e8);// 3
-    gammaSeries_.push_back(8.127e7);// 4
-    gammaSeries_.push_back(4.204e7);// 5
-    gammaSeries_.push_back(2.450e7);// 6
-    
-    // Backed out of a file containg values of the damping parameter a assuming 
-    // b=36km/s from Tepper-Garcia.  See Fig 1 in Tepper-Garcia 2006
-    gammaSeries_.push_back(1.236e7);// 7
-    gammaSeries_.push_back(8.252e6);// 8
-    gammaSeries_.push_back(5.781e6);// 9
-    gammaSeries_.push_back(4.209e6);// 10
-    gammaSeries_.push_back(3.159e6);// 11
-    
-    gammaSeries_.push_back(2.431e6);// 12
-    gammaSeries_.push_back(1.91e6); // 13
-    gammaSeries_.push_back(1.528e6);// 14
-    gammaSeries_.push_back(1.242e6);// 15
-    gammaSeries_.push_back(1.024e6);// 16
-    
-    gammaSeries_.push_back(8.532e5);// 17
-    gammaSeries_.push_back(7.185e5);// 18
-    gammaSeries_.push_back(6.109e5);// 19 
-    gammaSeries_.push_back(5.235e5);// 20
-    gammaSeries_.push_back(4.522e5);// 21 
-    
-    gammaSeries_.push_back(3.932e5);// 22
-    gammaSeries_.push_back(3.442e5);// 23
-    gammaSeries_.push_back(3.029e5);// 24
-    gammaSeries_.push_back(2.678e5);// 25
-    gammaSeries_.push_back(2.381e5);// 26
-    
-    gammaSeries_.push_back(2.127e5);// 27
-    gammaSeries_.push_back(1.906e5);// 28
-    gammaSeries_.push_back(1.716e5);// 29
-    gammaSeries_.push_back(1.549e5);// 30
-    gammaSeries_.push_back(1.405e5);// 31
-
-    gammaSeries_.push_back(1.277e5);// 32
-    // size of gammaSeries =  31
-   
+    return;
 };
 
-/******* HIColumnDensity ******************************************************/
-
-HIColumnDensity::HIColumnDensity(double beta1, double beta2, double Nc, 
-                                                double Nl, double Nu, int Nstep)
-: beta1_(beta1) , beta2_(beta2) , Nc_(Nc) , Nl_(Nl) , Nu_(Nu)
+double AtomicCalcs::returnWavelengthLymanSeries(int n)
 {
+    return WAVE_LYMANLIM_METERS/(1.-1./(n*n));
+};
 
-    Bnorm_ = 1; // temporarily set for now 
-    Bnorm_ = setBnorm(Nstep);
-    cout <<"     Normalization value B = "<< Bnorm_ <<endl;
-    double intVal = checkIntegration(Nstep);
-    double numIntVal = numIntegratePowerLaw(Nstep);
-    cout <<"     After normalization column density function numercially integrates to "<< intVal <<endl;
+double AtomicCalcs::returnWavelengthAngstrLymanSeries(int n)
+{
+    return WAVE_LYMANLIM_ANGSTR/(1.-1./(n*n));
+};
+
+double AtomicCalcs::returnFrequencyLymanSeries(int n)
+{
+    double wl = returnWavelengthLymanSeries(n);
+    return SPEED_OF_LIGHT_MS/wl;
+};
+
+double AtomicCalcs::returnDopplerWidthWL(int nLine, double dopplerParamKMS)
+{
+    double ratio = dopplerParamKMS/SPEED_OF_LIGHT_KMS;
+    return returnWavelengthLymanSeries(nLine)*ratio;
+};
+
+double AtomicCalcs::returnDopplerWidthFreq(int nLine, double dopplerParamKMS)
+{
+    double ratio = dopplerParamKMS/SPEED_OF_LIGHT_KMS;
+    return returnFrequencyLymanSeries(nLine)*ratio;
+};
+
+double AtomicCalcs::returnX(double lambda, int nLine, double dopplerParam)
+{
+    double dl = (lambda - returnWavelengthLymanSeries(nLine));
+    double dw = returnDopplerWidthWL(nLine, dopplerParam);
+
+    return dl/dw;
+};
+
+double AtomicCalcs::returnGamma(int nLine)
+{
+    int iSeries = nLine-2;
+    return gammaSeries_[iSeries];
+};
+
+double AtomicCalcs::returnOscillatorStrength(int nLine)
+{
+    int iSeries = nLine-2;
+    return fSeries_[iSeries];
+};
+
+double AtomicCalcs::returnDampingParameter(int nLine, double dopplerParamKMS)
+{
+    double li = returnWavelengthLymanSeries(nLine);
+    double gammai = returnGamma(nLine);
+    double ld = returnDopplerWidthWL(nLine, dopplerParamKMS);
+
+    double numer = li*li*gammai;
+    double denom = 4*PI*SPEED_OF_LIGHT_MS*ld;
+
+    return numer/denom;
+};
+
+void AtomicCalcs::printEverything(int nLine, double dopplerPar)
+{
+    std::cout << "Starting energy level:     " << nLine << std::endl;
+    std::cout << "Doppler Param:             " << dopplerPar << std::endl;
+
+    std::cout << "Lyman Series WL in m       " << returnWavelengthLymanSeries(nLine) << std::endl;
+    std::cout << "Lyman Series WL in A       " << returnWavelengthAngstrLymanSeries(nLine) << std::endl;
+    std::cout << "Lyman Series freq in s^-1  " << returnFrequencyLymanSeries(nLine) << std::endl;
+
+    std::cout << "Doppler Width WL:          " << returnDopplerWidthWL(nLine, dopplerPar) << std::endl;
+    std::cout << "Doppler Width freq:        " << returnDopplerWidthFreq(nLine,dopplerPar) << std::endl;
+
+    std::cout << "X for lambda = 500nm       " << returnX(0.0000005,nLine,dopplerPar) << std::endl;
+    std::cout << "gamma                      " << returnGamma(nLine) << std::endl;
+    std::cout << "Oscillator Strength        " << returnOscillatorStrength(nLine) << std::endl;
+    std::cout << "Return Damping Param       " << returnDampingParameter(nLine,dopplerPar) << std::endl;
+
+    return;
+};
+
+
+/******* HIColumnDensity **********************************************************/
+
+HIColumnDensity::HIColumnDensity() 
+: beta1_(1.6), beta2_(1.3), Nl_(1e12), Nc_(1.6e17), Nu_(1e22)
+{
+    normB_ = 1;
+    normalizeDist();
+    std::cout << "Normalization constant:    " << normB_ << std::endl;
+    //checkNormalize();
 
 };
 
-/******* HIColumnDensity methods **********************************************/
+/******* HIColumnDensity Methods **************************************************/
 
-double HIColumnDensity::setBnorm(int Nstep)
+void HIColumnDensity::normalizeDist()
 {
-
-    double beta1part = integratePowerLaw(Nc_,beta1_) - integratePowerLaw(Nl_,beta1_);                            
-    double beta2part = integratePowerLaw(Nu_,beta2_) - integratePowerLaw(Nc_,beta2_);
-                                                
-    double Bnorm = 1./(beta1part + beta2part);
-    return Bnorm;
-
-
+    double term1 = pow(Nc_, beta1_)*integratePowerLaw(Nl_, Nc_, -beta1_);
+    double term2 = pow(Nc_, beta2_)*integratePowerLaw(Nc_, Nu_, -beta2_);
+    double sumTerms = term1+term2;
+    normB_ = 1/sumTerms;
+    return;
 };
 
-
-double HIColumnDensity::returnColDensityDist(double Nh)
+double HIColumnDensity::integratePowerLaw(double low, double high, double power)
 {
-   
-    double dist;
-    if ( Nh < Nc_ ) {
-        dist = returnPowerLawNormalization()*returnFirstPowerLaw(Nh);
-        }
-    else if ( Nh >= Nc_ ) {
-        dist = returnPowerLawNormalization()*returnSecondPowerLaw(Nh);
-        }
+    double constant = 1/(1+power);
+    double integratedTerm = pow(high, 1+power) - pow(low, 1+power);
+    return constant*integratedTerm;
+};
+
+double HIColumnDensity::returnColDensityDist(double NHI)
+{
+    double dist = 0.0; 
+    if(NHI < Nc_) {
+        dist = returnFirstPowerLaw(NHI);
+    }
+    else if(NHI >= Nc_) {
+        dist = returnSecondPowerLaw(NHI);        
+    }
     else {
-        string emsg = "ERROR! column density value not recognized";
-        throw emsg;
-        }
-      
+        std::cout << "Column Density value not recognized!" << std::endl;
+    }
+
     return dist;
-     
 };
 
-void HIColumnDensity::writeToFile(string outfile, double dLog, int nStep)
+double HIColumnDensity::returnFirstPowerLaw(double NHI)
+{
+    double ratio = NHI/Nc_;
+    return returnNormB()*pow(ratio,-beta1_);
+};
+
+double HIColumnDensity::returnSecondPowerLaw(double NHI)
+{
+        double logb, logN, logNc, logg;
+        logb = log(returnNormB());
+        logN = log(NHI);
+        logNc = log(Nc_);
+        logg = logb-(beta2_*logN)+(beta2_*logNc);
+        return exp(logg);
+};
+
+double HIColumnDensity::returnNormB()
+{
+    return normB_;
+};
+
+void HIColumnDensity::returnPowerLawIndex(double &beta1, double &beta2)
+{
+    beta1 = beta1_;
+    beta2 = beta2_;
+    return;
+};
+
+void HIColumnDensity::returnColDensityLimits(double &Nl, double &Nu)
+{
+    Nl = Nl_;
+    Nu = Nu_;
+    return;
+};
+
+void HIColumnDensity::returnColDensityBreak(double &Nc)
+{
+    Nc = Nc_;
+    return;
+};
+
+void HIColumnDensity::writeToFile(std::string outfile, double dLog, int nStep)
 {
 
     double logNl = log(Nl_);
 
-    ifstream inp;
-	ofstream outp;
-	inp.open(outfile.c_str(), ifstream::in);
+    std::ifstream inp;
+	std::ofstream outp;
+	inp.open(outfile.c_str(), std::ifstream::in);
 	inp.close();
 	if(inp.fail()) {
 		
-		inp.clear(ios::failbit);
-		cout << "     Writing HI column density distribution to file ...";
-		cout << outfile.c_str() << endl;
-		outp.open(outfile.c_str(), ofstream::out);
+		inp.clear(std::ios::failbit);
+		std::cout << "     Writing HI column density distribution to file ...";
+		std::cout << outfile.c_str() << std::endl;
+		outp.open(outfile.c_str(), std::ofstream::out);
 		
 	    for (int i=0; i<nStep; i++) {
 	    
 			double logNh=logNl+i*dLog;
 			double Nh=exp(logNh);
-			outp << Nh <<"  "<< returnColDensityDist(Nh) << endl;
+			outp << Nh <<"  "<< returnColDensityDist(Nh) << std::endl;
             }
             
 		outp.close();
 	    }
 	else
-		cout << "Error...file " << outfile.c_str() << " exists" << endl;
+		std::cout << "Error...file " << outfile.c_str() << " exists" << std::endl;
 
 };
 
-double HIColumnDensity::checkIntegration(int Nstep)
+void HIColumnDensity::testClass()
+{
+    std::cout << "Confirming calculations in HIColumnDensity..." << std::endl;
+    std::cout << "Normalization constant should be:         " << "2.82654e-21" << std::endl;
+
+    double b1,b2,nl,nc,nu;
+    returnPowerLawIndex(b1,b2);
+    returnColDensityLimits(nl,nu);
+    returnColDensityBreak(nc);
+
+    std::cout << "beta1: " << b1 << std::endl << "beta2: " << b2 << std::endl
+                << "Nl: " << nl << std::endl << "Nc: " << nc << std::endl << "Nu: " << nu << std::endl;
+
+    return;
+};
+
+
+/******* AbsorberRedshiftDistribution *********************************************/
+AbsorberRedshiftDistribution::AbsorberRedshiftDistribution() 
+: A_(400.), z1_(1.2), z2_(4.0), gamma1_(0.2), gamma2_(2.5), gamma3_(4.0)
 {
 
-    double numIntVal = returnPowerLawNormalization()*numIntegratePowerLaw(Nstep);
-    return numIntVal;
 };
 
-double HIColumnDensity::numIntegratePowerLaw(int Nstep)
-{
-    // do integration in log steps
-    double logNl = log(Nl_);
-    double logNu = log(Nu_);
-    double dlogNh = (logNu - logNl )/(Nstep - 1);
-
-    double sum=0;
-    for ( int i=0; i<Nstep; i++ ) {
-        double logNh = logNl + i*dlogNh;
-        double Nh = exp(logNh);
- 
-        if ( Nh < Nc_ )
-            sum += returnFirstPowerLaw(Nh)*Nh*dlogNh;
-        else if ( Nh >= Nc_ )
-            sum += returnSecondPowerLaw(Nh)*Nh*dlogNh;
-    
-        }
-        
-    return sum;
-};
-
-/******* AbsorberRedshiftDistribution *****************************************/
-
-AbsorberRedshiftDistribution::AbsorberRedshiftDistribution(double gamma1,
-double gamma2, double gamma3, double z1, double z2, double A)
-: gamma1_(gamma1) , gamma2_(gamma2) , gamma3_(gamma3) , z1_(z1) , z2_(z2) ,A_(A)
-{
-             
-};
-
-/******* AbsorberRedshiftDistribution methods *********************************/
-
+/******* AbsorberRedshiftDistribution methods *************************************/
 double AbsorberRedshiftDistribution::returnRedshiftDist(double z)
 {
+    double dist = 0.0;
+    if(z <= z1_) {
+        dist = returnNormalization()*returnFirstPowerLaw(z);
+    }
+    else if(z <= z2_ && z > z1_) {
+        dist = returnNormalization()*returnSecondPowerLaw(z);
+    }
+    else if(z > z2_) {
+        dist = returnNormalization()*returnThirdPowerLaw(z);
+    }
+    else {
+        std::cout << "Redshift not recognized!" << std::endl;
+    }
 
-    double dist;
-    if ( z <= z1_ ) {
-        dist = A_*returnFirstPowerLaw(z);
-        }
-    else if ( z <= z2_ && z > z1_ ) {
-        dist = A_*returnSecondPowerLaw(z);
-        }
-    else if ( z > z2_ )
-        dist = A_*returnThirdPowerLaw(z);
-    else
-        throw ParmError("ERROR! redshift value not recognized");
-        
     return dist;
-
-
 };
 
-void AbsorberRedshiftDistribution::writeToFile(string outfile, double zmin, 
-                                                           double dz, int nStep)
+double AbsorberRedshiftDistribution::returnFirstPowerLaw(double z)
+{
+    double ratio = 0.0;
+    ratio = (1+z)/(1+z1_);
+    return pow(ratio, gamma1_);
+};
+
+double AbsorberRedshiftDistribution::returnSecondPowerLaw(double z)
+{
+    double ratio = 0.0;
+    ratio = (1+z)/(1+z1_);
+    return pow(ratio, gamma2_);
+};
+
+double AbsorberRedshiftDistribution::returnThirdPowerLaw(double z)
+{
+    double ratio2 = 0.0, ratio3 = 0.0;
+    ratio2 = (1+z2_)/(1+z1_);
+    ratio3 = (1+z)/(1+z2_);
+    return pow(ratio2,gamma2_)*pow(ratio3,gamma3_);
+};
+
+void AbsorberRedshiftDistribution::returnPowerLawIndex(double &g1, double &g2, double &g3)
+{
+    g1 = gamma1_;
+    g2 = gamma2_;
+    g3 = gamma3_;
+    return;
+};
+
+void AbsorberRedshiftDistribution::returnRedshiftBreaks(double &z1, double &z2)
+{
+    z1 = z1_;
+    z2 = z2_;
+    return;
+};
+
+double AbsorberRedshiftDistribution::returnNormalization()
+{
+    return A_;
+};
+
+void AbsorberRedshiftDistribution::testClass()
+{
+    double g1, g2, g3, z1, z2, A;
+    returnPowerLawIndex(g1,g2,g3);
+    returnRedshiftBreaks(z1,z2);
+    A = returnNormalization();
+
+    std::cout << "gamma1 " << g1 << std::endl
+                << "gamma2 " << g2 << std::endl
+                << "gamma3 " << g3 << std::endl
+                << "z1     " << z1 << std::endl
+                << "z2     " << z2 << std::endl
+                << "A      " << A  << std::endl;
+    std::cout << std::endl;
+
+    return;
+};
+
+/******* DopplerParDistribution ***************************************************/
+DopplerParDistribution::DopplerParDistribution()
+: bsigma_(23)
 {
 
-    ifstream inp;
-	ofstream outp;
-
-    inp.open(outfile.c_str(), ifstream::in);
-	inp.close();
-	if(inp.fail()) {
-		
-		inp.clear(ios::failbit);
-		cout << "     Writing to absorber redshift distribution to file ...";
-		cout << outfile.c_str() << endl;
-		outp.open(outfile.c_str(), ofstream::out);
-		
-	    for (int i=0; i<nStep; i++) {		
-			double zv=zmin+i*dz;
-			outp << zv <<"  "<< returnRedshiftDist(zv) << endl;
-            }
-            
-		outp.close();
-	    }
-	else
-		cout << "Error...file " << outfile.c_str() << " exists" << endl;
-
 };
 
-
-
-/******* DopplerParDistribution methods ***************************************/
+/******* DopplerParDistribution methods *******************************************/
 
 double DopplerParDistribution::returnDopplerDist(double b)
 {
-
-    double bsig4=bsigma_*bsigma_*bsigma_*bsigma_;
-    double b4=b*b*b*b;
-    double bratio=bsig4/b4;
-    double bratio2=bratio/b;
-    
-    return 4*bratio2*exp(-bratio);
-
+    double b4, bsig4, ratio4, p1, p2;
+    b4 = b*b*b*b;
+    bsig4 = bsigma_*bsigma_*bsigma_*bsigma_;
+    ratio4 = bsig4/b4;
+    p1 = 4*ratio4/b;
+    p2 = exp(-ratio4);
+    return p1*p2;
 };
 
-void DopplerParDistribution::writeToFile(string outfile, double bmin, 
-                                                           double db, int nStep)
+
+void DopplerParDistribution::testClass()
 {
-
-    ifstream inp;
-	ofstream outp;
-
-    inp.open(outfile.c_str(), ifstream::in);
-	inp.close();
-	if(inp.fail()) {
-		
-		inp.clear(ios::failbit);
-		cout << "     Writing Doppler parameter distribution to file ...";
-		cout << outfile.c_str() << endl;
-		outp.open(outfile.c_str(), ofstream::out);
-		
-	    for (int i=0; i<nStep; i++) {		
-			double bv=bmin+i*db;
-			outp << bv <<"  "<< returnDopplerDist(bv) << endl;
-            }
-            
-		outp.close();
-	    }
-	else
-		cout << "Error...file " << outfile.c_str() << " exists" << endl;
-
+    std::cout << "bsigma " << bsigma_ << std::endl;
+    return;
 };
 
-/******* ProbabilityDistAbsorbers  ********************************************/
 
+
+
+/******* ProbabilityDistAbsorbers *************************************************/
 ProbabilityDistAbsorbers::ProbabilityDistAbsorbers(RandomGeneratorInterface& rg,
-                            AbsorberRedshiftDistribution& absorberZDist,
-                            HIColumnDensity& hiColumnDensity,
-                            DopplerParDistribution& dopplerParDist
-        )
-: rg_(rg) , absorberZDist_(absorberZDist) , hiColumnDensity_(hiColumnDensity) ,
-                                                dopplerParDist_(dopplerParDist)
-{ 
+                                                   AbsorberRedshiftDistribution& absorberZDist,
+                                                   HIColumnDensity& hiColumnDensity,
+                                                   DopplerParDistribution& dopplerParDist)
+: rg_(rg), absorberZDist_(absorberZDist), hiColumnDensity_(hiColumnDensity), dopplerParDist_(dopplerParDist)
 
+{
     int nStep = 1000;
     setNHiDistribution(nStep);
-    bmin_ = 0, bmax_ = 200;
+    bmin_ = 0.0;
+    bmax_ = 200.;
     setDopplerDistribution(nStep);
-    
-
-
 
 };
 
-/******* ProbabilityDistAbsorbers methods *************************************/
-
-void ProbabilityDistAbsorbers::simulateLineOfSight(double zStart,double zMax,
-    vector<double>& redshifts, vector<double>& dopplerPars,
-                                  vector<double>& columnDensities, string outfile)
-{
-
-    double zCurrent = zStart;
-    int iAbsorber = 0;
-    
-    while ( zCurrent < zMax ) {
-	    //cout <<"     On absorber "<<iAbsorber+1<<endl;
-	    double zDraw, bdopp, NHI;
-	    simulateAbsorber(zCurrent,zDraw,bdopp,NHI);
-	    
-	    redshifts.push_back(zDraw);
-	    dopplerPars.push_back(bdopp);
-	    columnDensities.push_back(NHI);	    
-	    
-	    zCurrent = zDraw;
-	    iAbsorber++;
-	    }
-	int nAbsorbers = columnDensities.size();
-    cout <<"     Total number of absorbers along line of sight = "<<nAbsorbers<<".";
-	cout <<" Max redshift = "<<redshifts[redshifts.size()-1]<<endl;
-	
-	writeToFile(outfile, redshifts, dopplerPars, columnDensities);
-
-};
-
-void ProbabilityDistAbsorbers::simulateAbsorber(double zCurrent, 
-                    double& redshift, double& dopplerPar, double& columnDensity)
-{
-    redshift = zCurrent + drawDeltaZ(zCurrent);
-	dopplerPar = drawDoppler();
-	columnDensity = drawHIColumnDensity();
-
-};
-
-/*double ProbabilityDistAbsorbers::simulateAbsorberRedshift(double zSource)
-{
-    double redshift = findzInoue(zSource);
-    return redshift;
-};*/
-
-
-// To draw from the distributions
-double ProbabilityDistAbsorbers::drawDeltaZ(double zLast)
-{
-    
-    // returns number of absorbers expected at z
-    double fz=absorberZDist_(zLast);
-
-    // Probability the next absorber on a line of sight is at zLast + deltaZ:
-    // P(deltaZ | zLast) = fz*exp(-fz*deltaZ)
-    
-    // Normalize this distribution so it is properly cumulative (i.e. tends
-    // to Prob = 1 ->
-    // P(deltaZ | zLast) = exp(-fz*deltaZ)
-    
-    // Use inverse transformation method to generate correct distribution
-    double rn = rg_.Flat01();
-    
-    double deltaZ=-1/fz*log(rn); // this is inverse of above function
-    
-    return deltaZ;
-
-};
-
-// Code below is from IGMtransmission code - works same as drawDeltaZ above
-double ProbabilityDistAbsorbers::simulateAbsorberRedshift(double z0) 
-{
-		double random = rg_.Flat01();
-		double gamma1, gamma2, gamma3;
-		absorberZDist_.returnPowerLaws(gamma1, gamma2, gamma3);
-        double z1, z2;
-        absorberZDist_.returnzAtBreaks(z1, z2);
-
-		double z = 0;
-		if (z0 <= z1) {
-			double normalisation1 = ((1 + z1) / (gamma1 + 1))
-					* pow(((1 + z0) / (z1 + 1)), (gamma1 + 1))
-					- ((1 + z1) / (gamma1 + 1))
-					* pow((1 / (z1 + 1)), (gamma1 + 1));
-			z = pow(
-					(random * normalisation1 * ((gamma1 + 1) / (1 + z1)) + 
-					pow((1 / (1 + z1)), (gamma1 + 1))),
-					(1 / (gamma1 + 1)))
-					* (1 + z1) - 1;
-		} else if (z1 < z0 && z0 <= z2) {
-			double normalisation2 = ((1 + z1) / (1 + gamma1))
-					* (1 - pow((1 / (1 + z1)), (gamma1 + 1)))
-					+ ((1 + z1) / (1 + gamma2))
-					* (pow(((1 + z0) / (1 + z1)), (gamma2 + 1)) - 1);
-			double Fz1 = ((1 + z1) / (gamma1 + 1))
-					* (1 - pow((1 / (1 + z1)), (gamma1 + 1)))
-					/ normalisation2;
-			if (0 < random && random <= Fz1) {
-				z = pow((random * normalisation2
-						* ((gamma1 + 1) / (1 + z1)) + pow((1 / (1 + z1)),
-						(gamma1 + 1))), (1 / (gamma1 + 1)))
-						* (1 + z1) - 1;
-			} else if (Fz1 < random && random <= 1) {
-				z = pow(((random * normalisation2 - Fz1 * normalisation2)
-						* ((gamma2 + 1) / (1 + z1)) + 1), (1 / (gamma2 + 1)))
-						* (1 + z1) - 1;
-			} else {
-				throw ParmError("ERROR!");
-
-			}
-		} else if (z0 > z2) {
-			double normalisation3 = ((1 + z1) / (gamma1 + 1))
-					* (1 - pow((1 / (1 + z1)), (gamma1 + 1)))
-					+ ((1 + z1) / (gamma2 + 1))
-					* (pow(((1 + z2) / (1 + z1)), (gamma2 + 1)) - 1)
-					+ ((1 + z2) / (gamma3 + 1))
-					* (pow(((1 + z2) / (1 + z1)), gamma2))
-					* (pow(((1 + z0) / (1 + z2)), (gamma3 + 1)) - 1);
-			double Fz1 = (((1 + z1) / (gamma1 + 1)) * (1 - pow(
-					(1 / (1 + z1)), (gamma1 + 1))))
-					/ normalisation3;
-			double Fz2 = Fz1
-					+ (((1 + z1) / (gamma2 + 1)) * (pow(
-							((1 + z2) / (1 + z1)), (gamma2 + 1)) - 1))
-					/ normalisation3;
-			// System.out.println("Fz1: " + Fz1 + " Fz2: " + Fz2);
-			if (0 < random && random <= Fz1) {
-				z = pow((random * normalisation3
-						* ((gamma1 + 1) / (1 + z1)) + pow((1 / (1 + z1)),
-						(gamma1 + 1))), (1 / (gamma1 + 1)))
-						* (1 + z1) - 1;
-			} else if (Fz1 < random && random <= Fz2) {
-				z = pow(
-						((normalisation3 * random - ((1 + z1) / (gamma1 + 1))
-								* (1 - pow((1 / (1 + z1)), (gamma1 + 1))))
-								* ((gamma2 + 1) / (1 + z1)) + 1),
-						(1 / (gamma2 + 1)))
-						* (1 + z1) - 1;
-			} else if (random > Fz2) {
-
-				z = pow(
-								(((gamma3 + 1) / (1 + z2))
-										* pow(((1 + z1) / (1 + z2)),
-												gamma2)
-										* (random
-												* normalisation3
-												- ((1 + z1) / (gamma1 + 1))
-												* (1 - pow((1 / (1 + z1)),
-														(gamma1 + 1))) - ((1 + z1) / (gamma2 + 1))
-												* (pow(
-														((1 + z2) / (1 + z1)),
-														(gamma2 + 1)) - 1)) + 1),
-								(1 / (gamma3 + 1)))
-						* (1 + z2) - 1;
-			} else {
-				throw ParmError("ERROR!");
-			}
-		} else {
-			throw ParmError("ERROR!");
-		}
-		return z;
-	};
-
-
-double ProbabilityDistAbsorbers::drawHIColumnDensity()
-{
-
-    //cout <<"     log10(Nl) = "<<log10Nl_<<",  log10(Nu) = "<<log10Nu_<< endl;
-    //cout <<"     log10(gin) = "<<log10gmin_<<",  log10(gmax) = "<<log10gmax_<< endl;
-    double u1,u2;
-    while (true) {
-        u1 = log10Nl_ + (log10Nu_ - log10Nl_)*rg_.Flat01();
-        u2 = log10gmin_ + (log10gmax_ - log10gmin_)*rg_.Flat01();
-       // u2 = log10gmin_*rg_.Flat01();// between 0 and log10gmax
-        
-        double log10gval = colDensityFunc_(u1);
-        //int iElement=findClosestElement(log10NHIvals_,u1);
-   
-        if ( u2 <= log10gval)//log10gvals_[iElement])
-            break;
-        }
-    return pow(10.,u1);
-
-};
-
-
-double ProbabilityDistAbsorbers::drawDoppler()
-{
-
-    double u1,u2;
-    while (true)  {
-        u1 = bmin_ + (bmax_ - bmin_)*rg_.Flat01();
-        u2 = hmin_ + (hmax_ - hmin_)*rg_.Flat01();
-    
-        int iElement=findClosestElement(bvals_,u1);
-   
-        if ( u2 <= hvals_[iElement])
-            break;
-        }
-    return u1;
-
-};
-
+/******* ProbabilityDistAbsorbers methods *****************************************/
 
 void ProbabilityDistAbsorbers::setNHiDistribution(int nStep)
 {
-
     log10NHIvals_.clear();
     log10gvals_.clear();
-    
-    double Nl,Nu;
-    hiColumnDensity_.returnLowerUpperColDensValues(Nl,Nu);
+
+    double Nl, Nu;
+    hiColumnDensity_.returnColDensityLimits(Nl,Nu);
     log10Nl_ = log10(Nl);
     log10Nu_ = log10(Nu);
-    
-    double dlogN=(log10Nu_ - log10Nl_)/(nStep-1);
-    
-    for (int i=0; i<nStep; i++) {
+
+    double dlogN = (log10Nu_ - log10Nl_)/(nStep-1);
+
+    for(int i=0; i<nStep; i++) {
         double log10NHI = log10Nl_ + i*dlogN;
-        double NHI = pow(10.,log10NHI);
         log10NHIvals_.push_back(log10NHI);
-        double g=hiColumnDensity_.returnColDensityDist(NHI);
+
+        double NHI = pow(10., log10NHI);
+        double g = hiColumnDensity_(NHI);
         log10gvals_.push_back(log10(g));
-        }
-        
-    // Want to subtract the minimum values of log10(g) from all the elements in
-    // the log10gvals_ vector because log10gvals is negative
-    double log10gminTmp = findMinimum(log10gvals_);
-    //for (int i=0; i<nStep; i++)
-    //    log10gvals_[i] -= log10gminTmp;
+    }
 
-        
-    // check the vectors log10gvals and log10NHIvals_
-    // check the maximum values here
-    log10gmin_=findMinimum(log10gvals_); // new minimum must be zero
-    log10gmax_=findMaximum(log10gvals_);
-    cout << " log10gmax = " << log10gmax_ << " log10gmin = " << log10gmin_ << endl;
-    
-    // Make interpolation
-    colDensityFunc_.DefinePoints(log10NHIvals_,log10gvals_);
+    log10gmin_ = findMinimum(log10gvals_);
+    log10gmax_ = findMaximum(log10gvals_);
 
-    double eps = 1e-4;
-    //if (abs(log10gmin_)>eps)
-    //    throw ParmError("ERROR! Column density distribution minimum not zero!");
-    
+    // Create interpolation
+//    colDensityFunc_.DefinePoints(log10NHIvals_, log10gvals_);
+
+    return;
+  
 };
-
 
 void ProbabilityDistAbsorbers::setDopplerDistribution(int nStep)
 {
-
     bvals_.clear();
     hvals_.clear();
-    
+
     double db = (bmax_-bmin_)/(nStep-1);
-    
-    for (int i=0; i<nStep; i++) {
+
+    for(int i=0; i<nStep; i++) {
         double bv = bmin_ + i*db;
-
         bvals_.push_back(bv);
-        double hv=dopplerParDist_(bv);
+
+        double hv = dopplerParDist_(bv);
         hvals_.push_back(hv);
+    }
+
+    hmin_ = findMinimum(hvals_);
+    hmax_ = findMaximum(hvals_);
+
+    return;
+};
+
+double ProbabilityDistAbsorbers::drawDeltaZ(double zLast)
+{
+    double fz = absorberZDist_(zLast);
+    double rn = rg_.Flat01();
+
+    // MAY NEED TO RETURN AND NORMALIZE THIS BEFORE INVERTING
+    // p(\DeltaZ;z) = f(z)*exp( -f(z)*\DeltaZ )
+    double diff = log(fz)-log(rn);
+    double deltaZ = diff/fz;
+
+    return deltaZ;
+};
+
+double ProbabilityDistAbsorbers::drawHIColumnDensity()
+{
+    double u1, u2, nhi;
+
+    while(true) {
+        u1 = log10Nl_ + (log10Nu_ - log10Nl_)*rg_.Flat01();
+        u2 = log10gmin_ + (log10gmax_ - log10gmin_)*rg_.Flat01();
+
+        nhi = pow(10.,u1);
+        double gval = hiColumnDensity_(nhi);
+        double log10gval = log10(gval);
+
+        // Use interpolation to draw the number
+        //double log10gval = colDensityFunc_(u1);
+
+        if(u2 <= log10gval) {
+            break;
         }
+    }
 
-    hmin_=findMinimum(hvals_);
-    hmax_=findMaximum(hvals_);
+    return pow(10., u1);
+    //return nhi;
 };
 
-
-
-
-
-// Write the line of sight absorbers to a file 
-void ProbabilityDistAbsorbers::writeToFile(string outfile, 
-    vector<double>& redshifts, vector<double>& dopplerPars, 
-                                                vector<double>& columnDensity)
+double ProbabilityDistAbsorbers::drawDoppler()
 {
+    double u1, u2;
 
-    int nAbsorbers = columnDensity.size();
+    while(true) {
+        u1 = bmin_ + (bmax_ - bmin_)*rg_.Flat01();
+        u2 = hmin_ + (hmax_ - hmin_)*rg_.Flat01();
 
-    ifstream inp;
-	ofstream outp;
+        double hval = dopplerParDist_(u1);
 
-	inp.open(outfile.c_str(), ifstream::in);
-	inp.close();
-	if(inp.fail()) {
-		
-		inp.clear(ios::failbit);
-		cout << "     Writing line of sight to file ...";
-		cout << outfile.c_str() << endl;
-		outp.open(outfile.c_str(), ofstream::out);
-		
-	    for (long i=0; i<nAbsorbers; i++) {
-	        
-	        double zv = redshifts[i];
-	        double bv = dopplerPars[i];
-	        double cv = columnDensity[i];
-	        
-	        outp << zv <<"  "<< bv <<"  "<< cv <<endl;
-	        
-	        }
-	    outp.close();
-	    }
-	else
-		cout << "Error...file " << outfile.c_str() << " exists" << endl;
-
-
-
-};
-
-
-// Mostly for debugging below here
-void ProbabilityDistAbsorbers::writeZDistribution(string outfile, 
-                                            double zCurrent, long nTrial)
-{
-
-    ifstream inp;
-	ofstream outp;
-
-	inp.open(outfile.c_str(), ifstream::in);
-	inp.close();
-	if(inp.fail()) {
-		
-		inp.clear(ios::failbit);
-		cout << "     Writing delta z list to file ...";
-		cout << outfile.c_str() << endl;
-		outp.open(outfile.c_str(), ofstream::out);
-		
-	    for (long i=0; i<nTrial; i++) {
-	        
-	        double deltaZ=drawDeltaZ(zCurrent);
-	        
-	        outp << deltaZ <<endl;
-	        
-	        }
-	    outp.close();
-	    }
-	else
-		cout << "Error...file " << outfile.c_str() << " exists" << endl;
-
-
-};
-
-
-void ProbabilityDistAbsorbers::writeDopplerDistribution(string outfile, 
-                                                                   long nTrial)
-{
-
-    ifstream inp;
-	ofstream outp;
-
-	inp.open(outfile.c_str(), ifstream::in);
-	inp.close();
-	if(inp.fail()) {
-		
-		inp.clear(ios::failbit);
-		cout << "     Writing doppler list to file ...";
-		cout << outfile.c_str() << endl;
-		outp.open(outfile.c_str(), ofstream::out);
-		
-	    for (long i=0; i<nTrial; i++) {
-	        
-	        double doppler=drawDoppler();
-	        
-	        outp << doppler <<endl;
-	        
-	        }
-	    outp.close();
-	    }
-	else
-		cout << "Error...file " << outfile.c_str() << " exists" << endl;
-
-
-};
-
-void ProbabilityDistAbsorbers::writeNHiDistribution(string outfile, long nTrial)
-{
-
-
-    ifstream inp;
-	ofstream outp;
-
-	inp.open(outfile.c_str(), ifstream::in);
-	inp.close();
-	if(inp.fail()) {
-		
-		inp.clear(ios::failbit);
-		cout << "     Writing column density list to file ...";
-		cout << outfile.c_str() << endl;
-		outp.open(outfile.c_str(), ofstream::out);
-		
-	    for (long i=0; i<nTrial; i++) {
-	        
-	        double NHI=drawHIColumnDensity();
-	        
-	        outp << NHI <<endl;
-	        
-	        }
-	    outp.close();
-	    }
-	else
-		cout << "Error...file " << outfile.c_str() << " exists" << endl;
-
-
-};
-
-
-
-
-/******* OpticalDepth methods *************************************************/
-
-// All frequencies are REST FRAME (of the absorber) in these calculations
-double OpticalDepth::returnRestFrameOpticalDepth(double freq, double bAbsorber, double nHI)
-{
-
-    double sigmaLC = 0., sumSigmai = 0., opticalDepthRestFrame = 0.;
-    
-    // cross-section for the Lyman continuum 
-    sigmaLC = returnLymanContinuumCrossSection(freq);
-    
-    // cross-section for the Lyman series
-    sumSigmai = returnLymanSeriesCrossSection(freq, bAbsorber);
-    
-    // total optical depth
-    if (isAll_)
-        opticalDepthRestFrame = nHI*(sigmaLC + sumSigmai);
-    else if (isOnlyLymanC_)
-        opticalDepthRestFrame = nHI*sigmaLC;
-    else if (isOnlyLymanS_)
-        opticalDepthRestFrame = nHI*sumSigmai;
-    else
-        throw ParmError("ERROR! Unknown optical depth contributions");
-    
-    return opticalDepthRestFrame;
-
-};
-
-// All frequencies are REST FRAME (of the absorber) in these calculations
-// Continuum
-double OpticalDepth::returnLymanContinuumCrossSection(double freq)
-{
-    
-    double sigLC;
-    
-    if ( freq >= freqLymanLimInvSecs_) {
-        double freqRatio = freqLymanLimInvSecs_/freq;
-        sigLC = sigLymanLimCM2_*freqRatio*freqRatio*freqRatio;
+        if(u2 <= hval) {
+            break;
         }
-    else
-        sigLC = 0.;
-        
-    return sigLC; // in cm^2
+    }
+
+    return u1;
 };
 
-// All frequencies are REST FRAME (of the absorber) in these calculations
-// Series
-double OpticalDepth::returnLymanSeriesCrossSection(double freq, double bAbsorber)
+void ProbabilityDistAbsorbers::simulateLineOfSight(double zStart, double zMax,
+                    vector<double>& redshifts, vector<double>& dopplerPars,
+                    vector<double>& columnDensities, string outfile)
 {
+    double zCurrent = zStart;
+    int iAbsorber = 0;
 
-    double sumSigmai=0.;
-    for (int n=nLymanAlpha_; n<=nLineMax_; n++)
-        sumSigmai += returnLymanLineCrossSection(n, freq, bAbsorber);
-    return sumSigmai; // in cm^2
-    
+    while(zCurrent < zMax) {
+        double zNext, bdopp, NHI;
+        simulateAbsorber(zCurrent,zNext,bdopp,NHI);
+
+        redshifts.push_back(zNext);
+        dopplerPars.push_back(bdopp);
+        columnDensities.push_back(NHI);
+
+        zCurrent = zNext;
+        iAbsorber++;
+    }
+
+    cout << "       The total number of absorbers along the line of sight = "
+            << iAbsorber << endl;
+    cout << "       Max redshift = " << redshifts[iAbsorber-1] << endl;
+
+    return;
 };
 
-// All frequencies are REST FRAME (of the absorber) in these calculations
-double OpticalDepth::returnLymanLineCrossSection(int nLine, double freq, double bAbsorber)
+void ProbabilityDistAbsorbers::simulateAbsorber(double zCurrent, double& zNext,
+                    double& bdopp, double& NHI)
 {
+    zNext = zCurrent + drawDeltaZ(zCurrent);
+    bdopp = drawDoppler();
+    NHI = drawHIColumnDensity();
 
-    // Constant: in cgs units
-    double constants = (sqrt(PI)*ELECTRON_CHARGE_STATC*ELECTRON_CHARGE_STATC)/
-                                        (ELECTRON_MASS_G*SPEED_OF_LIGHT_CMS);// in cm^2/s
-                            
-    // Doppler width of line i
-    double dopplerWidth = returnDopplerWidthFreq(nLine, bAbsorber); // in s^-1
-    
-    // Oscillator strength of line i
-    double fi = returnOscillatorStrength(nLine); // unitless
-    
-    // Line profile function of line i
-    double phii = returnLineProf(nLine, freq, bAbsorber); // unitless
-    
-    // Lyman series cross-section
-    double sigmai = constants*(fi/dopplerWidth)*phii; // units of cm^2
-    
-    //cout << constants*(fi/dopplerWidth) <<endl;
-    //cout << "Nline="<<nLine<<"  "<<constants <<"  "<< fi <<"  "<< dopplerWidth <<"  "<<phii<<endl;
-                       
-    return sigmai;
-
+    return;
 };
 
-// All frequencies are REST FRAME (of the absorber) in these calculations
-double OpticalDepth::returnLineProf(int nLine,double freq, double bAbsorber)
+
+/******* VoigtProfile *************************************************************/
+VoigtProfile::VoigtProfile(double dopplerPar, int nLine)
+: dopplerPar_(dopplerPar), nLine_(nLine)
 {
-    VoigtProfile voigtProf(bAbsorber, nLine);
-    double lambda = SPEED_OF_LIGHT_MS/freq;
-    
-    double vprof = voigtProf(lambda);
-    return vprof;
-
-};
-
-/*// To set the distributions and the constants
-void OpticalDepth::setConstants()
-{
-
-    freqLymanLimInvSecs_ = SPEED_OF_LIGHT_MS/WAVE_LYMANLIM_METERS; // in s^-1
-    sigLymanLimCM2_  = 6.30e-18; // in cm^2
-    nLymanAlpha_ = 2;
-    nLineMaxMax_ =  31; // Maximum line series possible to go up to
-    nLineMax_ = nLineMaxMax_; // Maximum line series to actually go up to
-   
-    // Absorption oscillator strength of ith Lyman line
-    // Taken from Wiese et al 1966
-    fSeries_.push_back(0.4162);
-    fSeries_.push_back(7.910e-2);  
-    fSeries_.push_back(2.899e-2);  
-    fSeries_.push_back(1.394e-2);
-    fSeries_.push_back(7.799e-3);
-    
-    fSeries_.push_back(4.814e-3);
-    fSeries_.push_back(3.183e-3);
-    fSeries_.push_back(2.216e-3);
-    fSeries_.push_back(1.605e-3);
-    fSeries_.push_back(1.201e-3);
-    
-    fSeries_.push_back(9.214e-4);
-    fSeries_.push_back(7.227e-4);
-    fSeries_.push_back(5.774e-4);
-    fSeries_.push_back(4.686e-4);
-    fSeries_.push_back(3.856e-4);
-    
-    fSeries_.push_back(3.211e-4);
-    fSeries_.push_back(2.702e-4);
-    fSeries_.push_back(2.296e-4);
-    fSeries_.push_back(1.967e-4);
-    fSeries_.push_back(1.698e-4);
-    
-    fSeries_.push_back(1.476e-4);
-    fSeries_.push_back(1.291e-4);
-    fSeries_.push_back(1.136e-4);
-    fSeries_.push_back(1.005e-4);
-    fSeries_.push_back(8.928e-5);
-    
-    fSeries_.push_back(7.970e-5);
-    fSeries_.push_back(7.144e-5);
-    fSeries_.push_back(6.429e-5);
-    fSeries_.push_back(5.806e-5);
-    fSeries_.push_back(5.261e-5);
-    
-    fSeries_.push_back(4.782e-5);
-    fSeries_.push_back(4.360e-5);
-    fSeries_.push_back(3.986e-5);
-    fSeries_.push_back(3.653e-5);
-    fSeries_.push_back(3.357e-5);
-    
-    fSeries_.push_back(3.092e-5);
-    fSeries_.push_back(2.854e-5);
-    fSeries_.push_back(2.640e-5);
-    fSeries_.push_back(2.446e-5);
-    
-};*/
-
-/******* LineOfSightTrans methods *********************************************/
-
-double LineOfSightTrans::returnOpticaldepth(double lambda, double zSource)
-{
-
-    // Set contributions of absorbers
-    if (isAll_)
-        setLymanAll();
-    else if (isOnlyLymanC_)
-        setLymanContinuumOnly();
-    else if (isOnlyLymanS_)
-        setLymanSeriesOnly();
-    else
-        throw ParmError("ERROR! Unknown optical depth contributions");
-
-    // find most distant absorber 
-    int iDistant = findClosestElement(redshifts_,zSource);
-    
-    // loop over all the absorbers, summing up the optical depth of each
-    //bool isOpticalDepth=true;
-    double tau=0.;
-    for (int i=0; i<=iDistant; i++) {
-        
-        double zAbsorber = redshifts_[i];
-        double nHI = columnDensities_[i];
-        double bAbsorber = dopplerPars_[i];
-        
-        double tauAbsorber = returnObserverFrameOpticalDepth(lambda, zAbsorber, nHI, bAbsorber);
-
-        tau += tauAbsorber;
-        }
-        
-    return tau;
+    double nGammaMax = gammaSeries_.size() + 1;
+    if(nLine > nGammaMax) {
+        cout << "STARTING LINE IS TOO LARGE, NO GAMMA VALUES FOR THAT TRANSITION"
+                << endl;
+    }
 
 };
 
-/******* VoigtProfile methods *************************************************/
-
-/*double VoigtProfile::returnDampingParameter()
-{   
-    
-    double lambdaN = returnWavelengthLymanSeries(nLine_);
-    
-    int iSeries = nLine_-2;
-    double gammaLine = gammaSeries_[iSeries];
-    
-    double a = (lambdaN*lambdaN*gammaLine)/
-                    (4*PI*SPEED_OF_LIGHT_MS*returnDopplerWidth(nLine_,dopplerPar_));
-                    
-    return a; 
-
-};*/
-
-
+/******* VoigtProfile Methods *****************************************************/
 double VoigtProfile::kFunction(double x)
 {
+    double prefact = 1./(2*x*x);
+    double t1 = (4*x*x + 3.) * (x*x + 1.) * exp(-x*x);
+    double t2 = (1./(x*x)) * (2*x*x + 3.) * sinh(x*x);
+    double k = prefact*(t1 - t2);
 
-    double term1 = (4.*x*x + 3.)*(x*x + 1.)*exp(-x*x);
-    double term2 = (1./(x*x))*(2.*x*x + 3.)*sinh(x*x);
-    double k = (1./(2*x*x))*(term1 - term2);
-    
-    // check if inf
     int isInf = my_isinf(k);
-    
-    if (isInf != 0)// if k IS infinite set it to zero
-        k = 0.;
-    
+    if(isInf != 0) {
+//        k = 0.;
+        k = 1000000.;
+    }
+
     return k;
+};
+
+double VoigtProfile::returnHax(double lambda)
+{
+    double x = returnX(lambda, nLine_, dopplerPar_);
+    double K = kFunction(x);
+    double a = returnDampingParameter(nLine_, dopplerPar_);
+
+    double H1 = exp(-x*x) * (1. - a*2.*K/sqrt(PI));
+
+    return H1;
+};
+
+
+/******* OpticalDepth *************************************************************/
+
+OpticalDepth::OpticalDepth()
+{
+    nLineMax_ = nLineMaxMax_;
+    setLymanAll();
 
 };
 
-/*void VoigtProfile::setGamma()
+
+/******* OpticalDepth Methods *****************************************************/
+
+void OpticalDepth::setLymanAll()
 {
+    setContribution(0);
+    return;
+};
 
-    // Found in Table 2 of Morton 2003
-    gamma_.push_back(6.265e8);// 2
-    gamma_.push_back(1.897e8);// 3
-    gamma_.push_back(8.127e7);// 4
-    gamma_.push_back(4.204e7);// 5
-    gamma_.push_back(2.450e7);// 6
-    
-    // Backed out of a file containg values of the damping parameter a assuming 
-    // b=36km/s from Tepper-Garcia.  See Fig 1 in Tepper-Garcia 2006
-    gamma_.push_back(1.236e7);// 7
-    gamma_.push_back(8.252e6);// 8
-    gamma_.push_back(5.781e6);// 9
-    gamma_.push_back(4.209e6);// 10
-    gamma_.push_back(3.159e6);// 11
-    
-    gamma_.push_back(2.431e6);// 12
-    gamma_.push_back(1.91e6); // 13
-    gamma_.push_back(1.528e6);// 14
-    gamma_.push_back(1.242e6);// 15
-    gamma_.push_back(1.024e6);// 16
-    
-    gamma_.push_back(8.532e5);// 17
-    gamma_.push_back(7.185e5);// 18
-    gamma_.push_back(6.109e5);// 19 
-    gamma_.push_back(5.235e5);// 20
-    gamma_.push_back(4.522e5);// 21 
-    
-    gamma_.push_back(3.932e5);// 22
-    gamma_.push_back(3.442e5);// 23
-    gamma_.push_back(3.029e5);// 24
-    gamma_.push_back(2.678e5);// 25
-    gamma_.push_back(2.381e5);// 26
-    
-    gamma_.push_back(2.127e5);// 27
-    gamma_.push_back(1.906e5);// 28
-    gamma_.push_back(1.716e5);// 29
-    gamma_.push_back(1.549e5);// 30
-    gamma_.push_back(1.405e5);// 31
+void OpticalDepth::setLymanContinuumOnly()
+{
+    setContribution(1);
+    return;
+};
 
-    gamma_.push_back(1.277e5);// 32
+void OpticalDepth::setLymanSeriesOnly()
+{
+    setContribution(2);
+    return;
+};
+
+void OpticalDepth::setContribution(int option)
+{
+    isLymanC_ = true;
+    isLymanS_ = true;
+
+    if(option == 1) {
+        isLymanS_ = false;
+    } else if(option == 2) {
+        isLymanC_ = false;
+    }
+
+    return;
+};
+
+double OpticalDepth::returnObserverFrameTransmission(double lambda, double zAbsorber,
+                    double nhiAbsorber, double bAbsorber)
+{
+    double tau = returnObserverFrameOpticalDepth(lambda, zAbsorber, nhiAbsorber, bAbsorber);
+    return exp(-tau);
+};
+
+double OpticalDepth::returnObserverFrameOpticalDepth(double lambda, double zAbsorber,
+                    double nhi, double bAbsorber)
+{
+    double lambdaE = lambda/(1.0+zAbsorber);
+    double freq = SPEED_OF_LIGHT_MS/lambdaE;
+    double tau = returnRestFrameOpticalDepth(freq, bAbsorber, nhi);
+
+    return tau;
+};
+
+double OpticalDepth::returnRestFrameOpticalDepth(double freq, double bAbsorber, double nhi)
+{
+    double sigmaLC = 0.0, sumSigmai = 0.0, sigmaT = 0.0, restFrameOpticalDepth = 0.0;
+
+    sigmaLC = returnLymanContinuumCrossSection(freq);
+    sumSigmai = returnLymanSeriesCrossSection(freq, bAbsorber);
+
+    if(isLymanC_)
+        sigmaT += sigmaLC;
+    if(isLymanS_)
+        sigmaT += sumSigmai;
+
+    restFrameOpticalDepth = nhi*sigmaT;
+
+    return restFrameOpticalDepth;
+};
+
+double OpticalDepth::returnLymanContinuumCrossSection(double freq)
+{
+    double sigmaLC = 0.0;
+
+    if(freq >= freqLymanLimitInvSec_) {
+        double ratio = freqLymanLimitInvSec_/freq;
+        sigmaLC = sigmaLymanLimitCM2_*ratio*ratio*ratio;
+    } else {
+        sigmaLC = 0.0;
+    }
+
+    return sigmaLC;
+};
+
+double OpticalDepth::returnLymanSeriesCrossSection(double freq, double bAbsorber)
+{
+    double sigmaSumLymanSeries = 0.0;
+    for(int n=nLymanAlpha_; n<=nLineMax_; n++) {
+        sigmaSumLymanSeries += returnLymanLineCrossSection(n, freq, bAbsorber);
+    }
+
+    return sigmaSumLymanSeries;
+};
+
+double OpticalDepth::returnLymanLineCrossSection(int n, double freq, double bAbsorber)
+{
+    double constNumer = sqrt(PI)*ELECTRON_CHARGE_STATC*ELECTRON_CHARGE_STATC;
+    double constDenom = ELECTRON_MASS_G*SPEED_OF_LIGHT_CMS;
+
+    double vd = returnDopplerWidthFreq(n, bAbsorber);
+    double fi = returnOscillatorStrength(n);
+    double phii = returnLineProfile(n, freq, bAbsorber);
+
+    double numer = constNumer*fi*phii;
+    double denom = constDenom*vd;
+
+    double sigmai = numer/denom;
+
+    return sigmai;
+};
+
+double OpticalDepth::returnLineProfile(int n, double freq, double bAbsorber)
+{
+    VoigtProfile voigtProf(bAbsorber, n);
+    double lambda = SPEED_OF_LIGHT_MS/freq;
+
+    double vprof = voigtProf(lambda);
     
-    // size of gamma =  31
-   
-};*/
+    return vprof;
+};
+
+void OpticalDepth::setMaxLine(int nLine)
+{
+    nLineMax_ = nLine;
+    return;
+};
+
+
+/******* LineOfSightTrans *********************************************************/
+LineOfSightTrans::LineOfSightTrans(vector<double>& redshifts, vector<double>& dopplerPars,
+                                   vector<double>& columnDensities)
+: redshifts_(redshifts), dopplerPars_(dopplerPars), columnDensities_(columnDensities)
+{
+    setLymanAll();
+    isOpticalDepth_=false;
+};
+
+/******* LineOfSightTrans Methods *************************************************/
+
+double LineOfSightTrans::returnOpticalDepth(double lambda, double zSource)
+{
+    int numAbsorbers = returnNumberOfAbsorbers(zSource);
+    double tau = 0.0;
+
+    for(int i=0; i<numAbsorbers; i++) {
+        double z = redshifts_[i];
+        double nhi = columnDensities_[i];
+        double b = dopplerPars_[i];
+
+        double tauAbsorber = returnObserverFrameOpticalDepth(lambda, z, nhi, b);
+        
+        tau += tauAbsorber;
+    }
+
+    return tau; 
+};
+
+double LineOfSightTrans::returnTransmission(double lambda, double zSource)
+{
+    double tau = returnOpticalDepth(lambda, zSource);
+    return exp(-tau);
+};
+
+int LineOfSightTrans::returnNumberOfAbsorbers(double zSource)
+{
+    int numAbsorbers = 0;
+    for(int i=0; i<redshifts_.size(); i++) {
+        if(redshifts_[i] < zSource)
+            numAbsorbers++;
+    }
+
+    return numAbsorbers;
+};
+
+void LineOfSightTrans::setReturnType(bool isOpticalDepth)
+{
+    isOpticalDepth_ = isOpticalDepth;
+    return;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /******* Madau methods ********************************************************/
 
@@ -1242,7 +1056,7 @@ double LAFMeiksin::taulya(double lambda, double z)
 {
 		/* add Lyman series resonant scattering */
 
-		int debug = 0;
+		//int debug = 0;
 		int nmax, n;
 		double lambdaL = 911.75;
 		double tauLyn;
