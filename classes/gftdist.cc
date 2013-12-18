@@ -1,41 +1,23 @@
 #include "gftdist.h"
 
-/* ------------------------------------------------ 
+/* -----------------------------------------------------------------------------
    A. Abate , R. Ansari
----------------------------------------------------*/
-
-//******* CumulDistZ *********************************************************//
-
-// Constructor for doing whole calculation
-CumulDistZ::CumulDistZ(LFParameters& lfpars,SimpleUniverse& su,double zmin,
-		double zmax, int nptinteg,int nptinterp,int prt)
-: lfpars_(lfp_default_) , su_(su_default_) , zmin_(zmin) , zmax_(zmax) , nptinteg_(nptinteg)
-, nptinterp_(nptinterp)
-{
-	SetUp(lfpars,su,zmin,zmax,nptinteg,nptinterp,prt);
-};
-
-// Constructor for reading values from a file
-CumulDistZ::CumulDistZ(string infile,int prt)
-: lfpars_(lfp_default_) , su_(su_default_) , zmin_(0) , zmax_(0) , nptinteg_(0)
-, nptinterp_(0)
-{
-	SetUp(infile,prt);
-};
+------------------------------------------------------------------------------*/
+// Only really CumulDistZ, DrawM, SimBaseCatalog have methods defined here
 
 //******* CumulDistZ methods *************************************************//
 
 // Set up for doing whole calculation
-void CumulDistZ::SetUp(LFParameters& lfpars,SimpleUniverse& su,double zmin,
-			double zmax,int nptinteg,int nptinterp,int prt)
+void CumulDistZ::SetUp(LFParameters& lfpars, SimpleUniverse& su, double zmin,
+			double zmax, int nptinteg, int nptinterp, int prt)
 {
 
-	lfpars_=lfpars;
-	su_=su;
-	zmin_=zmin;
-	zmax_=zmax;
-	nptinteg_=nptinteg;
-	nptinterp_=nptinterp;
+	lfpars_ = lfpars;
+	su_ = su;
+	zmin_ = zmin;
+	zmax_ = zmax;
+	nptinteg_ = nptinteg;
+	nptinterp_ = nptinterp;
 	cout <<"     Setting up cumulative redshift distribution between "<< zmin_;
 	cout <<" < z < "<< zmax_ <<endl;
 
@@ -45,7 +27,7 @@ void CumulDistZ::SetUp(LFParameters& lfpars,SimpleUniverse& su,double zmin,
 	// This code is calculating the equation for F_z(z) in Gorecki et al 2012 in prep
 	
 	// The below class returns phi(z) = [int phi(M|z) dM]*dV(z)
-	SchechterZVol schZ(lfpars_,su_);
+	SchechterZVol schZ(lfpars_, su_);
 
 	// set up interpolation table for int phi(z) dz
 	
@@ -57,7 +39,7 @@ void CumulDistZ::SetUp(LFParameters& lfpars,SimpleUniverse& su,double zmin,
 		if (prt>0)
 			cout <<"     On "<<i+1<<" of "<<nptinterp_<<endl;                           
 		double z = zmin + i*dz;
-		schZ.SetInteg(0,z,nptinteg_);
+		schZ.SetInteg(0, z, nptinteg_);
 		double val=schZ.Integrate();
 		zv_.push_back(z);
 		scv_.push_back(val);
@@ -71,16 +53,16 @@ void CumulDistZ::SetUp(LFParameters& lfpars,SimpleUniverse& su,double zmin,
 
 	// divide by value at zmax
 	for (int i=0; i<nptinterp_; i++)
-		scv_[i]/=scv_[nptinterp_-1];
+		scv_[i] /= scv_[nptinterp_-1];
 
 	// check vector
 	if (prt>0) {
 	cout << "     Checking cumval z vector ... "<<endl;
 		for (int i=0; i<nptinterp; i++)
-			cout << zv_[i] <<"  "<<scv_[i]<<endl; }
+			cout << zv_[i] <<"  "<< scv_[i] <<endl; }
 
 	// create table
-	schZint_.DefinePoints(zv_,scv_,zv_[0],zv_[zv_.size()-1],zv_.size()*4);
+	schZint_.DefinePoints(zv_, scv_, zv_[0], zv_[zv_.size()-1], zv_.size()*4);
 
 	/*double ztmp;
 	ztmp=5.9;
@@ -93,18 +75,18 @@ void CumulDistZ::SetUp(LFParameters& lfpars,SimpleUniverse& su,double zmin,
 };
 
 // Set up for reading in FITS bintable file
-void CumulDistZ::SetUp(string infile,int prt)
+void CumulDistZ::SetUp(string infile, int prt)
 {
 
-	cout <<"     Reading in file "<<infile<<endl;
-	FitsInOutFile fin(infile,FitsInOutFile::Fits_RO);
+	cout <<"     Reading in file "<< infile <<endl;
+	FitsInOutFile fin(infile, FitsInOutFile::Fits_RO);
 	fin.MoveAbsToHDU(2);
-	SwFitsDataTable dt(fin,512,false);
+	SwFitsDataTable dt(fin, 512, false);
 	DataTableRow rowin = dt.EmptyRow();
 	int nv=dt.NEntry();
-	for (int i=0;i<nv; i++)
-		{
-		dt.GetRow(i,rowin);
+	for (int i=0;i<nv; i++) {
+	
+		dt.GetRow(i, rowin);
 		double z=rowin[0];
 		double c=rowin[1];
 		zv_.push_back(z);
@@ -115,13 +97,13 @@ void CumulDistZ::SetUp(string infile,int prt)
 	if (prt>0) {
 	cout << "     Checking cumval z vector ... "<<endl;
 		for (int i=0; i<nv; i++)
-			cout << zv_[i] <<"  "<<scv_[i]<<endl; }
+			cout << zv_[i] <<"  "<< scv_[i] <<endl; }
 
     zmin_ = zv_[0];
     zmax_ = zv_[nv-1];
 
 	// create interpolation: this won't set to zero outside of zmin, zmax
-	schZint_.DefinePoints(zv_,scv_,zmin_,zmax_,nv*4);
+	schZint_.DefinePoints(zv_, scv_, zmin_, zmax_, nv*4);
 
 };
 
@@ -176,7 +158,7 @@ void CumulDistZ::Output2File(string outfileroot)
 	string outfile = outfileroot + "_" + ss1.str() + "z" + ss2.str() + "_cumz.fits";
 
 	// Create swap space FITS file structure
-	FitsInOutFile swf(outfile,FitsInOutFile::Fits_Create);	
+	FitsInOutFile swf(outfile, FitsInOutFile::Fits_Create);	
 	SwFitsDataTable func(swf, 2048);
 	func.AddFloatColumn("z");
 	func.AddFloatColumn("Fz");
@@ -185,8 +167,9 @@ void CumulDistZ::Output2File(string outfileroot)
 	cout << "     Writing to file ..." << outfile.c_str() << endl;
 	int nz = zv_.size();
 	for (int i=0; i<nz; i++) {
-		double z=zv_[i];
-		double szv=scv_[i];
+	
+		double z = zv_[i];
+		double szv = scv_[i];
 		row[0] = z;
 		row[1] = szv; 
 		func.AddRow(row);
@@ -225,35 +208,11 @@ void CumulDistZ::Output2File(string outfile)
 };*/
 
 
-
-
-//******* DrawM **************************************************************//
-
-// Default constructor
-DrawM::DrawM(CumulDistM& cumm)
-: cumm_(cumm) , rg_(rg_default_) , mmin_(1) , mmax_(1), zmin_(-1) , zmax_(-1)
-{   };
-
-// Constructor when calculating table
-DrawM::DrawM(CumulDistM& cumm,RandomGeneratorInterface& rg,double mmin,
-		double mmax,double zmin,double zmax,int nptz,int nptm)
-: cumm_(cumm_default_) , rg_(rg_default_) , mmin_(mmin) , mmax_(mmax), zmin_(zmin) , zmax_(zmax)
-{
-	SetUp(rg, mmin, mmax, zmin, zmax, nptz, nptm);	
-};
-
-// Constructor when reading table from file
-DrawM::DrawM(string fname)
-: cumm_(cumm_default_) , rg_(rg_default_) , mmin_(1) , mmax_(1), zmin_(-1) , zmax_(-1)
-{   
-	SetUp(fname);
-};
-
 //******* DrawM methods ******************************************************//
 
 // Set up for calculating table
-void DrawM::SetUp(RandomGeneratorInterface& rg,double mmin,
-			double mmax,double zmin,double zmax,int nptz,int nptm)
+void DrawM::SetUp(RandomGeneratorInterface& rg, double mmin, double mmax,
+    double zmin, double zmax, int nptz, int nptm)
 {
 
 		rg_ = rg;
@@ -461,6 +420,7 @@ void DrawM::Output2File(string outfile)
 
 };*/
 
+
 //******* SimBaseCatalog methods *********************************************//
 
 void SimBaseCatalog::DoSim(long ngal, string outfileroot)
@@ -506,7 +466,10 @@ void SimBaseCatalog::DoSim(long ngal, string outfileroot)
 
 };
 
-/****************************** GALFLXTYPDIST ******************************/
+
+//******************** Below here all is redundant **************************///
+
+/****************************** GALFLXTYPDIST *********************************/
 //-- Constructor
 GalFlxTypDist::GalFlxTypDist(RandomGeneratorInterface& rg, int prtlev)
  : rg_(rg) , dt1(),  dt2() , dt3() , t1_(dt1) , t2_(dt2) , t3_(dt3)//, sa_(sa)
@@ -547,7 +510,7 @@ bool GalFlxTypDist::Check()
 }
 
 // ADD NEW GALAXY TYPE
-int GalFlxTypDist::AddGalType(GenericFunc& magf, double magmin, double magmax, double fr, 
+int GalFlxTypDist::AddGalType(ClassFunc1D& magf, double magmin, double magmax, double fr, 
                               int nbinmag, int nstep)
 // * magf : Magnitude distribution function (i.e. luminosity function)
 // * magmin, magmax : Magnitude range
@@ -808,7 +771,7 @@ for(sa_size_t j=0;j<max;j++)
 };
 
 // MAKE Z DISTRIBUTION TO FOLLOW VOLUME ELEMENT
-int GalFlxTypDist::GetZDist(GenericFunc& dVdz, double zmin,double zmax, 
+int GalFlxTypDist::GetZDist(ClassFunc& dVdz, double zmin,double zmax, 
                               int nbin, int nstep)
 {
 /****************** FIRST MAKE EQUI BIN DISTRIBUTION ******************/
