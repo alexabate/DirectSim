@@ -56,7 +56,7 @@ all : progs tests test
 
 progs : analyzeBPZ baseSimulation calculateKcorrections colorDistributions \
 convertSEDS fitLSSTspectra lineOfSightLymanAlpha lineOfSightMagnitude \
-pcaTemplates photoZdist priorFitter projectTemplates rdlss simdensity \
+pcaTemplates photoZdist priorFitter projectTemplates rdlss sdssElColors simdensity \
 simulateAbsorberLinesOfSight simulateLSSTobsFromTruth simulateLSSTobs
 
 tests : test2Dinterp testbasesim testErrors testEMalgorithm testgoodsmagsim    \
@@ -107,6 +107,9 @@ projectTemplates : $(EXE)/projectTemplates
 	
 rdlss : $(EXE)/rdlss
 	@echo 'makefile : rdlss made'
+	
+sdssElColors : $(EXE)/sdssElColors
+	@echo 'makefile : sdssElColors made'
 	
 simdensity : $(EXE)/simdensity
 	@echo 'makefile : simdensity made'
@@ -317,6 +320,17 @@ $(EXE)/rdlss : $(OBJ)/rdlss.o $(LIBO)
 $(OBJ)/rdlss.o : $(PROGS)/rdlss.cc $(LIBH)  
 	mkdir -p $(OBJ)
 	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/rdlss.o $(PROGS)/rdlss.cc 
+	
+# CALCULATE SDSS COLORS OF ELLIPTICAL GALAXY
+$(EXE)/sdssElColors : $(OBJ)/sdssElColors.o $(LIBO) 
+	mkdir -p $(EXE)
+	mkdir -p $(ROOTOUT)
+	$(CXXLINK) -o $(EXE)/sdssElColors $(OBJ)/sdssElColors.o $(LIBO) \
+	$(SOPHYAEXTSLBLIST) $(MYLIB) $(ROOTLIB)
+
+$(OBJ)/sdssElColors.o : $(PROGS)/sdssElColors.cc $(LIBH)  
+	mkdir -p $(OBJ)
+	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/sdssElColors.o $(PROGS)/sdssElColors.cc 
 	
 # SIMULATE OVERDENSITY GRID
 $(EXE)/simdensity : $(OBJ)/simdensity.o $(LIBO) 

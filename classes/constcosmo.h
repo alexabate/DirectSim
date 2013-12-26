@@ -1,5 +1,3 @@
-// -*- LSST-C++ -*-
-
 /**
  * @file  constcosmo.h
  * @brief Holds physical, unit conversion and cosmology constants
