@@ -52,16 +52,17 @@ MINUIT = -lMinuit
 
 ################################################################################
 
-all : progs tests test
+all : progs tests tests
 
-progs : addIGMToSED analyzeBPZ baseSimulation calculateKcorrections cfhtColors colorDistributions \
-convertSEDS fitLSSTspectra lineOfSightLymanAlpha lineOfSightMagnitude lymanAlphaToDensity\
-pcaTemplates photoZdist priorFitter projectTemplates rdlss simdensity \
-simulateAbsorberLinesOfSight simulateCFHTobs simulateLSSTobsFromTruth simulateLSSTobs
+progs : analyzeBPZ baseSimulation calculateKcorrections colorDistributions \
+convertSEDS fitLSSTspectra lineOfSightLymanAlpha lineOfSightMagnitude lsstPicklesLibrary \
+pcaTemplates photoZdist priorFitter projectTemplates rdlss sdssElColors sdssPicklesLibrary \
+simdensity simulateAbsorberLinesOfSight simulateLSSTobsFromTruth simulateLSSTobs
 
 tests : test2Dinterp testbasesim testErrors testEMalgorithm testgoodsmagsim    \
-testKcorrColors testKcorrMethod testLF testLymanAlphaAbs testMadau testMeiksin \
-testSimReadKcorr testsimulateIGM testTemplateFitting testsimdensity testSimulation
+testKcorrColors testKcorrMethod testLF testMadau testMeiksin \
+ testTemplateFitting testsimdensity 
+#testSimReadKcorr testsimulateIGM testSimulation
 
 
 clean : 
@@ -98,6 +99,9 @@ lineOfSightLymanAlpha : $(EXE)/lineOfSightLymanAlpha
 
 lineOfSightMagnitude : $(EXE)/lineOfSightMagnitude
 	@echo 'makefile : lineOfSightMagnitude made'
+
+lsstPicklesLibrary : $(EXE)/lsstPicklesLibrary
+	@echo 'makefile : lsstPicklesLibrary made'
 	
 lymanAlphaToDensity : $(EXE)/lymanAlphaToDensity
 	@echo 'makefile : lymanAlphaToDensity made'
@@ -116,6 +120,12 @@ projectTemplates : $(EXE)/projectTemplates
 	
 rdlss : $(EXE)/rdlss
 	@echo 'makefile : rdlss made'
+	
+sdssElColors : $(EXE)/sdssElColors
+	@echo 'makefile : sdssElColors made'
+
+sdssPicklesLibrary : $(EXE)/sdssPicklesLibrary
+	@echo 'makefile : sdssPicklesLibrary made'
 	
 simdensity : $(EXE)/simdensity
 	@echo 'makefile : simdensity made'
@@ -298,6 +308,17 @@ $(EXE)/lineOfSightMagnitude : $(OBJ)/lineOfSightMagnitude.o $(LIBO)
 $(OBJ)/lineOfSightMagnitude.o : $(PROGS)/lineOfSightMagnitude.cc $(LIBH)  
 	mkdir -p $(OBJ)
 	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/lineOfSightMagnitude.o $(PROGS)/lineOfSightMagnitude.cc
+
+# CALCULATE LSST COLORS FOR PICKLES' LIBRARY OF STARS 
+$(EXE)/lsstPicklesLibrary : $(OBJ)/lsstPicklesLibrary.o $(LIBO) 
+	mkdir -p $(EXE)
+	mkdir -p $(ROOTOUT)
+	$(CXXLINK) -o $(EXE)/lsstPicklesLibrary $(OBJ)/lsstPicklesLibrary.o $(LIBO) \
+	$(SOPHYAEXTSLBLIST) $(MYLIB) $(ROOTLIB)
+
+$(OBJ)/lsstPicklesLibrary.o : $(PROGS)/lsstPicklesLibrary.cc $(LIBH)
+	mkdir -p $(OBJ)
+	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/lsstPicklesLibrary.o $(PROGS)/lsstPicklesLibrary.cc
 	
 # LYMAN ALPHA ALONG LINE OF SIGHT CONVERTED TO DENSITY
 $(EXE)/lymanAlphaToDensity : $(OBJ)/lymanAlphaToDensity.o $(LIBO) 
@@ -364,6 +385,28 @@ $(EXE)/rdlss : $(OBJ)/rdlss.o $(LIBO)
 $(OBJ)/rdlss.o : $(PROGS)/rdlss.cc $(LIBH)  
 	mkdir -p $(OBJ)
 	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/rdlss.o $(PROGS)/rdlss.cc 
+	
+# CALCULATE SDSS COLORS OF ELLIPTICAL GALAXY
+$(EXE)/sdssElColors : $(OBJ)/sdssElColors.o $(LIBO) 
+	mkdir -p $(EXE)
+	mkdir -p $(ROOTOUT)
+	$(CXXLINK) -o $(EXE)/sdssElColors $(OBJ)/sdssElColors.o $(LIBO) \
+	$(SOPHYAEXTSLBLIST) $(MYLIB) $(ROOTLIB)
+
+$(OBJ)/sdssElColors.o : $(PROGS)/sdssElColors.cc $(LIBH)  
+	mkdir -p $(OBJ)
+	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/sdssElColors.o $(PROGS)/sdssElColors.cc 
+
+# CALCULATE SDSS COLORS FOR PICKLES' LIBRARY OF STARS 
+$(EXE)/sdssPicklesLibrary : $(OBJ)/sdssPicklesLibrary.o $(LIBO) 
+	mkdir -p $(EXE)
+	mkdir -p $(ROOTOUT)
+	$(CXXLINK) -o $(EXE)/sdssPicklesLibrary $(OBJ)/sdssPicklesLibrary.o $(LIBO) \
+	$(SOPHYAEXTSLBLIST) $(MYLIB) $(ROOTLIB)
+
+$(OBJ)/sdssPicklesLibrary.o : $(PROGS)/sdssPicklesLibrary.cc $(LIBH)
+	mkdir -p $(OBJ)
+	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/sdssPicklesLibrary.o $(PROGS)/sdssPicklesLibrary.cc
 	
 # SIMULATE OVERDENSITY GRID
 $(EXE)/simdensity : $(OBJ)/simdensity.o $(LIBO) 
