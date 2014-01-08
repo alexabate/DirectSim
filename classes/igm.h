@@ -1,27 +1,12 @@
-// -*- LSST-C++ -*-
-
-/**
- * @file  igm.h
- * @brief Contains classes that provide functions to Monte Carlo simulate the IGM
- *
- * Could add more information here I think
- *
- * @author Alex Abate
- * Contact: abate@email.arizona.edu
- *
- * Created on: 20 Aug 2012
- * @date 20 Aug 2012
- *
- */
-
 #ifndef IGM_H_SEEN
 #define IGM_H_SEEN
 
-#include "machdefs.h"
+//#include "machdefs.h"
 #include <math.h>
 #include <iostream>
 #include <fstream>
-
+#include <vector>
+#include <string>
 
 // sophya
 #include "genericfunc.h"
@@ -35,6 +20,7 @@
 #include "sinterp.h"
 
 
+
 /** AtomicCalcs
   *
   * Class that holds basic atomic calculations and constants mostly to do with
@@ -42,763 +28,349 @@
   * 
   *
   */
+
 class AtomicCalcs
 {
 public:
-    /** Constructor */
-    AtomicCalcs(){ setGammas(); setConstants(); nLineMaxMax_ =  31; };
+    AtomicCalcs();
+
+    /** Return the Lyman Series 1) Wavelength in m 2) and in Angstroms and 3)frequency
+        @param  n is the starting energy level for a Lyman transition (down to m=1)
+                (minimum n is 2)                                              */
+    double returnWavelengthLymanSeries(int n);
+    double returnWavelengthAngstrLymanSeries(int n);
+    double returnFrequencyLymanSeries(int n);
 
     /** Return Doppler width in meters with line center wavelength corresponding
         to Lyman series n \f$ \Delta\lambda=\lambda_i\frac{b}{c} \f$
         @param nLine starting energy level of the Lyman line transition
         @param dopplerParKMS doppler parameter in km/s                        */
-    double returnDopplerWidthWL(int nLine, double dopplerParKMS)
-        { return returnWavelengthLymanSeries(nLine)*(dopplerParKMS/SPEED_OF_LIGHT_KMS); };
-        //THIS SEEMS RIGHT BUT DOESN'T SEEM TO WORK? 
-        //{ return returnWavelengthLymanSeries(nLine)*(SPEED_OF_LIGHT_KMS/dopplerParKMS); };
-        
+    double returnDopplerWidthWL(int nLine, double dopplerParamKMS);
+
     /** Return Doppler width in s^-1 with line center frequency corresponding to 
         Lyman series n \f$ \Delta\nu=\nu_i\frac{b}{c} \f$
         @param n starting energy level of the Lyman line transition
         @param dopplerParKMS doppler parameter in km/s                        */
-    double returnDopplerWidthFreq(int nLine, double dopplerParKMS)
-        { return returnFrequencyLymanSeries(nLine)*(dopplerParKMS/SPEED_OF_LIGHT_KMS); }; 
-        //return SPEED_OF_LIGHT_KMS/returnDopplerWidthWL(nLine,dopplerParKMS); }; 
-        //returnFrequencyLymanSeries(nLine)*(dopplerParKMS/SPEED_OF_LIGHT_KMS); };
-        
-    /** Return Lyman series wavelength in meters 
-        @param  n is the starting energy level of the Lyman line transition
-                (therefore n can have a minimum of 2: Lyman-alpha)            */
-    double returnWavelengthLymanSeries(int n)
-        { return WAVE_LYMANLIM_METERS/(1.-1./(n*n)); };
-        
-    /** Return Lyman series wavelength in angstroms 
-        @param  n is the starting energy level of the Lyman line transition
-                (therefore n can have a minimum of 2: Lyman-alpha)            */
-    double returnWavelengthAngstrLymanSeries(int n)
-        { return WAVE_LYMANLIM_ANGSTR/(1.-1./(n*n)); };
-        
-    /** Return Lyman series frequency in s^-1
-        @param  n is the starting energy level of the Lyman line transition 
-                (therefore n can have a minimum of 2: Lyman-alpha)            */
-    double returnFrequencyLymanSeries(int n)
-        { return SPEED_OF_LIGHT_MS/returnWavelengthLymanSeries(n); };
-        
-   /** Return the (unitless) wavelength difference relative to resonant wavelength
+    double returnDopplerWidthFreq(int nLine, double dopplerParamKMS);
+
+    /** Return the (unitless) wavelength difference relative to resonant wavelength
        in Doppler units
        @param lambda wavelength in meters */
-    double returnX(double lambda, int nLine, double dopplerPar) {
-        double dl = (lambda - returnWavelengthLymanSeries(nLine));
-        double dw = returnDopplerWidthWL(nLine,dopplerPar);
-        return dl/dw; };
-    
+    double returnX(double lambda, int nLine, double dopplerPar);
+
+    /** Return the damping constant for the Lyman line beginning at nLine */
+    double returnGamma(int nLine);
+
+    /** Return the Oscillator Strength for the Lyman line beginning at nLine */
+    double returnOscillatorStrength(int nLine);
+
     /** Return (unitless) damping parameter a */            
     double returnDampingParameter(int nLine, double dopplerPar);
-        
-    /** Return oscillator strength of Lyman series line nLine                 */
-    double returnOscillatorStrength(int nLine) {
-        int n = nLine - 2;
-        return fSeries_[n]; };
-  
-    // Methods that set atomic constants    
-    
-    /** Set damping constant gamma for the Lyman series units of s^-1         */
+
+    void printEverything(int nLine, double dopplerPar);
+
     void setGammas();
-    
-    /** Set constants used in this class such as freq. of Lyman series        */
-    void setConstants();
-    
-protected: 
-    vector<double> gammaSeries_;    /**< damping constant of Lyman series s^-1*/
-    vector<double> fSeries_;        /**< oscillator strength of Lyman series  */
-    double freqLymanLimInvSecs_;    /**< frequency of the Lyman limit in s^-1 */
-    double sigLymanLimCM2_;         /**< cross-section at the Lyman limit in cm^2*/
-    int nLymanAlpha_;               /**< starting level of Lyman-a transition*/
-    int nLineMaxMax_;               /**< maximum Lyman series line possible to use */
-    
+    void setOscillatorStrength();
+    void setConsants();
+
+protected:
+    std::vector<double> gammaSeries_;   /**< damping constant of the Lyman series in s^-1 */
+    std::vector<double> fSeries_;       /**< oscillator strength of the Lyman series */
+    double sigmaLymanLimitCM2_;         /**< cross-section at the lyman limit in cm^2 */
+    double freqLymanLimitInvSec_;       /**< frequency of the lyman limit in s^-1 */
+    int nLymanAlpha_;                   /**< starting level of a lyman alpha transition */
+    int nLineMaxMax_;                   /**< maximum Lyman series line possible to use */
 };
 
-/** HIColumnDensity class
-  *
-  * Class to calculate the HI column density distribution function
-  * Parameterization based on Inoue & Iwata 2008 eqn 4 g(N_HI)
-  *
-  */
-class HIColumnDensity :
-    public GenericFunc
+class HIColumnDensity
 {
 public:
-    /** Constructor 
-        @param beta1 First power law index (default = 1.6)
-        @param beta2 Second power law index (default = 1.3)
-        @param Nc Column density value at break (default = 1.6e17/cm^2)
-        @param Nl Lower bound of column density values (default = 1e12/cm^2)
-        @param Nu Upper bound of column density values (default = 1e22/cm^2)
-        @param Nstep Number of steps to integrate each part of power law with
-    */
-    HIColumnDensity(double beta1=1.6,double beta2=1.3,double Nc=1.6e17,
-                            double Nl=1e12, double Nu=1e22, int Nstep=500000);
-    
-    /** Set normalization such that int g(NHI) dNHI = 1 */
-    double setBnorm(int Nstep);
-    
-    /** Analytical integration of \f$ (N_{HI}/N_c)^{-\beta} \f$               */
-    double integratePowerLaw(double NHI, double beta)
-        {  double npower = pow(NHI,(1.-beta));
-           double constant = (1.-beta)*pow(Nc_,-beta);
-           return npower/constant; };
-    
-    /** Return column density distribution at column density value given */
-    virtual double operator()(double Nh)
-            { return returnColDensityDist(Nh); };
-            
-    /** Return column density distribution at column density value given */
-    double returnColDensityDist(double Nh);
-    
-    /** Return power law at column density value given */
-    double returnFirstPowerLaw(double Nh)
-            { return pow( (Nh/Nc_),-beta1_ ); };
-            
-    /** Return power law at column density value given */
-    double returnSecondPowerLaw(double Nh)
-            { return pow( (Nh/Nc_),-beta2_ ); };
-            
-    /** Return the power law index values */
-    void returnPowerLaws(double& beta1, double& beta2)
-            { beta1=beta1_; beta2=beta2_; };
-            
-    /** Return the column density limits */
-    void returnLowerUpperColDensValues(double& Nl, double& Nu)
-            { Nl=Nl_; Nu=Nu_; };
-            
-    /** Return column density at power law break */
-    double returnColDensAtBreak() { return Nc_; };
-    
-    /** Return the normalization of the power law */
-    double returnPowerLawNormalization() { return Bnorm_; };
-    
+    HIColumnDensity();
+
+    void normalizeDist();
+    double integratePowerLaw(double low, double high, double power);
+
+    double returnColDensityDist(double NHI);
+    double returnFirstPowerLaw(double NHI);
+    double returnSecondPowerLaw(double NHI);
+    double returnNormB();
+
+    void returnPowerLawIndex(double &beta1, double &beta2);
+    void returnColDensityLimits(double &Nl, double &Nu);
+    void returnColDensityBreak(double &Nc);
+
+    virtual double operator()(double NHI)
+        { return returnColDensityDist(NHI); }
+
     /** Write the column density distribution to a file, log-spaced
         @param outfile Name of file to write to
         @param dLog    Log of step in column density values
         @param nStep   Number of column density values
      */
-    void writeToFile(string outfile, double dLog, int nStep);
-    
-    
-    /** Numerically integrate power law (incorrectly normalized) */
-    double numIntegratePowerLaw(int Nstep);
-    
-    /** Check integration of column density function is 1 */
-    double checkIntegration(int Nstep);
-    
+    //Copied from Alex's version
+    void writeToFile(std::string outfile, double dLog, int nStep);
+
+    void testClass();
 
 protected:
-    double beta1_;          /**< Power law index */
-    double beta2_;          /**< Power law index */
-    double Nc_;             /**< Column density at power law break */
-    double Nl_;             /**< Lower column density values */
-    double Nu_;             /**< Upper column density values */
-    double Bnorm_;          /**< Normalization of column density function*/
-
+    double beta1_;
+    double beta2_;
+    double Nl_;
+    double Nc_;
+    double Nu_;
+    double normB_;
 };
 
-/** AbsorberRedshiftDistribution class
-  *
-  * Class to calculate the absorber (LAF, LLS, DLA) redshift distribution
-  * Parameterization based on Inoue & Iwata 2008 eqn 5 f(z)
-  *
-  */
-class AbsorberRedshiftDistribution :
-    public GenericFunc
+class AbsorberRedshiftDistribution
 {
 public:
-    /** Constructor 
-        @param gamma1 First power law index (default = 0.2)
-        @param gamma2 Second power law index (default = 2.5)
-        @param gamma3 Third power law index (default = 4.0)
-        @param z1 Redshift value at first break (default = 1.2)
-        @param z2 Redshift value at second break (default = 4.0)
-        @param A (Normalization) Total number of absorbers at z=z1 with a 
-               column density 1e12<=NHI<=1e22 /cm^2 (default = 400)
-    */
-    AbsorberRedshiftDistribution(double gamma1=0.2,double gamma2=2.5,
-                 double gamma3=4.0, double z1=1.2, double z2=4.0, double A=400);
-    
-    /** Return redshift distribution at redshift value given */
-    virtual double operator()(double z)
-            { return returnRedshiftDist(z); };
-            
-    /** Return redshift distribution at z value given */
+    AbsorberRedshiftDistribution();
+
     double returnRedshiftDist(double z);
-    
-    /** Return power law at z value given */
-    double returnFirstPowerLaw(double z)
-            { return pow( ((1.+z)/(1.+z1_)),gamma1_ ); };
-    /** Return power law at z given */
-    double returnSecondPowerLaw(double z)
-            { return pow( ((1.+z)/(1.+z1_)),gamma2_ ); };
-    /** Return power law at z value given */
-    double returnThirdPowerLaw(double z){
-            double parta = pow( ((1.+z2_)/(1.+z1_)),gamma2_ );
-            double partb = pow( ((1.+z)/(1.+z2_)),gamma3_ );
-            return parta*partb; };
+    double returnFirstPowerLaw(double z);
+    double returnSecondPowerLaw(double z);
+    double returnThirdPowerLaw(double z);
 
+    void returnPowerLawIndex(double &g1, double &g2, double &g3);
+    void returnRedshiftBreaks(double &z1, double &z2);
+    double returnNormalization();
 
-    /** Return the power laws */
-    void returnPowerLaws(double& gamma1, double& gamma2, double& gamma3)
-            { gamma1=gamma1_; gamma2=gamma2_; gamma3=gamma3_;};
-    /** Return the redshifts at the breaks */
-    void returnzAtBreaks(double& z1, double& z2)
-            { z1=z1_; z2=z2_; };
-    /** Return the normalization */
-    double returnNormalization() { return A_; };
-    
-    /** Write the absorber redshift distribution to a file, 
-        @param outfile Name of file to write to
-        @param zmin    Minimum redshift
-        @param dz      Step in redshifts
-        @param nStep   Number of redshift values
-     */
-    void writeToFile(string outfile, double zmin, double dz, int nStep);
-            
+    virtual double operator()(double z)
+        { return returnRedshiftDist(z); }
+
+    void testClass();
+
 protected:
-    double gamma1_;    /**< Power law index */
-    double gamma2_;    /**< Power law index */
-    double gamma3_;    /**< Power law index */
-    double z1_;        /**< Redshift value at first break */
-    double z2_;        /**< Redshift value at second break */
-    double A_;         /**< (Normalization) Total number of absorbers at z=z1 
-                        with a column density 1e12<=NHI<=1e22 /cm^2 */
+    double A_;
+    double z1_;
+    double z2_;
+    double gamma1_;
+    double gamma2_;
+    double gamma3_;
 };
 
-
-/** DopplerParDistribution class
-  *
-  * Class to calculate the Doppler parameter b distribution
-  * Parameterization based on Inoue & Iwata 2008, and Hui & Rutledge 1999
-  *
-  */
-class DopplerParDistribution :
-    public GenericFunc
+class DopplerParDistribution
 {
 public:
-    /** Constructor 
-        @param bsigma Single parameter of distribution (default = 23km/s)
-    */
-    DopplerParDistribution(double bsigma=23)
-    : bsigma_(bsigma) { };
-    
-    /** Return Doppler distribution at b value given */
-    virtual double operator()(double b)
-            { return returnDopplerDist(b); };
-            
-    /** Return Doppler distribution at b value given */
+    DopplerParDistribution();
     double returnDopplerDist(double b);
-    
-    /** Write the doppler parameter distribution to a file, 
-        @param outfile Name of file to write to
-        @param bmin    Minimum doppler parameter
-        @param db      Step in doppler parameter
-        @param nStep   Number of doppler parameter values
-     */
-    void writeToFile(string outfile, double zmin, double db, int nStep);
-    
+
+    virtual double operator()(double b)
+        { return returnDopplerDist(b); }
+
+    void testClass();
+
 protected:
-    double bsigma_; /**< Single parameter of distribution */
+    double bsigma_;
 };
 
-/** ProbabilityDistAbsorbers class
-  *
-  * Class to calculate the probability of an absorber within delta z range of
-  * z', if there is already an absorber at z'
-  * Parameterization based on Inoue & Iwata 2008
-  *
-  */
-class ProbabilityDistAbsorbers //:
-    //public GenericFunc
+class ProbabilityDistAbsorbers
 {
 public:
-    /** Constructor
-        @param rg Class that mediates random number drawing
-        @param absorberZDist Class holding the absorber redshift distribution
-        @param hiColumnDensity
-        @param dopplerParDist */
     ProbabilityDistAbsorbers(RandomGeneratorInterface& rg,
-                            AbsorberRedshiftDistribution& absorberZDist,
-                            HIColumnDensity& hiColumnDensity,
-                            DopplerParDistribution& dopplerParDist
-        );
-    
-    /** Simulate a line of sight distribution of absorbers
-        @param zStart           Starting redshift of line of sight distribution
-        @param zMax             Max redshift along line of sight
-        @param redshifts        Vector of absorber redshifts (sorted in ascending order)
-        @param dopplerPars      Vector of absorber doppler parameters 
-        @param columnDensity    Vector of absorber column densities **/
-    void simulateLineOfSight(double zStart,double zMax, 
-                    vector<double>& redshifts, vector<double>& dopplerPars,
-                               vector<double>& columnDensities, string outfile);
-            
-    void simulateAbsorber(double zCurrent, double& redshift, double& dopplerPar,
-                                                    double& columnDensity);
-    /** Draw deltaZ of next absorber (next absorber is at zLast+deltaZ).  This 
-        uses the "Inverse Transformation method"
-        @param zLast Redshift of last absorber                                */   
+                             AbsorberRedshiftDistribution& absorberZDist,
+                             HIColumnDensity& hiColumnDensity,
+                             DopplerParDistribution& dopplerParDist);
+
+    // Define the min and max values for the column density and
+    // the density distribution
+    void setNHiDistribution(int nStep);
+    // Define the min and max values for the doppler parameter 
+    // and the doppler param distribution
+    void setDopplerDistribution(int nStep);
+
+    /** Using the inverse transform method and equation 7 in 
+        Inoue & Iwata 2008      */
     double drawDeltaZ(double zLast);
-    
-    /** Draw absorber redshift given redshift of source
-        @param zSource  redshift source                                       */
-    double simulateAbsorberRedshift(double zSource);
-    
-    /** Draw HI column density of absorber.  This uses the "Rejection method" */   
+    /** Draw a column density from the distribution given in 
+       Inoue & Iwata 2008 equation 4        */
     double drawHIColumnDensity();
-    
-    /** Draw Doppler parameter of absorber.  This uses the "Rejection method" */   
+    /** Draw a doppler parameter from the distribution given in
+       Inoue & Iwata 2008 equation 6        */
     double drawDoppler();
-    
-    
-    /** Set the HI column density distribution to draw from */
-    void setNHiDistribution(int nStep=1000);
-    /** Set the doppler parameter distribution to draw from */
-    void setDopplerDistribution(int nStep=1000);
-    
-    /** Set HI column density distribution with a new step size */
-    void resetNHiDistribution(int nStep=1000)
-        { setNHiDistribution(nStep); };
-        
-    /** Set Doppler distribution with a new min, max and step size */
-    void resetDopplerDistribution(double bmin=0,double bmax=200,int nStep=1000)
-        { bmin_=bmin; bmax_=bmax; 
-        setDopplerDistribution(nStep); };
-        
-        
-    /** write simulated absorbers redshifts, doppler parameters and column
-        densities to a file */
-    void writeToFile(string outfile, vector<double>& redshifts, 
-                    vector<double>& dopplerPars, vector<double>& columnDensity);        
-                    
-        
-    // These write**Distribution methods are really for debugging/checking
-        
-    /** Write redshifts to a file 
-        @param outfile  File to write to
-        @param zCurrent redshift of current absorber
-        @param nTrial   Number of redshifts to draw
+
+    /** Simulate a single absorber
+        @param zCurrent     the redshift of the previous absorber
+        @param zNext        the redshift of the absorber being simulated
+        @param bdopp        the doppler param of the absorber being simulated
+        @param NHI          the HI column density of the absorber being simulated
     */
-    void writeZDistribution(string outfile, double zCurrent, long nTrial);
-    /** Write doppler parameters to a file 
-        @param outfile  File to write to
-        @param nTrial   Number of doppler parameters to draw
+    void simulateAbsorber(double zCurrent, double& zNext, double& bdopp, double& NHI);
+
+    /** Simulate a line of sight 
+        @param zStart           the redshift to begin at
+        @param zMax             the redshift to end at
+        @param redshifts        the vector to hold the redshift of each absorber
+        @param dopplerPars      the vector to hold the doppler parameter of each absorber
+        @param columnDensities  the vector to hold the column density of each absorber
     */
-    void writeDopplerDistribution(string outfile, long nTrial);
-    /** Write column densities to a file 
-        @param outfile  File to write to
-        @param nTrial   Number of column densities to draw
-    */
-    void writeNHiDistribution(string outfile, long nTrial);
-    
-    /** Return the grid used to draw the HI column densities from             */
-    void returnColumnDensityGrid(vector<double>& log10NHIvals, vector<double>& log10gvals)
-        {
-            log10NHIvals = log10NHIvals_;
-            log10gvals = log10gvals_;
-            return;
-        };
-    
+    void simulateLineOfSight(double zStart, double zMax, vector<double>& redshifts,
+                             vector<double>& dopplerPars, vector<double>& columnDensities,
+                             string outfile);
+
+
 protected:
-    RandomGeneratorInterface&       rg_; /**< For random number generation */
-    /** Class holding the absorber redshift distribution */
+    RandomGeneratorInterface&       rg_;
     AbsorberRedshiftDistribution&   absorberZDist_;
-    /** Class holding the HI column density distribution */
     HIColumnDensity&                hiColumnDensity_;
-    /** Class holding the Doppler parameter distribution */
     DopplerParDistribution&         dopplerParDist_;
-    double log10Nl_;                /**< log10 of minimum column density */
-    double log10Nu_;                /**< log10 of maximum column density */
-    vector<double> log10NHIvals_;   /**< log10 column density grid values */
-    vector<double> log10gvals_;     /**< log10 column density grid values dist*/
-    double log10gmin_;              /**< log10 of minimum of column density dist*/
-    double log10gmax_;              /**< log10 of maximum of column density dist*/
-    SInterp1D   colDensityFunc_;    /**< Interpolation function for column density dist*/
-    vector<double> bvals_;          /**< doppler parameter b grid values */
-    vector<double> hvals_;          /**< doppler parameter b grid values dist*/
-    double bmin_;                   /**< minimum doppler parameter value*/
-    double bmax_;                   /**< maximum doppler parameter value*/
-    double hmin_;                   /**< minimum doppler parameter dist value*/
-    double hmax_;                   /**< maximum doppler parameter dist value*/
+
+    double log10Nl_;
+    double log10Nu_;
+    vector<double> log10NHIvals_;
+    vector<double> log10gvals_;
+    double log10gmin_;
+    double log10gmax_;
+
+//    SInterp1D colDensityFunc_;
+
+    vector<double> bvals_;
+    vector<double> hvals_;
+    double bmin_;
+    double bmax_;
+    double hmin_;
+    double hmax_;
+
 
 };
 
-
-/** OpticalDepth class
-  *
-  * Class to calculate the optical depth due to a single absorber at redshift z
-  * with column density NHI and doppler parameter b
-  *
-  */
-class OpticalDepth : public AtomicCalcs
+class VoigtProfile:
+    public AtomicCalcs
 {
 public:
-    /** Constructor
-        @param zAbsorber redshift of absorber
-        @param nHI column density
-        @param bAbsorber doppler parameter
-        @param returnOpticalDepth return optical depth or transmission */
-    //OpticalDepth(double zAbsorber, double nHI, double bAbsorber, 
-    //                                        bool isOpticalDepth=false)
-        //: zAbsorber_(zAbsorber) , nHI_(nHI) , bAbsorber_(bAbsorber) , 
-        //                        isOpticalDepth_(isOpticalDepth) { 
-    OpticalDepth() {
-    nLineMax_ = nLineMaxMax_; // Maximum line series to actually go up to
-                              // nLineMaxMax is set in AtomicCalcs
-    setLymanAll(); // by default do both contributions
-    //setConstants(); push to atomic calcs class
+    VoigtProfile(double dopplerPar, int nLine);
+
+    double kFunction(double x);
+
+    double returnHax(double lambda);
+
+    virtual double operator()(double lambda) { 
+        return returnHax(lambda); 
     };
     
-    /** Return optical depth or transmission at wavelength value given 
-        @param lambda observed wavelength in meters
-    //virtual double operator()(double lambda)
-    virtual double operator()(double lambda, double zAbsorber, double nHI, double bAbsorber)
-            {   double lambdaE = lambda/(1. + zAbsorber); // convert to emission frame
-                double freq = SPEED_OF_LIGHT_MS/lambdaE;   // convert to frequency
-                double tau = returnRestFrameOpticalDepth(freq, bAbsorber, nHI); 
-                if (isOpticalDepth_)
-                    return tau;
-                else
-                    return exp(-tau);
-                    
-            };*/
-            
-    /** Return the transmission in the observer's frame due to an absorber 
-        with redshift z, column density nHI, and doppler parameter bAbsorber
-        @param lambda       observed wavelength in meters                          
-        @param zAbsorber    redshift of absorber
-        @param nHI          HI column density of absorber (cm^-2)
-        @param bAbsorber    doppler parameter of absorber (km/s)              */
-    double returnObserverFrameTransmission(double lambda, double zAbsorber, double nHI, double bAbsorber)
-        { double tau = returnObserverFrameOpticalDepth(lambda, zAbsorber, nHI, bAbsorber);
-          return exp(-tau); };    
-    
-    /** Return the optical depth in the observer's frame due to an absorber 
-        with redshift z, column density nHI, and doppler parameter bAbsorber
-        @param lambda       observed wavelength in meters                          
-        @param zAbsorber    redshift of absorber
-        @param nHI          HI column density of absorber (cm^-2)
-        @param bAbsorber    doppler parameter of absorber (km/s)              */
-    double returnObserverFrameOpticalDepth(double lambda, double zAbsorber, double nHI, double bAbsorber)
-        { double lambdaE = lambda/(1. + zAbsorber); // convert to absorption frame
-          double freq = SPEED_OF_LIGHT_MS/lambdaE;  // convert to frequency
-          double tau = returnRestFrameOpticalDepth(freq, bAbsorber, nHI);
-          return tau; };            
-    
-    /** Return (unitless) optical depth in the rest-frame of the absorber
-        Includes both Lyman-Limit Systems and Lyman-Alpha Forest
-        @param freq         rest-frame frequency in s^-1                            
-        @param bAbsorber    doppler parameter of absorber (km/s)              
-        @param nHI          column density of HI in cm^-2                     */
-    double returnRestFrameOpticalDepth(double freq, double bAbsorber, double nHI);
-    
-    /** Return the Lyman continuum cross-section in cm^2
-        @param freq         rest-frame frequency in s^-1                           */
+protected:
+    double dopplerPar_;         /*< The doppler parameter of the absorber         */
+    int nLine_;                 /*< The line number to being the Lyman transition */
+
+};
+
+
+class OpticalDepth:
+    public AtomicCalcs
+{
+public:
+    OpticalDepth();
+
+    void setLymanAll();
+    void setLymanContinuumOnly();
+    void setLymanSeriesOnly();
+    void setContribution(int option);
+
+    /** Return the transmission in the observer's frame from an absorber with redshift zAbsorber,
+        column density nhiAbsorber, and doppler parameter bAbsorber
+        @param lambda observed wavelength in m
+        @param zAbsorber redshift of absorber
+        @param nhiAbsorber column density of absorber
+        @param bAbsorber doppler parameter of absorber          */
+    double returnObserverFrameTransmission(double lambda, double zAbsorber, double nhiAbsorber, double bAbsorber);
+
+    /** Return the optical depth in the observer's frame due to an absorber with redshift zAbsorber,
+        column density nhi, and doppler parameter bAbsorber
+        @param lambda observed wavelength in m
+        @param zAbsorber redshift of absorber
+        @param nhi column density of absorber
+        @param bAbsorber doppler parameter of absorber          */
+    double returnObserverFrameOpticalDepth(double lambda, double zAbsorber, double nhi, double bAbsorber);
+
+    /** Return the optical depth in the rest frame of the absorber
+        @param freq rest frame frequency in 1/s
+        @param bAbsorber doppler parameter of the absorber in km/s
+        @param nhi the column density of the absorber in cm^-2  */
+    double returnRestFrameOpticalDepth(double freq, double bAbsorber, double nhi);
+
     double returnLymanContinuumCrossSection(double freq);
-    
-    /** Return the cross-section for the total Lyman-series in cm^2
-        @param freq         rest-frame frequency in s^-1     
-        @param bAbsorber    doppler parameter of absorber (km/s)              */
+
     double returnLymanSeriesCrossSection(double freq, double bAbsorber);
-    
-    /** Return the cross-section for the ith Lyman-series in cm^2
-        @param nLine        starting energy level of the Lyman line transition
-        @param freq         rest-frame frequency in s^-1      
-        @param bAbsorber    doppler parameter of absorber (km/s)              */
-    double returnLymanLineCrossSection(int nLine, double freq, double bAbsorber);
-    
-    /** Return the (unitless) optical depth for just the Lyman continuum contribution 
-        @param freq         rest-frame frequency in s^-1 
-        @param nHI          column density in cm^-2                           */
-    double returnLymanContinuumOpticalDepth(double freq, double nHI) {
-        return nHI*returnLymanContinuumCrossSection(freq); };
-        
-    /** Return the (unitless) optical depth for just the Lyman series contribution    
-        @param freq         rest-frame frequency in s^-1 
-        @param nHI          column density in cm^-2                           
-        @param bAbsorber    doppler parameter in km/s                         */
-    double returnLymanSeriesOpticalDepth(double freq, double nHI, double bAbsorber) {
-        return nHI*returnLymanSeriesCrossSection(freq, bAbsorber); };
-        
-    /** Return the (unitless) line profile function, analytical approx by 
-        Tepper-Garica 2006 
-        @param nLine        starting energy level of the Lyman line transition
-        @param freq         rest-frame frequency in s^-1   
-        @param bAbsorber    doppler parameter  in km/s                        */
-    double returnLineProf(int nLine, double freq, double bAbsorber);
-        
-    
-        
-    /** Set contribution type as both Lyman contributions                     */
-    void setLymanAll() { setContribution(0); };    
-    /** Set contribution type as Lyman continuum only                         */
-    void setLymanSeriesOnly() { setContribution(1); };
-    /** Set contribution type as Lyman series only                            */
-    void setLymanContinuumOnly() { setContribution(2); };
-    
-                
-    /** Set contribution type: Lyman continuum only, Lyman series only or both     
-        @param contributionType 0=both, 1=Lyman series, 2=Ly*/
-    void setContribution(int contributionType)
-        { if (contributionType==0)
-            { isAll_=true; isOnlyLymanC_=false; isOnlyLymanS_=false; }
-          else if (contributionType==1)
-            { isAll_=false; isOnlyLymanC_=false; isOnlyLymanS_=true; }
-          else if (contributionType==2)
-            { isAll_=false; isOnlyLymanC_=true; isOnlyLymanS_=false; }
-          else
-            throw ParmError("ERROR! contribution option not understood");
-        };
-        
-    /** Set whether to return the optical depth or the transmission           
-    void setReturnType(bool isOpticalDepth)
-        { isOpticalDepth_ = isOpticalDepth; };*/
-        
-    /** Set Lyman line calculation limit */
-    void setnLineMax(int nLineMax)
-                {   nLineMax_ = nLineMax;
-                    if (nLineMax > nLineMaxMax_) 
-                        throw ParmError("ERROR! Cannot compute Lyman series this far!");
-                };
-                
-    // generic stuff
-    
-    /** Return Doppler width in s^-1 with line center frequency corresponding to 
-        Lyman series n 
-        @param n starting energy level of the Lyman line transition
-        @param dopplerParKMS doppler parameter in km/s                        */
-    //double returnDopplerWidth(int nLine, double dopplerParKMS)
-   //     { return returnFrequencyLymanSeries(nLine)*(dopplerParKMS/SPEED_OF_LIGHT_KMS); };
-    
-    /** Return oscillator strength of Lyman series line nLine                 */
-    //double returnOscillatorStrength(int nLine) {
-    //    int n = nLine - 2;
-    //    return fSeries_[n]; };
-                                                                   
-    /** Return Lyman series wavelength in meters 
-        @param  n is the starting energy level of the Lyman line transition
-                (therefore n can have a minimum of 2: Lyman-alpha)            */
-    //double returnWavelengthLymanSeries(int n)
-    //    { return WAVE_LYMANLIM_METERS/(1.-1./(n*n)); };
-        
-    /** Return Lyman series frequency in s^-1
-        @param  n is the starting energy level of the Lyman line transition 
-                (therefore n can have a minimum of 2: Lyman-alpha)            */
-   // double returnFrequencyLymanSeries(int n)
-   //     { return SPEED_OF_LIGHT_MS/returnWavelengthLymanSeries(n); };
-        
-    /** Set constants used in this class such as freq. of Lyman series */
-    //void setConstants();
-    
-    
-                
+
+    double returnLymanLineCrossSection(int n, double freq, double bAbsorber);
+
+    double returnLineProfile(int n, double freq, double bAbsorber);
+
+    void setMaxLine(int nLine);
+
 protected:
-    //double zAbsorber_;              /**< redshift of absorber                 */
-    //double nHI_;                    /**< column density of absorber           */
-    //double bAbsorber_;              /**< doppler parameter of absorber in km/s*/
-    bool isAll_;                    /**< return both the Lyman contributions  */
-    bool isOnlyLymanC_;             /**< return only the Lyman continuum contribution */
-    bool isOnlyLymanS_;             /**< return only the Lyman series contribution    */
-    //bool isOpticalDepth_;           /**< return optical depth or transmission */
-    int nLineMax_;                  /**< maximum Lyman series line to use     */
-    //double freqLymanLimInvSecs_;    /**< frequency of the Lyman limit in s^-1*/
-    //double sigLymanLimCM2_;         /**< cross-section at the Lyman limit in cm^2*/
-    //int nLymanAlpha_;               /**< starting level of Lyman-a transition*/
-    //int nLineMaxMax_;               /**< maximum Lyman series line possible to use */
-    //vector<double> fSeries_;        /**< oscillator strength of ith Lyman line*/
+    bool isLymanC_;
+    bool isLymanS_;
+    int nLineMax_;
+
 };
 
 
-/** LineOfSightTrans class
-  *
-  * Calculates the line of sight transmission after attenuation by the IGM
-  * absorber distribution as a function of observed wavelength and redshift of 
-  * the source
-  *
-  */
-class LineOfSightTrans : public GenericFunc, public OpticalDepth
+class LineOfSightTrans
+: public OpticalDepth
 {
 public:
-    /** Constructor
-        @param redshifts of absorbers along line of sight (must be sorted in ascending order)
-        @param doppler parameters of absorbers along line of sight
-        @param column densities of absorbers along line of sight              */
-    LineOfSightTrans(vector<double> redshifts, vector<double> dopplerPars,
-                 vector<double> columnDensities, bool isOpticalDepth=false)
-    : redshifts_(redshifts) , dopplerPars_(dopplerPars) , 
-      columnDensities_(columnDensities) , isOpticalDepth_(isOpticalDepth) {
-        bool isSorted = sortCheck(redshifts_);      
-        if (!isSorted)
-            throw ParmError("ERROR! redshifts vector is not sorted in ascending order");
-        //setContribution(0); // by default use both contributions
-        setLymanAll(); // by default use both contributions
-        if (isOpticalDepth)
-            cout << "     Returning optical depth"<<endl;
+    LineOfSightTrans(vector<double>& redshifts, vector<double>& dopplerPars,
+                     vector<double>& columnDensities);
+
+    /** Return the total optical depth at observed wavelength lambda
+        @param lambda   observed wavelength in m
+        @param zSource  redshift of source      */
+    double returnOpticalDepth(double lambda, double zSource);
+
+    double returnTransmission(double lambda, double zSource);
+
+    int returnNumberOfAbsorbers(double zSource);
+
+    void setReturnType(bool isOpticalDepth);
+
+    virtual double operator()(double lambda, double zSource) {
+        if(isOpticalDepth_)
+            return returnOpticalDepth(lambda, zSource);
         else
-            cout << "     Returning transmission"<<endl;
-       };
-    
-    /** Return total optical depth (\f$\tau\f$) or transmission (\f$e^{-\tau}\f$)
-        at observed wavelength value given due to all absorbers along line of sight 
-        @param lambda   observed wavelength in meters                           
-        @param zSource  redshift of background source                         */
-    virtual double operator()(double lambda, double zSource)
-        {   if (isOpticalDepth_)
-                return returnOpticaldepth(lambda, zSource);
-            else 
-                return returnTransmission(lambda, zSource);
-        };
-        
-    /** Return optical depth at observed wavelength lambda in meters of light
-        from a source located at zSource, returns \f$e^{-\tau}\f$
-        @param lambda   observed wavelength
-        @param zSource  redshift of background source                         */
-    double returnOpticaldepth(double lambda, double zSource);
-    
-    /** Return transmission at observed wavelength lambda in meters of light
-        from a source located at zSource, returns \f$\tau\f$
-        @param lambda observed wavelength
-        @param zSource redshift of background source                          */
-    double returnTransmission(double lambda, double zSource) {
-        double tau = returnOpticaldepth(lambda, zSource);
-        return exp(-tau);
-        };
-    
-    /** Set whether to return the optical depth or the transmission           */
-    void setReturnType(bool isOpticalDepth)
-        { isOpticalDepth_ = isOpticalDepth; };
-         
-    /** Set contribution type: Lyman continuum only, Lyman series only or both     
-        @param contributionType 0=both, 1=Lyman series, 2=Ly
-    void setContribution(int contributionType)
-        { if (contributionType==0)
-            { isAll_=true; isOnlyLymanC_=false; isOnlyLymanS_=false; }
-          else if (contributionType==1)
-            { isAll_=false; isOnlyLymanC_=false; isOnlyLymanS_=true; }
-          else if (contributionType==2)
-            { isAll_=false; isOnlyLymanC_=true; isOnlyLymanS_=false; }
-          else
-            throw ParmError("ERROR! contribution option not understood");
-        };*/
-    
+            return returnTransmission(lambda, zSource);
+    }; 
+
 protected:
-    vector<double> redshifts_;      /**< redshift of absorbers                */
-    vector<double> dopplerPars_;    /**< doppler parameters of absorbers      */
-    vector<double> columnDensities_;/**< column densities of absorbers        */
-    bool isOpticalDepth_;           /**< return optical depth or transmission */
-    //bool isOnlyLymanC_;             /**< return only the Lyman continuum contribution */
-    //bool isOnlyLymanS_;             /**< return only the Lyman series contribution    */
-    //bool isAll_;                    /**< return both the Lyman contributions  */
-    //int nLineMax_;                  /**< maximum Lyman series line to use     */
+    vector<double> redshifts_;
+    vector<double> dopplerPars_;
+    vector<double> columnDensities_;
+    bool isOpticalDepth_;
 };
 
 
 
-/** VoigtProfile class
-  *
-  * Class to calculate profiles of HI absorption lines imprinted on the spectra 
-  * of bright background sources by intervening absorbing systems. Uses a simple
-  * analytical approximation involving the Voigt-Hjerting function and an 
-  * absorption coefficient.  Follows Tepper-Garcia 2006
-  *
-  * Voigt profiles play an important role in the spectroscopy of stellar 
-  * atmospheres where accurate measurements of line wings allow the 
-  * contributions of Doppler broadening, or natural linewidth of collision line 
-  * broadening to be separated. From this measurements the temperature and 
-  * pressure of the emitting or absorbing layers in the stellar atmospheres can 
-  * be determined.
-  *
-  */
-class VoigtProfile :
-    public GenericFunc, public AtomicCalcs
-{
-public:
-    /** Constructor
-        @param dopplerPar doppler parameter of absorber
-        @param Lyman series line number (Lyman-alpha = 2, Lyman-beta=3 ...) */
-    VoigtProfile(double dopplerPar, int nLine)
-    : dopplerPar_(dopplerPar) , nLine_(nLine) {
-        //setGammas();// set the damping constant gamma for up to Ly-series 32
-        int nLinesWithGamma = gammaSeries_.size() + 1;
-        if ( nLine_>nLinesWithGamma ) {
-            string emsg = "ERROR! Cannot calculate profile of Lyman series n>";
-            stringstream ss; ss<<(gammaSeries_.size()+1);
-            emsg += ss.str();
-            throw ParmError(emsg);
-            }
-            
-        };
-    
-    /** Returns the (unitless) line profile at lambda, see Tepper-Garcia 2006 equation 25 
-        @param lambda the wavelength in meters */
-    virtual double operator()(double lambda) {
-        double x = returnX(lambda, nLine_, dopplerPar_);
-        double a = returnDampingParameter(nLine_, dopplerPar_);
-        double K = kFunction(x);
-        double H1 = exp(-x*x)*(1-a*(2./sqrt(PI))*K);
-        //cout <<" x="<<x<<", a="<<a<<", K(x)="<<K<<", H1="<<H1<<endl;
-        return H1; };
-                
-    
-    /** Returns the (unitless) function defined in Tepper-Garcia 2006 equation 24 
-        @param x the wavelength difference relative to resonant wavelength
-               in Doppler units */
-    double kFunction(double x);
-    
-    
-        
-    
-    // THESE FUNCS BELOW ARE GENERIC: SHOULD THEY BE MOVED OUT SOMEWHERE?
-    // probably should make a new class called AtomicCalcs and then have
-    // classes inherit from that class
-    
-    /** Return the (unitless) wavelength difference relative to resonant wavelength
-        in Doppler units
-        @param lambda wavelength in meters */
-    //double returnX(double lambda) {
-    //    double dl = (lambda - returnWavelengthLymanSeries(nLine_));
-    //    double dw = returnDopplerWidth(nLine_,dopplerPar_);
-    //    return dl/dw; };
-    
-    /** Return (unitless) damping parameter a */            
-    //double returnDampingParameter();
-    
-    /** Set the damping constant gamma, units s^-1. Hard-coded values for each Lyman 
-        transmission as found in Table 2 of Morton 2003 and calculated from a 
-        file containg values of the damping parameter a assuming b=36km/s from 
-        Tepper-Garcia                                                         */
-    // void setGamma();
-    
-    /** Return Doppler width in m with line center frequency corresponding to 
-        Lyman series n 
-        @param nLine starting energy level of the Lyman line transition
-        @param dopplerParKMS doppler parameter in km/s 
-        THIS SEEMS RIGHT BUT DOESN'T SEEM TO WORK? */
-    //double returnDopplerWidth(int nLine, double dopplerParKMS)
-    //    { return returnWavelengthLymanSeries(nLine_)*(SPEED_OF_LIGHT_KMS/dopplerParKMS); };
-        
-    /** Return Lyman series wavelength in meters 
-        @param n is the starting energy level of the Lyman line transition */
-    //double returnWavelengthLymanSeries(int n)
-    //    { return WAVE_LYMANLIM_METERS/(1.-1./(n*n)); };
-        
-    /** Return Lyman series frequency in s^-1
-        @param n is the starting energy level of the Lyman line transition */
-    //double returnFrequencyLymanSeries(int n)
-    //    { return SPEED_OF_LIGHT_MS/returnWavelengthLymanSeries(n); };
-    
-protected:
-    double dopplerPar_;             /**< doppler parameter of absorber */
-    int nLine_;                     /**< starting energy level of the Lyman line transition */
-    //vector<double> gamma_;          /** damping constant */
 
-};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /** Madau class
   *

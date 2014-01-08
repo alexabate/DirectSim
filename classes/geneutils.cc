@@ -971,7 +971,7 @@ double findMaximumPosition(TArray<double> array, int& iRow, int& jCol)
 
 double findMinimum(vector<double> values)
 {
-    double minval=1e12;
+    double minval=1e13;
     int nv = values.size();
     for (int i=0; i<nv; i++) {
         
