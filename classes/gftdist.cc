@@ -319,7 +319,7 @@ double DrawM::Draw(double z)
 
 	// find closest redshift to the input z
 	for (int i=0; i<zv_.Size(); i++) {
-		double diff=abs(z-zv_(i));
+		double diff=std::abs(z-zv_(i));
 		if (diff<mindiff) {
 			ibin=i;
 			mindiff=diff;
@@ -338,7 +338,7 @@ double DrawM::Draw(double z)
 	double rn=rg_.Flat01();
 
 	for (int i=0; i<mv_.Size(); i++) {
-		double diff=abs(rn-cumval_(i,iz));
+		double diff=std::abs(rn-cumval_(i,iz));
 
 		if (diff<mindiff) {
 			ibin=i;

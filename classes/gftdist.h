@@ -105,8 +105,7 @@ public:
         @param prt      printing level                                        */
 	CumulDistZ(string fname, int prt=0)
 	: lfpars_(lfp_default_), su_(su_default_), zmin_(0), zmax_(0), nptinteg_(0),
-      nptinterp_(0) {
-	        SetUp(infile, prt); };
+      nptinterp_(0) { SetUp(fname, prt); };
 
 	//METHODS//
 	
@@ -325,7 +324,7 @@ public:
 	    from a file 
 	    @param fname    FITS filename containing pre-calculated 2D array of 
 	                    F_M(M,z)                                              */
-	DrawM(string fname);
+	DrawM(string fname)
 	: cumm_(cumm_default_), rg_(rg_default_), mmin_(1), mmax_(1), zmin_(-1), zmax_(-1)
     { SetUp(fname); };
     

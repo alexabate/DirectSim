@@ -5,7 +5,7 @@
 
 // K-correction calculations 
 
-double PhotometryCalcs::Kcorr(double z, GenericFunc& sed, Filter& filterX, 
+double PhotometryCalcs::Kcorr(double z, ClassFunc1D& sed, Filter& filterX, 
                                                         Filter& restFrameFilter)
 {
 // rest-frame and observed filters need NOT be the SAME
@@ -38,7 +38,7 @@ double PhotometryCalcs::Kcorr(double z, GenericFunc& sed, Filter& filterX,
 };
 
 
-double PhotometryCalcs::Kcorr1Filter(double z, GenericFunc& sed, Filter& filterX)
+double PhotometryCalcs::Kcorr1Filter(double z, ClassFunc1D& sed, Filter& filterX)
 {
 // 1 FILTER: rest-frame and observed filters are the SAME
 // compute general K correction for a galaxy with:
@@ -61,7 +61,7 @@ double PhotometryCalcs::Kcorr1Filter(double z, GenericFunc& sed, Filter& filterX
 };
 
 
-double PhotometryCalcs::CompColor(double z, GenericFunc& sed, Filter& filterX, Filter& filterY)
+double PhotometryCalcs::CompColor(double z, ClassFunc1D& sed, Filter& filterX, Filter& filterY)
 {
 // compute color: mag in filter X - filter Y, for a galaxy with:
 // -redshift z
@@ -89,7 +89,7 @@ double PhotometryCalcs::CompColor(double z, GenericFunc& sed, Filter& filterX, F
 };
 
 
-double PhotometryCalcs::restFrameFlux(GenericFunc& sed, Filter& filter, double zs)
+double PhotometryCalcs::restFrameFlux(ClassFunc1D& sed, Filter& filter, double zs)
 {
     BlueShiftFilter blueshiftFilter(filter, zs);// returns filter(lam*(1+zs))
     SEDzFilterProd sedXlambdaXfilter(sed, blueshiftFilter, 0.);// returns sed*lambda*filter
@@ -124,7 +124,7 @@ double PhotometryCalcs::getFilterZeroPointFlux(Filter& filterX)
 };
 
 
-double PhotometryCalcs::effectiveFilterWavelength(GenericFunc& filter)
+double PhotometryCalcs::effectiveFilterWavelength(ClassFunc1D& filter)
 {
 
     double x, y, lambdaEff, lmin, lmax;
@@ -151,7 +151,7 @@ double PhotometryCalcs::effectiveFilterWavelength(GenericFunc& filter)
 };
 
 
-double PhotometryCalcs::findFilterMax(GenericFunc& filter, double& lambdaAtMax, int nStep)
+double PhotometryCalcs::findFilterMax(ClassFunc1D& filter, double& lambdaAtMax, int nStep)
 {
 
     // over whole range lmin_:lmax_
@@ -181,7 +181,7 @@ double PhotometryCalcs::findFilterMax(GenericFunc& filter, double& lambdaAtMax, 
 };
 
 
-double PhotometryCalcs::findFilterTransValue(GenericFunc& filter, double trans, double lmin, 
+double PhotometryCalcs::findFilterTransValue(ClassFunc1D& filter, double trans, double lmin, 
                                                          double lmax, int nStep)
 {
 
@@ -219,7 +219,7 @@ double PhotometryCalcs::findFilterTransValue(GenericFunc& filter, double trans, 
 };
 
 
-void PhotometryCalcs::findFilterEdges(double& lmin, double& lmax, GenericFunc& filter, 
+void PhotometryCalcs::findFilterEdges(double& lmin, double& lmax, ClassFunc1D& filter, 
 	                                                double edgeDefinition)
 {
 
