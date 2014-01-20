@@ -15,6 +15,7 @@
 #define SINTERP_H_SEEN
 
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <string>
 #include <exception>
@@ -22,11 +23,13 @@
 
 using namespace std;
 
-// To compile without SOPHYA : Comment the following two lines 
 // Sophya update v2.3 June 2013 replaces genericfunc with classfunc
 #include "classfunc.h" 
 //#include "genericfunc.h"
+
 #include "tarray.h"
+#include "tvector.h"
+
 using namespace SOPHYA; 
 
 /** @class
@@ -35,8 +38,6 @@ using namespace SOPHYA;
   * Simple linear 1D interpolation class 
   *
   */
-// To compile without SOPHYA : exchange the comment between the following two lines 
-// class SInterp1D
 class SInterp1D : public ClassFunc1D
 {
 public :
@@ -61,6 +62,19 @@ public :
         @param npt   number of points to use in interpolation                 */
     SInterp1D(vector<double>& xs, vector<double>& ys, 
                                  double xmin=1., double xmax=-1., size_t npt=0); 
+                        
+    // comment this constructor out if compiling withouht SOPHYA         
+    /** Constructor: pairs of (x,y) points, no need to be regularly spaced in x,
+        but MUST be sorted. Interpolates to a finer regularly spaced grid, from 
+        xmin to xmax with npt points. If npt<1 interpolation is done on 
+        irregular spaced grid. xs limits are used if xmax < xmin 
+        @param xs    x values of the points
+        @param ys    y values of the points
+        @param xmin  min x value to do interpolation from
+        @param xmax  max x value to do interpolation from
+        @param npt   number of points to use in interpolation                 */ 
+    SInterp1D(TVector<r_8>& xs, TVector<r_8>& ys, 
+                                 double xmin=1., double xmax=-1., size_t npt=0); 
 
     /** Destructor */
     virtual ~SInterp1D() { };
@@ -69,17 +83,17 @@ public :
     double XMin() const { return xmin_; };
     
     /** Return max x value of interpolation table                             */
-    double XMax() const { return xmax_; }
+    double XMax() const { return xmax_; };
   
     /** Return dx step of interpolation table                                 */
-    double DeltaX()  { return dx_; }
+    double DeltaX()  { return dx_; };
   
     /** Returns x value for index i in interpolation table                    */
-    inline double X(long i) const {return xmin_ + i*dx_;}  
+    inline double X(long i) const { return xmin_ + i*dx_; };
 
     // --------------------------------------------------------------
     /** Return interpolated Y value as a function of X                        */ 
-    double YInterp(double x) const ;
+    double YInterp(double x) const;
   
     // To compile without SOPHYA : Comment the following line 
     /** Return interpolated Y value as a function of X                        */
@@ -161,7 +175,7 @@ inline ostream& operator << (ostream& s, SInterp1D const& a)
 
 // Super un-sophisticated 2D interpolation
 // Also NOT properly checked since sophya update
-class SInterp2D : public ClassFunc1D
+class SInterp2D : public ClassFunc2D
 {
 public :
 
@@ -179,7 +193,7 @@ public :
             
     /** This is defined to override the pure virtual function defined in ClassFunc1D
         otherwise SInterp2D is sometimes treated as an abstract class        */
-    virtual double operator() (double) const { };
+    virtual double operator() (double, double) const { };
         
     void definePoints(vector<double> xa, vector<double> xb, TArray<double> y, bool isAccurate=true)
         {
@@ -218,7 +232,7 @@ public :
             { return biLinear(x1,x2);} };
     
     /** Find closest xa element to x1, where xa<x1                            */
-    int findxaElement(double x1) { 
+    int findxaElement(double x1) const { 
             int ia = (int)floor((x1-xa_[0])/dxa_); 
             if (ia < 0)
                 { cout << "WARNING! x1 outside of grid!" <<endl; ia = 0;}
@@ -228,8 +242,7 @@ public :
             };
             
     /** Find closest xb element to x2, where xb<x2                            */
-    int findxbElement(double x2)
-        { 
+    int findxbElement(double x2) { 
             int ib = (int)floor((x2-xb_[0])/dxb_); 
             if (ib < 0)
                 { cout << "WARNING! x2 outside of grid!" <<endl; ib = 0;}

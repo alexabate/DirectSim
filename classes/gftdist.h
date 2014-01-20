@@ -47,26 +47,28 @@
 // generic stuff
 #include <iostream>
 #include <fstream>
+#include <stdlib.h>
 
 // sophya stuff
+#include "machdefs.h"
+#include "sopnamsp.h"
 #include "array.h"
 // Sophya update v2.3 June 2013 replaces genericfunc with classfunc
 //#include "genericfunc.h"
 #include "classfunc.h"
 #include "pexceptions.h"
 #include "randinterf.h" // This define RandomGenerator interface class
-#include "sopnamsp.h"
 #include "ctimer.h"
 #include "fiosinit.h"
 #include "fitsioserver.h"
 #include "swfitsdtable.h"
 
-// stuff in classes dir
-#include "schechter.h"
-#include "cosmocalcs.h"
+// DirectSim
 #include "mydefrg.h"  // definition of default RandomGenerator
 #include "sinterp.h"
 #include "geneutils.h"
+#include "cosmocalcs.h"
+#include "schechter.h"
 
 namespace SOPHYA {
 
@@ -372,7 +374,7 @@ public:
 				zv_(j) = z;
 				cumval_(i,j) = cv;  // dim1=m, dim2=z
 				
-				if (i<1 && (j<10 && j>8 || j<20 && j>18) ) {
+				if ( (i<1) && ( (j<10 && j>8) || (j<20 && j>18) ) ) {
 		            tm.Split();
 		            cout <<"     10 loops took "<< tm.PartialElapsedTimems() <<"ms"<<endl;
 		            }

@@ -1,9 +1,8 @@
-// -*- LSST-C++ -*-
 #include "hpoly.h"
 
 /******* Hermite methods ******************************************************/
 
-double Hermite::returnHermiteN(int order, double x)
+double Hermite::returnHermiteN(int order, double x) const
 {
     //cout <<" order = "<< order <<endl;
     // coefficients are listed from zeroth order up to order n (n=order)
@@ -22,7 +21,7 @@ double Hermite::returnHermiteN(int order, double x)
 };
 
 
-vector<double> Hermite::getHermiteCoeffs(int order)
+vector<double> Hermite::getHermiteCoeffs(int order) const
 {
 
     vector<double> coeffs;
@@ -82,9 +81,11 @@ vector<double> Hermite::getHermiteCoeffs(int order)
         default:
             coeffs = calculateHermiteCoeffs(order);
         }
+        
+    return coeffs;
 };
 
-vector<double> Hermite::calculateHermiteCoeffs(int order)
+vector<double> Hermite::calculateHermiteCoeffs(int order) const
 {
     // to do!
     cout <<"     Danger! shouldn't be in this function!"<<endl;
@@ -130,9 +131,9 @@ endif else begin
       coeffs[n-2*i] = factorial(n,/UL64) / ( factorial(i,/UL64) * factorial(n-2*i,/UL64) ) * 2ULL^(n-2*i) * (-1)^i
 
   endelse
-endelse
+endelse  */
 
-return, coeffs*/
+    return coeffs;
 
 };
 

@@ -1,10 +1,7 @@
-// -*- LSST-C++ -*-
-
 /**
  * @file  shapelets.h
  * @brief 
  *
- * Could add more information here I think
  *
  * @author Alex Abate
  * Contact: abate@email.arizona.edu
@@ -25,76 +22,100 @@
 
 // sophya
 #include "sopnamsp.h"
-#include "genericfunc.h"
+// Sophya update v2.3 June 2013 replaces genericfunc with classfunc
+//#include "genericfunc.h"
+#include "classfunc.h"
 #include "pexceptions.h"
 #include "mydefrg.h"
 
-// CatSim
+// DirectSim
 #include "constcosmo.h"
 #include "geneutils.h"
 #include "hpoly.h"
 
 
-/** BasisFuncs class
+/** @class BasisFuncs 
   *
   * Calculates dimensionless basis functions involving Hermite polynomials
   * 
   */
-class BasisFuncs : public GenericFunc, public Hermite
+class BasisFuncs : public ClassFunc1D, public Hermite
 {
 public:
     /** Constructor */
     BasisFuncs(){ };
     
-    /** Return the basis function \f$\phi_n\f$                                */
-    virtual double operator()(int n, double x)
+    /** This is defined to override the pure virtual function defined in ClassFunc1D
+        otherwise BasisFuncs is sometimes treated as an abstract class        */
+    virtual double operator() (double) const { };
+    
+    /** Return the basis function \f$\phi_n(x)\f$
+        @param n    order of Hermite polynomial
+        @param x    value basis function evalulated at                        */
+    virtual double operator()(int n, double x) const
         { return phiBasisFunc(n, x); };
         
-    /** Return the rescaled basis function \f$B_n\f$                          */
-    virtual double operator()(int n, double x, double beta)
+    /** Return the rescaled basis function \f$B_n(x)\f$
+        @param n     order of Hermite polynomial
+        @param x     value basis function evalulated at                        
+        @param beta  scale size                                               */
+    virtual double operator()(int n, double x, double beta) const
         { return bBasisFunc(n, x, beta); };
     
-    /** Return the basis function \f$\phi_n\f$                                */
-    double phiBasisFunc(int n, double x);
+    /** Return the basis function \f$\phi_n(x)\f$                                
+        @param n    order of Hermite polynomial
+        @param x    value basis function evalulated at                        */
+    double phiBasisFunc(int n, double x) const;
     
-    /** Return the rescaled basis function \f$B_n\f$                          */
-    double bBasisFunc(int n, double x, double beta)
-            {   double xb=x/beta;
-                return phiBasisFunc(n, xb)/sqrt(beta); };
+    /** Return the rescaled basis function \f$B_n\f$
+        @param n     order of Hermite polynomial
+        @param x     value basis function evalulated at                        
+        @param beta  scale size                                               */
+    double bBasisFunc(int n, double x, double beta) const {
+        double xb = x/beta;
+        return phiBasisFunc(n, xb)/sqrt(beta); };
     
 
 };
 
-/** FunctionXBasisFunction class
+
+/** @class FunctionXBasisFunction 
   *
   * Multiplies generic function with basis function \f$B_n\f$, returns as a 
   * function
   */
-class FunctionXBasisFunction : public GenericFunc
+class FunctionXBasisFunction : public ClassFunc1D
 {
 public:
-    FunctionXBasisFunction(GenericFunc& func, int n, double beta)
+    /** Constructor 
+        @param func    function to multiply with basis function
+        @param n       order of Hermite polynomial
+        @param beta    shapelet scale size                                    */
+    FunctionXBasisFunction(ClassFunc1D& func, int n, double beta)
     : func_(func) , n_(n) , beta_(beta) { };
     
-    virtual double operator()(double x)
+    virtual double operator()(double x) const
         {   BasisFuncs basisFunc;
             return func_(x)*basisFunc.bBasisFunc(n_, x, beta_); };
     
 protected:
-    GenericFunc&    func_;
-    int             n_;   
-    double          beta_;      
+    ClassFunc1D& func_; /**< function to multiply with basis function         */
+    int n_;             /**< order of Hermite polynomial                      */
+    double beta_;       /**< shapelet scale size                              */
 };
 
-/** Shapelets class
+
+/** @class Shapelets
   *
-  *
+  * Expand a function into shapelets
   */
-class Shapelets : public GenericFunc
+class Shapelets : public ClassFunc1D
 {
 public:
-    /** Constructor */
-    Shapelets(GenericFunc& func)
+
+    /** Constructor 
+        @param func    function to expand into shapelets                      */
+    Shapelets(ClassFunc1D& func)
     : func_(func) { 
         // for integration purposes	
 	    npt_=1000;
@@ -103,6 +124,10 @@ public:
 	    xmin_=-1, xmax_=1;// No idea what these should be!
 	    };
     
+    /** Return function expanded into shapelets
+        @param x
+        @param nmax  maximum order of Hermite polynomial
+        @param beta  shapelet scale size                                      */
     double functionRep(double x, int nmax, double beta) {
             BasisFuncs basisfuncs;
             double fx=0;
@@ -114,9 +139,10 @@ public:
             return fx;
             };
              
-    /** Return shapelet coefficient for order n                               */
-    double shapeletCoefficient(int n, double beta)
-            { 
+    /** Return shapelet coefficient for order n                               
+        @param n     order of Hermite polynomial
+        @param beta  shapelet scale size                                      */
+    double shapeletCoefficient(int n, double beta) {
             FunctionXBasisFunction funcXbasisFunc(func_, n, beta);
             double fn = IntegrateFunc(funcXbasisFunc,xmin_,xmax_,perc_,dxinc_,dxmax_,glorder_);
             return fn; 
@@ -131,7 +157,7 @@ public:
         { xmin_ = xmin; xmax_ = xmax; };
           
 protected:
-    GenericFunc&    func_;      /**< function to expand into shapelets        */
+    ClassFunc1D&    func_;      /**< function to expand into shapelets        */
     // integration parameters   
 	int npt_;			        /**< number of points to use in integration   */
 	double perc_;               /**< integration parameter                    */

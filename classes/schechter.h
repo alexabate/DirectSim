@@ -12,24 +12,37 @@
  * @todo create a wrapper class the other schechter classes can inherit 
  * idential methods from, eg the integration ones Integrate() and Integrate(double)
  *
+ * @todo had to comment out Delete method from SchechterMassDist class because
+ *  of the following errors at the linking stage:
+ *
+ * ~DirectSim/classes/schechter.h:536:38:   instantiated from here
+ * /usr/include/c++/4.6/bits/stl_vector.h:142:9: error: invalid use of incomplete type ‘struct SOPHYA::FunRan’
+ * ~DirectSim/classes/schechter.h:34:7: error: forward declaration of ‘struct SOPHYA::FunRan’
+ * ...
+ * ~DirectSim/classes/schechter.h:536:38:   instantiated from here
+ * /usr/include/c++/4.6/bits/stl_construct.h:127:7: error: incomplete type ‘_Value_type {aka SOPHYA::FunRan}’ not allowed
+ *
+ *
  */
 
 #ifndef SCHECHTER_SEEN
 #define SCHECHTER_SEEN
 
-#include "machdefs.h"
 #include <stdlib.h>
 
+// sophya
+#include "machdefs.h"
 // Sophya update v2.3 June 2013 replaces genericfunc with classfunc
 #include "classfunc.h" 
 //#include "genericfunc.h"
+#include "ctimer.h"
+
+// DirectSim
 #include "geneutils.h"
 #include "cosmocalcs.h"
-#include "ctimer.h"
 
 namespace SOPHYA {
 
-// I think I put these here because of "error: return type **** is incomplete"
 class Histo;
 class FunRan;
 
@@ -533,7 +546,7 @@ public:
     /** Default constructor */
     SchechterMassDist(void);
     
-    virtual ~SchechterMassDist(void) { Delete(); };
+    //virtual ~SchechterMassDist(void) { Delete(); };
 
     /** Return the mass bin limits and number of bins. Number of bins is returned
         by the function

@@ -16,10 +16,23 @@
 #ifndef PKSPECTRUM_SEEN
 #define PKSPECTRUM_SEEN
 
+#include <iostream>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <math.h>
+#include <unistd.h>
+
+// sophya includes
 #include "machdefs.h"
+#include "pexceptions.h"
 // Sophya update v2.3 June 2013 replaces genericfunc with classfunc
 #include "classfunc.h" 
 //#include "genericfunc.h"
+
+// DirectSim includes
+#include "constcosmo.h"
+#include "geneutils.h"
 #include "sinterp.h"
 
 namespace SOPHYA {
@@ -540,20 +553,20 @@ public:
     virtual ~PkSpecCalc(void) {};
     
     /** Return power spectrum at wavenumber k
-        @param k    wavenumber                                                */
+        @param k    wavenumber in units ?                                     */
     virtual double operator() (double k) const { return (*this)(k, zref_); };
     
     /** Return power spectrum at wavenumber k and redshift z
-        @param k    wavenumber                                                
+        @param k    wavenumber in units ?                                                
         @param z    redshift                                                  */
     virtual double operator() (double k, double z) const;
     
     /** Return initial power spectrum at wavenumber k
-        @param k    wavenumber                                                */
+        @param k    wavenumber in units ?                                     */
     double ReturnPki(double k) { return pkinf_(k); };
     
     /** Return transfer function at wavenumber k
-        @param k    wavenumber                                                */
+        @param k    wavenumber in units ?                                     */
     double ReturnTrans(double k) { return tf_(k); };
     
     /** Return growth function at redshift z
@@ -780,6 +793,7 @@ protected:
   double kpivot_;         /**< pivot scale                                    */
   double Apiv_;           /**< amplitude at pivot scale                       */
 };
+
 
 /** VarianceSpectrum class
   *

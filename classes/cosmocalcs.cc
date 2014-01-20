@@ -64,6 +64,7 @@ void SimpleUniverse::SetOmegaLambda(double omegaL)
     if (omegaL > 1.e-39) {
         omegaL_ = omegaL;
         hasL_ = true;
+        hasX_ = false;
         }
     else {
         omegaL_ = 0.;

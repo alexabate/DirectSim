@@ -159,10 +159,11 @@ protected:
 	PkSpecCalc& pk_;	    /**< Holds power spectrum                         */
 	double zref_;		    /**< redshift of mass function                    */
 	bool TypeLog_; 		    /**< if true return dn/dlogm rather than dn/dm    */
+	bool IntType_;          /**< if true does more accurate integration?      */
 	int MFType_; 		    /**< Which mass function to return, 0 = Sheth-Torman */
 	double lmstep_;		    /**< step with which to compute derivation of dlnsig/dlnm */
 	double Om_;             /**< \f$\Omega_m$\f */
-	bool IntType_;          /**< if true does more accurate integration?      */
+	
 
 	// constants
 	static double a_ST_Cst;	/**< Sheth-Torman mass function parameter         */

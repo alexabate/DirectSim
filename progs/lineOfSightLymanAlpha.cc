@@ -95,9 +95,9 @@ int main(int narg, char* arg[]) {
 	cout <<"     Calculating absorber HI column density distribution"<<endl;
     double beta1=1.6, beta2=1.3;
     int nStep = 10000;
-    HIColumnDensity hiColumnDensity(beta1,beta2,1.6e17,1e12,1e22, nStep);
+    HIColumnDensity hiColumnDensity;//(beta1,beta2,1.6e17,1e12,1e22, nStep);
     double Nl, Nu;
-    hiColumnDensity.returnLowerUpperColDensValues(Nl,Nu);
+    hiColumnDensity.returnColDensityLimits(Nl,Nu);
     //double intVal = hiColumnDensity.checkIntegration(nStep);
     nStep=500000;
     double logNl=log(Nl);
@@ -108,7 +108,7 @@ int main(int narg, char* arg[]) {
 	// Calculates f(z) given in eqn 5 in Inoue & Iwata 2008
 	cout <<"     Calculating absorber redshift distribution"<<endl;
     double gamma1=0.2, gamma2=2.5, gamma3=4.0;
-    AbsorberRedshiftDistribution absorberZDist(gamma1,gamma2,gamma3);
+    AbsorberRedshiftDistribution absorberZDist;//(gamma1,gamma2,gamma3);
     double zmin=0.2, zmax=6;
     double dz=(zmax-zmin)/(nStep-1);
     cout << endl;
@@ -117,7 +117,7 @@ int main(int narg, char* arg[]) {
 	// Calculates h(b) given in eqn 6 in Inoue & Iwata 2008
 	cout <<"     Calculating absorber b-parameter distribution"<<endl;
     double bsig=23;
-    DopplerParDistribution dopplerParDist(bsig);
+    DopplerParDistribution dopplerParDist;//(bsig);
     double bmin=2, bmax=200;
     double db=(bmax-bmin)/(nStep-1);
     cout << endl;
@@ -151,7 +151,7 @@ int main(int narg, char* arg[]) {
 
         // Lyman-alpha only
         LineOfSightTrans lightOfSightTransLya(redshifts, dopplers, columnDensities);
-        lightOfSightTransLya.setnLineMax(nLya);
+        lightOfSightTransLya.setMaxLine(nLya);
         lightOfSightTransLya.setLymanSeriesOnly();
         
         // Lyman-series only

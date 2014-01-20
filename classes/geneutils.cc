@@ -1,17 +1,3 @@
-#include "machdefs.h"
-#include <iostream>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <math.h>
-#include <vector>
-
-#include "pexceptions.h"
-
-#include "histos.h"
-#include "hisprof.h"
-#include "srandgen.h"
-
 #include "geneutils.h"
 
 #define SIGN(a,b) ((b) >= 0.0 ? fabs(a) : -fabs(a))
@@ -53,7 +39,7 @@ InterpFuncXY::DefinePoints(vector<double>& xs,vector<double>& ys, double xmin, d
 */
 
 
-/******* InterpFunc **********************************************************/
+/******* InterpFunc ***********************************************************/
 // InterpFunc:
 // Class of linear interpolation
 // The vector y has n elements y_i such as y_i = f(x_i)
@@ -191,13 +177,13 @@ int InverseFunc::ComputeParab(long nout,vector<double>& xfcty)
     return 0;
 }
 
-/******* InterpTab **********************************************************/
+/******* InterpTab ************************************************************/
 double InterpTab(double x0, vector<double>const& X, vector<double> const& Y, unsigned short typint)
-// Interpole in x0 the table Y = f(X)
-//           X doit etre ordonne par ordre croissant (strictement)
+// Interp in x0 the table Y = f(X)
+//           X must be sorted in ascending order
 // typint = 0 : nearest value
 //          1 : linear interpolation
-//          2 : parabolique interpolation
+//          2 : parabolic interpolation
 {
  long n = X.size();
  if(n>(long)Y.size() || n<2)
@@ -1043,7 +1029,7 @@ double findMinimumPosition(vector<double> array, int& iElement)
 };
 
 
-int findClosestElement(vector<double> values,double val)
+int findClosestElement(vector<double> values, double val)
 {
 
     double minval=1e100;
@@ -1053,7 +1039,7 @@ int findClosestElement(vector<double> values,double val)
         
         double diff = abs(val-values[i]);
         
-        if ( minval>diff ) {
+        if ( diff<minval ) {
             iElement = i;
             minval = diff;
             }
@@ -1065,6 +1051,30 @@ int findClosestElement(vector<double> values,double val)
         
     return iElement;
 
+};
+
+
+int findClosestElement(TVector<r_8> values, double val)
+{
+
+    double minval=1e100;
+    int iElement = -1;
+    int nv = values.Size();
+    for (int i=0; i<nv; i++) {
+        
+        double diff = abs(val-values[i]);
+        
+        if ( diff<minval ) {
+            iElement = i;
+            minval = diff;
+            }
+            
+        }
+        
+    if ( iElement < 0)
+        throw ParmError("findClosestElement failed");
+        
+    return iElement;
 
 };
 
@@ -1116,7 +1126,8 @@ vector<int> uniqueVector(vector<int> vect,vector<int>& ids)
         else {
             
             bool isRepeat = false;
-            for (int j=0; j<uniqueValues.size(); j++){
+            int jmax = uniqueValues.size();
+            for (int j=0; j<jmax; j++){
                 //cout <<" checking if value is repeated "<< endl;
                 int uval = uniqueValues[j];
                 //cout << uval << endl;

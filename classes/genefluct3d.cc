@@ -52,37 +52,34 @@
 
 namespace SOPHYA {
 
-//-------------------------------------------------------
-GeneFluct3D::GeneFluct3D(long nx,long ny,long nz,double dx,double dy,double dz
-                        ,unsigned short nthread,int lp)
+// Constructor
+GeneFluct3D::GeneFluct3D(long nx, long ny, long nz, double dx, double dy, double dz,
+                                                 unsigned short nthread, int lp)
 {
- init_default();
+    init_default();
 
- lp_ = lp;
- nthread_ = nthread;
+    lp_ = lp;
+    nthread_ = nthread;
 
- setsize(nx,ny,nz,dx,dy,dz);
- setalloc();
- setpointers(false);
- init_fftw();
-}
+    setsize(nx,ny,nz,dx,dy,dz);
+    setalloc();
+    setpointers(false);
+    init_fftw();
+};
 
+
+// default constructor
 GeneFluct3D::GeneFluct3D(unsigned short nthread)
 {
- init_default();
- setsize(2,2,2,1.,1.,1.);
- nthread_ = nthread;
- setalloc();
- setpointers(false);
- init_fftw();
-}
+    init_default();
+    setsize(2,2,2,1.,1.,1.);
+    nthread_ = nthread;
+    setalloc();
+    setpointers(false);
+    init_fftw();
+};
 
-GeneFluct3D::~GeneFluct3D(void)
-{
- delete_fftw();
-}
 
-//-------------------------------------------------------
 void GeneFluct3D::init_default(void)
 {
  Nx_ = Ny_ = Nz_ = 0;
@@ -230,32 +227,22 @@ void GeneFluct3D::SetObservator(double redshref,double kredshref)
 // Example: redshref=1.5 kredshref=250.75
 //    -> The pixel i=nx/2 j=ny/2 k=250.75 is at redshift 1.5
 {
- if(redshref<0.) redshref = 0.;
- if(kredshref<0.) {
-   if(Nz_<=0) {
-     const char *bla = "GeneFluct3D::SetObservator_Error: for kredsh_ref<0 define cube geometry first";
-     cout<<bla<<endl; throw ParmError(bla);
-   }
-   kredshref = Nz_/2.;
- }
- redsh_ref_  = redshref;
- kredsh_ref_ = kredshref;
- if(lp_>0)
-   cout<<"--- GeneFluct3D::SetObservator zref="<<redsh_ref_<<" kref="<<kredsh_ref_<<endl;
-}
+    if(redshref<0.) redshref = 0.;
+    if(kredshref<0.) {
+        if(Nz_<=0) {
+            const char *bla = "GeneFluct3D::SetObservator_Error: for kredsh_ref<0 define cube geometry first";
+            cout<<bla<<endl; throw ParmError(bla);
+            }
+        kredshref = Nz_/2.;
+        }
+    redsh_ref_  = redshref;
+    kredsh_ref_ = kredshref;
+    if(lp_>0)
+        cout <<"--- GeneFluct3D::SetObservator zref="<< redsh_ref_ <<" kref="<< kredsh_ref_ << endl;
+};
 
-void GeneFluct3D::SetCosmology(SimpleUniverse& cosmo)
-{
- cosmo_ = &cosmo;
- if(lp_>1) cosmo_->Print();
-}
 
-void GeneFluct3D::SetGrowthFactor(GrowthFactor& growth)
-{
- growth_ = &growth;
-}
-
-long GeneFluct3D::LosComRedshift(double zinc,long npoints)
+long GeneFluct3D::LosComRedshift(double zinc, long npoints)
 // Given a position of the cube relative to the observer
 // and a cosmology
 // (SetObservator() and SetCosmology() should have been called !)
@@ -267,133 +254,151 @@ long GeneFluct3D::LosComRedshift(double zinc,long npoints)
 // npoints : number of points required for inverting loscom -> zred
 // 
 {
- if(lp_>0) cout<<"--- LosComRedshift: zinc="<<zinc<<" , npoints="<<npoints<<endl;
+    if(lp_>0) cout<<"--- LosComRedshift: zinc="<< zinc <<" , npoints="<< npoints <<endl;
 
- if(cosmo_ == NULL || redsh_ref_<0.) {
-   const char *bla = "GeneFluct3D::LosComRedshift_Error: set Observator and Cosmology first";
-   cout<<bla<<endl; throw ParmError(bla);
- }
+    if(cosmo_ == NULL || redsh_ref_<0.) {
+        const char *bla = "GeneFluct3D::LosComRedshift_Error: set Observator and Cosmology first";
+        cout<< bla <<endl; throw ParmError(bla);
+        }
 
- cosmo_->SetEmissionRedShift(redsh_ref_);
- // angular/luminosity/Dnu distance from reference pixel
- //dred_ref_ = Dz_/(cosmo_->Dhubble()/cosmo_->E(redsh_ref_));
- dred_ref_ = Dz_/(cosmo_->DH()/cosmo_->Ez(redsh_ref_));
- //loscom_ref_ = cosmo_->Dloscom(redsh_ref_);
- loscom_ref_ = cosmo_->LineOfSightComovDistanceMpc();
- //dtrc_ref_ = cosmo_->Dtrcom(redsh_ref_);
- dtrc_ref_ = cosmo_->TransComovDistanceMpc();
- //dlum_ref_ = cosmo_->Dlum(redsh_ref_);
- dlum_ref_ = cosmo_->LuminosityDistanceMpc();
- //dang_ref_ = cosmo_->Dang(redsh_ref_);
+    // get reference pixel quantities
+    cosmo_->SetEmissionRedShift(redsh_ref_);
+    // angular/luminosity/Dnu distance from reference pixel
+    //dred_ref_ = Dz_/(cosmo_->Dhubble()/cosmo_->E(redsh_ref_));
+    dred_ref_ = Dz_/(cosmo_->DH()/cosmo_->Ez(redsh_ref_));
+    //loscom_ref_ = cosmo_->Dloscom(redsh_ref_);
+    loscom_ref_ = cosmo_->LineOfSightComovDistanceMpc();
+    //dtrc_ref_ = cosmo_->Dtrcom(redsh_ref_);
+    dtrc_ref_ = cosmo_->TransComovDistanceMpc();
+    //dlum_ref_ = cosmo_->Dlum(redsh_ref_);
+    dlum_ref_ = cosmo_->LuminosityDistanceMpc();
+    //dang_ref_ = cosmo_->Dang(redsh_ref_);
 	dang_ref_ = cosmo_->AngularDiameterDistanceMpc();
- nu_ref_   = FREQ_21CM_HI_IN_GHZ/(1.+redsh_ref_); // GHz
- dnu_ref_  = FREQ_21CM_HI_IN_GHZ*dred_ref_/pow(1.+redsh_ref_,2.); // GHz
- if(lp_>0) {
-   cout<<"...reference pixel redshref="<<redsh_ref_
-       <<", dredref="<<dred_ref_
-       <<", nuref="<<nu_ref_ <<" GHz"
-       <<", dnuref="<<dnu_ref_ <<" GHz"<<endl
-       <<"   dlosc="<<loscom_ref_<<" Mpc com"
-       <<", dtrc="<<dtrc_ref_<<" Mpc com"
-       <<", dlum="<<dlum_ref_<<" Mpc"
-       <<", dang="<<dang_ref_<<" Mpc"<<endl;
- }
+    nu_ref_   = FREQ_21CM_HI_IN_GHZ/(1.+redsh_ref_); // GHz
+    dnu_ref_  = FREQ_21CM_HI_IN_GHZ*dred_ref_/pow(1.+redsh_ref_,2.); // GHz
+ 
+    if(lp_>0) {
+        cout <<"...reference pixel redshref="<< redsh_ref_
+             <<", dredref="<< dred_ref_
+             <<", nuref="<< nu_ref_ <<" GHz"
+             <<", dnuref="<< dnu_ref_ <<" GHz" <<endl
+             <<"   dlosc="<< loscom_ref_ <<" Mpc com"
+             <<", dtrc="<< dtrc_ref_ <<" Mpc com"
+             <<", dlum="<< dlum_ref_ <<" Mpc"
+             <<", dang="<< dang_ref_ <<" Mpc" <<endl;
+        }
 
- // Calculate the observer coordinates at the reference point of the cube,
- // ie the origin is the center of pixel i=j=l=0.
- // The observer is on an axis centered on the middle of the Oxy face
- xobs_[0] = Nx_/2.*Dx_;
- xobs_[1] = Ny_/2.*Dy_;
- xobs_[2] = kredsh_ref_*Dz_ - loscom_ref_;
+    // Calculate the observer coordinates at the reference point of the cube,
+    // ie the origin is the center of pixel i=j=l=0.
+    // The observer is on an axis centered on the middle of the Oxy face
+    xobs_[0] = Nx_/2.*Dx_;
+    xobs_[1] = Ny_/2.*Dy_;
+    xobs_[2] = kredsh_ref_*Dz_ - loscom_ref_;
 
- // Is the observer in the cube?
- bool obs_in_cube = false;
- if(xobs_[2]>=0. && xobs_[2]<=Nz_*Dz_) obs_in_cube = true;
+    // Is the observer in the cube?
+    bool obs_in_cube = false;
+    if(xobs_[2]>=0. && xobs_[2]<=Nz_*Dz_) obs_in_cube = true;
 
- // Find MINIMUM los com distance to the observer:
- // It's the centre of the face at k=0
- // (or zero if the observer is in the cube)
- loscom_min_ = 0.;
- if(!obs_in_cube) loscom_min_ = -xobs_[2];
+    // Find MINIMUM los com distance to the observer:
+    // It's the centre of the face at k=0
+    // (or zero if the observer is in the cube)
+    loscom_min_ = 0.;
+    if(!obs_in_cube) loscom_min_ = -xobs_[2];
 
- // TO BE FIXED TO BE FIXED TO BE FIXED TO BE FIXED TO BE FIXED TO BE FIXED
- if(loscom_min_<=1.e-50)
-   for(int i=0;i<50;i++)
-     cout<<"ATTENTION TOUTES LES PARTIES DU CODE NE MARCHENT PAS POUR UN OBSERVATEUR DANS LE CUBE"<<endl;
- // TO BE FIXED TO BE FIXED TO BE FIXED TO BE FIXED TO BE FIXED TO BE FIXED
+    // TO BE FIXED TO BE FIXED TO BE FIXED TO BE FIXED TO BE FIXED TO BE FIXED
+    if(loscom_min_<=1.e-50) {
+        string emsg = "WARNING! CODE DOES NOT WORK FOR AN OBSERVER INSIDE THE CUBE";
+        for(int i=0;i<50;i++)
+            cout<< emsg << endl;
+        }
+    // TO BE FIXED TO BE FIXED TO BE FIXED TO BE FIXED TO BE FIXED TO BE FIXED
 
 
- // Find MAXIMUM los com distance to the observer:
- // where that positions the observer, the max
-// distance is one of the corners of the cube
- loscom_max_ = 0.;
- for(long i=0;i<=1;i++) {
-   double dx2 = DXcom(i*(Nx_-1)); dx2 *= dx2;
-   for(long j=0;j<=1;j++) {
-     double dy2 = DYcom(j*(Ny_-1)); dy2 *= dy2;
-     for(long k=0;k<=1;k++) {
-       double dz2 = DZcom(k*(Nz_-1)); dz2 *= dz2;
-       dz2 = sqrt(dx2+dy2+dz2);
-       if(dz2>loscom_max_) loscom_max_ = dz2;
-     }
-   }
- }
- if(lp_>0) {
-   cout<<"...zref="<<redsh_ref_<<" kzref="<<kredsh_ref_<<" losref="<<loscom_ref_<<" Mpc\n"
-       <<"   xobs="<<xobs_[0]<<" , "<<xobs_[1]<<" , "<<xobs_[2]<<" Mpc "
-       <<" in_cube="<<obs_in_cube
-       <<" loscom_min="<<loscom_min_<<" loscom_max="<<loscom_max_<<" Mpc (com)"<<endl;
- }
+    // Find MAXIMUM los com distance to the observer:
+    // where that positions the observer, the max
+    // distance is one of the corners of the cube
+    loscom_max_ = 0.;
+    for(long i=0;i<=1;i++) {
+        double dx2 = DXcom(i*(Nx_-1)); dx2 *= dx2;
+        for(long j=0;j<=1;j++) {
+            double dy2 = DYcom(j*(Ny_-1)); dy2 *= dy2;
+            for(long k=0;k<=1;k++) {
+                double dz2 = DZcom(k*(Nz_-1)); dz2 *= dz2;
+                dz2 = sqrt(dx2+dy2+dz2);
+                if(dz2>loscom_max_) loscom_max_ = dz2;
+                }
+            }
+        }
+        
+    if(lp_>0) {
+        cout <<"...zref="<< redsh_ref_ <<" kzref="<< kredsh_ref_ <<" losref="<< loscom_ref_ <<" Mpc\n"
+             <<"   xobs="<< xobs_[0] <<" , "<< xobs_[1] <<" , "<< xobs_[2] <<" Mpc "
+             <<" in_cube="<< obs_in_cube
+             <<" loscom_min="<< loscom_min_ <<" loscom_max="<< loscom_max_ <<" Mpc (com)"<<endl;
+        }
 
- // Fill the corresponding vectors for loscom and zred
- // Be sure to have one dlc <loscom_min and one >loscom_max
- if(zinc<=0.) zinc = 0.01;
- for(double z=0.; ; z+=zinc) {
-   //double dlc = cosmo_->Dloscom(z);
-	 cosmo_->SetEmissionRedShift(z);
-	 double dlc = cosmo_->LineOfSightComovDistanceMpc();
-   if(dlc<loscom_min_) {zred_.resize(0); loscom_.resize(0);}
-   zred_.push_back(z);
-   loscom_.push_back(dlc);
-   z += zinc;
-   if(dlc>loscom_max_) break; // sort after to have stored dlc>dlcmax
- }
+    // Fill the corresponding vectors for loscom and zred
+    // Be sure to have one dlc <loscom_min and one >loscom_max
+    if(zinc<=0.) zinc = 0.01;
+ 
+    for(double z=0.; ; z+=zinc) {
+        //double dlc = cosmo_->Dloscom(z);
+        
+        // calculate line of sight comoving distance to redshift z
+	    cosmo_->SetEmissionRedShift(z);
+	    double dlc = cosmo_->LineOfSightComovDistanceMpc();
+	    
+	    // if this distance is outside of cube (lower distance than the cube)
+	    // resize the loscom(z) table to zero
+        if(dlc<loscom_min_) { zred_.resize(0); loscom_.resize(0); }
+        
+        zred_.push_back(z);
+        loscom_.push_back(dlc);
+        z += zinc;
+        
+        // quit loop when distance is outside far side of cube
+        if(dlc>loscom_max_) break; // sort after to have stored dlc>dlcmax
+        }
 
- if(lp_>0) {
-   long n = zred_.size();
-   cout<<"...zred/loscom tables[zinc="<<zinc<<"]: n="<<n;
-   if(n>0) cout<<" z="<<zred_[0]<<" -> d="<<loscom_[0];
-   if(n>1) cout<<" , z="<<zred_[n-1]<<" -> d="<<loscom_[n-1];
-   cout<<endl;
- }
+    if(lp_>0) {
+        long n = zred_.size();
+        cout <<"...zred/loscom tables[zinc="<< zinc <<"]: n="<< n;
+        if(n>0) cout <<" z="<< zred_[0] <<" -> d="<< loscom_[0];
+        if(n>1) cout <<" , z="<< zred_[n-1] <<" -> d="<< loscom_[n-1];
+        cout<<endl;
+        }
 
- // Compute the parameters and tables needed for inversion loscom->zred
- if(npoints<3) npoints = zred_.size();
- InverseFunc invfun(zred_,loscom_);
- invfun.ComputeParab(npoints,loscom2zred_);
- loscom2zred_min_ = invfun.YMin();
- loscom2zred_max_ = invfun.YMax();
+    // Compute the parameters and tables needed for inversion loscom->zred
+    if(npoints<3) npoints = zred_.size();
+    InverseFunc invfun(zred_,loscom_);
+    invfun.ComputeParab(npoints,loscom2zred_);
+    loscom2zred_min_ = invfun.YMin();
+    loscom2zred_max_ = invfun.YMax();
 
- if(lp_>0) {
-   long n = loscom2zred_.size();
-   cout<<"...loscom -> zred[npoints="<<npoints<<"]: n="<<n
-       <<" los_min="<<loscom2zred_min_
-       <<" los_max="<<loscom2zred_max_
-       <<" -> zred=[";
-   if(n>0) cout<<loscom2zred_[0];
-   cout<<",";
-   if(n>1) cout<<loscom2zred_[n-1];
-   cout<<"]"<<endl;
-   if(lp_>1 && n>0)
-     for(int i=0;i<n;i++)
-       if(i<2 || abs(i-n/2)<2 || i>=n-2)
-         cout<<"    i="<<i
-             <<"  d="<<loscom2zred_min_+i*(loscom2zred_max_-loscom2zred_min_)/(n-1.)
-             <<" Mpc   z="<<loscom2zred_[i]<<endl;
- }
+    if(lp_>0) {
+        long n = loscom2zred_.size();
+        cout <<"...loscom -> zred[npoints="<< npoints <<"]: n="<< n
+             <<" los_min="<< loscom2zred_min_
+             <<" los_max="<< loscom2zred_max_
+             <<" -> zred=[";
+   
+        if(n>0) cout << loscom2zred_[0];
+        cout <<",";
+        if(n>1) cout << loscom2zred_[n-1];
+        cout <<"]"<<endl;
+        
+        if(lp_>1 && n>0)
+            for(int i=0;i<n;i++)
+                if(i<2 || abs(i-n/2)<2 || i>=n-2) {
+                    cout <<"    i="<< i
+                         <<"  d="<< loscom2zred_min_+i*(loscom2zred_max_-loscom2zred_min_)/(n-1.)
+                         <<" Mpc   z="<<loscom2zred_[i] <<endl;
+                    }
+        }
 
- return zred_.size();
-}
+    return zred_.size();
+};
+
 
 //-------------------------------------------------------
 void GeneFluct3D::WriteFits(string cfname,int bitpix)
@@ -625,7 +630,7 @@ void GeneFluct3D::Print(void)
 }
 
 //-------------------------------------------------------
-void GeneFluct3D::ComputeFourier0(GenericFunc& pk_at_z)
+void GeneFluct3D::ComputeFourier0(ClassFunc1D& pk_at_z)
 // cf ComputeFourier() but with another method of generating the spectrum
 //    (attention make one fft to generate the spectrum)
 {
@@ -675,7 +680,7 @@ void GeneFluct3D::ComputeFourier0(GenericFunc& pk_at_z)
 }
 
 //-------------------------------------------------------
-void GeneFluct3D::ComputeFourier(GenericFunc& pk_at_z)
+void GeneFluct3D::ComputeFourier(ClassFunc1D& pk_at_z)
 // Calculate a realisation of spectrum "pk_at_z"
 // Attention: in TArray first index varies fastest
 // Normalisation explanation: see Coles & Lucchin, Cosmology, p264-265

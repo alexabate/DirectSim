@@ -59,10 +59,10 @@ convertSEDS fitLSSTspectra lineOfSightLymanAlpha lineOfSightMagnitude \
 pcaTemplates photoZdist priorFitter projectTemplates rdlss sdssElColors simdensity \
 simulateAbsorberLinesOfSight simulateLSSTobsFromTruth simulateLSSTobs
 
-tests : test2Dinterp testbasesim testErrors testEMalgorithm testgoodsmagsim    \
+tests : test2Dinterp testbasesim testErrors testEMalgorithm testgoodsmagsim \
 testKcorrColors testKcorrMethod testLF testMadau testMeiksin \
- testTemplateFitting testsimdensity 
-#testSimReadKcorr testsimulateIGM testSimulation
+testTemplateFitting testSimReadKcorr testsimulateIGM testSimulation
+# testsimdensity 
 
 clean : 
 	rm  $(OBJ)/* $(EXE)/*
@@ -498,8 +498,8 @@ $(EXE)/testSimReadKcorr : $(OBJ)/testSimReadKcorr.o $(LIBO)
 	mkdir -p $(EXE)
 	mkdir -p $(TESTS)
 	mkdir -p $(KCORR)
-	$(CXXLINK) -o $(EXE)/testSimReadKcorr $(OBJ)/testSimReadKcorr.o \
-	$(SOPHYAEXTSLBLIST) $(MYLIB) $(ROOTLIB) $(LIBO)
+	$(CXXLINK) -o $(EXE)/testSimReadKcorr $(OBJ)/testSimReadKcorr.o $(LIBO) \
+	$(SOPHYAEXTSLBLIST) $(MYLIB) $(ROOTLIB) 
 
 $(OBJ)/testSimReadKcorr.o : $(PROGS)/testSimReadKcorr.cc $(LIBH)
 	mkdir -p $(OBJ)
@@ -510,8 +510,8 @@ $(EXE)/testsimulateIGM : $(OBJ)/testsimulateIGM.o $(LIBO)
 	mkdir -p $(EXE)
 	mkdir -p $(ROOTOUT)
 	mkdir -p $(TESTS)
-	$(CXXLINK) -o $(EXE)/testsimulateIGM $(OBJ)/testsimulateIGM.o \
-	$(SOPHYAEXTSLBLIST) $(MYLIB) $(ROOTLIB) $(LIBO)
+	$(CXXLINK) -o $(EXE)/testsimulateIGM $(OBJ)/testsimulateIGM.o $(LIBO) \
+	$(SOPHYAEXTSLBLIST) $(MYLIB) $(ROOTLIB) 
 
 $(OBJ)/testsimulateIGM.o : $(PROGS)/testsimulateIGM.cc $(LIBH)
 	mkdir -p $(OBJ)
@@ -521,8 +521,8 @@ $(OBJ)/testsimulateIGM.o : $(PROGS)/testsimulateIGM.cc $(LIBH)
 $(EXE)/testSimulation : $(OBJ)/testSimulation.o $(LIBO)
 	mkdir -p $(EXE)
 	mkdir -p $(ROOTOUT)
-	$(CXXLINK) -o $(EXE)/testSimulation $(OBJ)/testSimulation.o \
-	$(SOPHYAEXTSLBLIST) $(MYLIB) $(ROOTLIB) $(LIBO)
+	$(CXXLINK) -o $(EXE)/testSimulation $(OBJ)/testSimulation.o $(LIBO) \
+	$(SOPHYAEXTSLBLIST) $(MYLIB) $(ROOTLIB) 
 
 $(OBJ)/testSimulation.o : $(PROGS)/testSimulation.cc $(LIBH)
 	mkdir -p $(OBJ)
@@ -573,7 +573,8 @@ $(EXE)/testsimdensity : $(OBJ)/testsimdensity.o $(LIBO)
 	$(SOPHYAEXTSLBLIST) $(MYLIB) $(ROOTLIB)
 
 $(OBJ)/testsimdensity.o : $(PROGS)/testsimdensity.cc $(LIBH)  
-	mkdir -p $(OBJ)
+	mkdir -p $(OBJ)/usr/include/c++/4.6/bits/stl_vector.h:142:9: error: invalid use of incomplete type ‘struct SOPHYA::FunRan’
+
 	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/testsimdensity.o $(PROGS)/testsimdensity.cc 
 
 ############################# UTILITIES ########################################

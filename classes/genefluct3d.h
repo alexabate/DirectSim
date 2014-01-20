@@ -2,7 +2,6 @@
  * @file  genefluct3d.h
  * @brief Generates over-densities on a grid
  *
- * Could add more information here I think
  *
  * @author Reza Ansari, Christophe Magneville
  * Contact:
@@ -17,7 +16,9 @@
 
 #include "machdefs.h"
 #include <math.h>
-#include "genericfunc.h"
+// Sophya update v2.3 June 2013 replaces genericfunc with classfunc
+//#include "genericfunc.h"
+#include "classfunc.h"
 #include "tarray.h"
 #include "histerr.h"
 #include "hist2err.h"
@@ -52,15 +53,45 @@
 
 namespace SOPHYA {
 
-//-----------------------------------------------------------------------------------
+/** @class GeneFluct3D
+  *
+  * Generate fluctuations on a 3D cube
+  *
+  */
 class GeneFluct3D {
 public:
-  GeneFluct3D(long nx,long ny,long nz,double dx,double dy,double dz,unsigned short nthread=0,int lp=0);  // Mpc
-  GeneFluct3D(unsigned short nthread=0);
-  virtual ~GeneFluct3D(void);
+    
+    /** Constructor - initialize cube properties
+    @param nx        number of pixels along x-dimension
+    @param ny        number of pixels along y-dimension
+    @param nz        number of pixels along z-dimension
+    @param dx        size of pixel in x-dimension
+    @param dy        size of pixel in y-dimension
+    @param dz        size of pixel in z-dimension
+    @param nthread   number of threads for parallel proc.
+    @param lp        print level                                              */
+    GeneFluct3D(long nx, long ny, long nz, double dx, double dy, double dz,
+                                 unsigned short nthread=0, int lp=0);  // Mpc
+    
+    /** Default constructor 
+        @param nthread   number of threads for parallel proc.                 */
+    GeneFluct3D(unsigned short nthread=0);
+    
+    /** Destructor */
+    virtual ~GeneFluct3D(void) { delete_fftw(); };
 
-  // Comoving distance to the observer
-  void SetObservator(double redshref=0.,double kredshref=0.);
+    /** Set redshift. The observer is at redshift z=0 and is situated 
+        "perpendicular" to the x,y face on an axis that goes through the center 
+        of this face. Redshift of cube is set by specifying a redshift value
+        @param redshref at the index of one of the pixels along the z-dimension
+        @kredshref. If redshref<0 then redshref=0. If kredshref<0 then 
+        kredshref=nz/2 (middle of cube). Example: redshref=1.5 kredshref=250.75
+        -> The pixel i=nx/2 j=ny/2 k=250.75 is at redshift 1.5
+        @param redshref    reference redshift
+        @param kredshref   pixel index along z-dimension of pixel@redshref    */
+    void SetObservator(double redshref=0., double kredshref=0.);
+    
+    
     inline double DXcom(long i) {return i*Dx_ - xobs_[0];}
     inline double DYcom(long j) {return j*Dy_ - xobs_[1];}
     inline double DZcom(long k) {return k*Dz_ - xobs_[2];}
@@ -68,29 +99,48 @@ public:
       double dx=DXcom(i), dy=DYcom(j), dz=DZcom(k); 
       return sqrt(dx*dx+dy*dy+dz*dz);
     }
-  void SetCosmology(SimpleUniverse& cosmo);
-  void SetGrowthFactor(GrowthFactor& growth);
-  long LosComRedshift(double zinc=0.001,long npoints=-1);
+    
+    /** Set cosmological model
+        @param    cosmological model                                          */
+    void SetCosmology(SimpleUniverse& cosmo) {
+        cosmo_ = &cosmo; if(lp_>1) cosmo_->Print(); };
 
-  TArray< complex<GEN3D_TYPE> >& GetComplexArray(void) {return T_;}
-  GEN3D_FFTW_COMPLEX * GetComplexPointer(void) {return fdata_;}
-  TArray<GEN3D_TYPE>& GetRealArray(void) {return R_;}
-  GEN3D_TYPE* GetRealPointer(void) {return data_;}
+    /** Set growth function 
+        @param growth    growth function                                      */
+    void SetGrowthFactor(GrowthFactor& growth) { growth_ = &growth; };
+    
+    /** Given a position of the cube relative to the observer and a cosmology 
+        (SetObservator() and SetCosmology() should have been called !)
+        This routine fills a look up table of redshift to line of sight comoving
+        distance for all distances/redshifts within the cube
+        @param zinc       redshift increment for computing the table
+        @param npoints    number of points required for inverting loscom -> zred */
+    long LosComRedshift(double zinc=0.001, long npoints=-1);
 
-  // For index data_[ip]
-  inline int_8 IndexR(long i,long j,long k) {return (int_8)(k+NTz_*(j+Ny_*i));}
-  // For index fdata_[ip][0-1]
-  inline int_8 IndexC(long i,long j,long k) {return (int_8)(k+NCz_*(j+Ny_*i));}
-  // Could also index:
-  // TArray< complex<r_8> >& pk = gf3d.GetComplexArray();
-  //    pk(k,j,i) avec k=[0,NCz_[  j=[0,Ny_[   i=[0,Nx_[
-  //    pk[IndexC(i,j,k)]
-  // TArray<r_8>& rgen = gf3d.GetRealArray();
-  //    rgen(k,j,i) avec k=[0,NTz_[  j=[0,Ny_[   i=[0,Nx_[
-  //                mais seul k=[0,Nz_[ est utile
-  //    rgen[IndexR(i,j,k)]
-  // ATTENTION: TArray adresse en memoire a l'envers du C !
-  //            Tarray(n1,n2,n3) == Carray[n3][n2][n1]
+    /** Return Fourier space cube of coefficients                             */
+    TArray< complex<GEN3D_TYPE> >& GetComplexArray(void) {return T_;};
+    
+    GEN3D_FFTW_COMPLEX * GetComplexPointer(void) {return fdata_;}
+    
+    /** Return real space cube of fluctuations                                */
+    TArray<GEN3D_TYPE>& GetRealArray(void) {return R_;};
+    
+    GEN3D_TYPE* GetRealPointer(void) {return data_;}
+
+    // For index data_[ip]
+    inline int_8 IndexR(long i,long j,long k) {return (int_8)(k+NTz_*(j+Ny_*i));}
+    // For index fdata_[ip][0-1]
+    inline int_8 IndexC(long i,long j,long k) {return (int_8)(k+NCz_*(j+Ny_*i));}
+    // Could also index:
+    // TArray< complex<r_8> >& pk = gf3d.GetComplexArray();
+    //    pk(k,j,i) avec k=[0,NCz_[  j=[0,Ny_[   i=[0,Nx_[
+    //    pk[IndexC(i,j,k)]
+    // TArray<r_8>& rgen = gf3d.GetRealArray();
+    //    rgen(k,j,i) avec k=[0,NTz_[  j=[0,Ny_[   i=[0,Nx_[
+    //                mais seul k=[0,Nz_[ est utile
+    //    rgen[IndexR(i,j,k)]
+    // ATTENTION: TArray adresse en memoire a l'envers du C !
+    //            Tarray(n1,n2,n3) == Carray[n3][n2][n1]
 
   vector<long> GetNpix(void) {return N_;}
   int_8 NPix(void) {return NRtot_;}
@@ -118,8 +168,8 @@ public:
   double GetKTincMin(void) {return min(Dk_[0],Dk_[1]);}
   double GetKTincMax(void) {return max(Dk_[0],Dk_[1]);}
 
-  void ComputeFourier0(GenericFunc& pk_at_z);
-  void ComputeFourier(GenericFunc& pk_at_z);
+  void ComputeFourier0(ClassFunc1D& pk_at_z);
+  void ComputeFourier(ClassFunc1D& pk_at_z);
   void FilterByPixel(void);
 
   void ComputeReal(void);

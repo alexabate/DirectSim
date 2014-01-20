@@ -1,5 +1,3 @@
-#include <fstream>
-
 #include "sinterp.h"
 
 //-------------------------------------------
@@ -37,13 +35,27 @@ SInterp1D::SInterp1D(vector<double>& xs, vector<double>& ys, double xmin, double
 };
 
 
-// Interpolate y value
-double SInterp1D::YInterp(double x)  const
+// constructor without regularly spaced x and TVector
+SInterp1D::SInterp1D(TVector<r_8>& xs, TVector<r_8>& ys,  double xmin, double xmax, size_t npt)
+  : xmin_(0.), xmax_(1.), dx_(1.), ksmx_(1), npoints_(0)
 {
-
-    if (npoints_>0) {// use regularly spaced points (computed in DefinePoints)
+    vector<double> xs_std, ys_std;
+    for (int i=0; i<xs.Size(); i++) {
+        xs_std.push_back(xs(i));
+        ys_std.push_back(ys(i));
+        }
         
-        long i=(long)((x-xmin_)/dx_);//find closest index to given x val 
+    setzero_=false;
+    DefinePoints(xs_std, ys_std, xmin, xmax, npt);
+};
+
+
+// Interpolate y value
+double SInterp1D::YInterp(double x) const
+{
+    if (npoints_>0) { // use regularly spaced points (computed in DefinePoints)
+        
+        long i = (long)((x-xmin_)/dx_); // find closest index to given x value
     
         // if index is negative (i.e. x < xmin-dx)
         if (i<0) {
@@ -52,24 +64,24 @@ double SInterp1D::YInterp(double x)  const
                 // linearly extrapolate outside range:
 				return ( yreg_[0]+(x-xmin_)*(yreg_[1]-yreg_[0])/dx_ );
                 } 
-            else if (setzero_)// if automatically set to zero
+            else if (setzero_) // if automatically set to zero
                 return 0;
             }
             
         // if index outside yreg_ (x>xmax_)
 		if (i>=(int)npoints_) {
 		
-            if(!setzero_)// if not automatically setting zero ...
+            if(!setzero_) // if not automatically setting zero ...
                 return ( yreg_[npoints_]+(x-xmax_)*(yreg_[npoints_]-yreg_[npoints_-1])/dx_ );
-            else if (setzero_)// if automatically set to zero
+            else if (setzero_) // if automatically set to zero
                 return 0;
-             }
+            }
 
         // otherwise, if within range
         return (yreg_[i]+(x-X(i))*(yreg_[i+1]-yreg_[i])/dx_);
 	
 		}
-  	else   { // use the points xs_,ys_ directly 
+  	else { // use the points xs_,ys_ directly 
 		
 		// if x outside x,y pair values linearly extrapolate outside range
 		
@@ -79,8 +91,8 @@ double SInterp1D::YInterp(double x)  const
     		
         // if x>xs
         if (x>=xs_[ksmx_]) 
-    	    return ( ys_[ksmx_]+(x-xs_[ksmx_])* (ys_[ksmx_]-ys_[ksmx_-1])/
-    	                                            (xs_[ksmx_]-xs_[ksmx_-1]) );
+    	    return ( ys_[ksmx_]+(x-xs_[ksmx_])*(ys_[ksmx_]-ys_[ksmx_-1])/
+    	                                           (xs_[ksmx_]-xs_[ksmx_-1]) );
         // if x within range
         size_t k=1;
         while(x>xs_[k]) k++; {
@@ -92,7 +104,7 @@ double SInterp1D::YInterp(double x)  const
                 }
             }
 
-        double rv=ys_[k-1]+(x-xs_[k-1])*(ys_[k]-ys_[k-1])/(xs_[k]-xs_[k-1]);
+        double rv = ys_[k-1]+(x-xs_[k-1])*(ys_[k]-ys_[k-1])/(xs_[k]-xs_[k-1]);
 //    cout << " DBG- x=" << x << " k=" << k << " xs[k]=" << xs_[k] << " ys[k]" << ys_[k] 
 //	 << " rv=" << rv << endl;
         return rv;
@@ -105,7 +117,7 @@ double SInterp1D::YInterp(double x)  const
 void SInterp1D::DefinePoints(double xmin, double xmax, vector<double>& yreg)
 {
   
-    if (yreg.size()<2)  {
+    if (yreg.size()<2) {
         string emsg = "SInterp1D::DefinePoints(xmin,xmax,yreg) Bad parameters yreg.size()<2 ";
         throw range_error(emsg);
         }
@@ -116,7 +128,7 @@ void SInterp1D::DefinePoints(double xmin, double xmax, vector<double>& yreg)
     npoints_ = yreg.size()-1; // because x max is not included
     dx_ = (xmax_-xmin_)/(double)npoints_;
     yreg_ = yreg;
-}
+};
 
 
 // Define interpolation table with x,y pairs
@@ -175,7 +187,7 @@ void SInterp1D::DefinePoints(vector<double>& xs, vector<double>& ys,
     yreg_[0] = ys_[0]; // set first element
     yreg_[npoints_] = ys_[ksmx_];
     size_t k=1; // k=1 because already set k=0
-    for (size_t i=0; i<npoints_; i++)  {
+    for (size_t i=0; i<npoints_; i++) {
     
         double x = X(i); // X is a function that returns xmin_ + i*dx_
         
@@ -214,7 +226,7 @@ size_t SInterp1D::ReadYFromFile(string const& filename, double xmin,
 {
     ifstream inputFile;
     inputFile.open(filename.c_str(), ifstream::in);  
-    if(! inputFile.is_open()) {
+    if ( !inputFile.is_open() ) {
         string emsg = "  SInterp1D::ReadYFromFile() problem opening file ";
         emsg += filename;
         throw runtime_error(emsg);
@@ -231,7 +243,7 @@ size_t SInterp1D::ReadYFromFile(string const& filename, double xmin,
     while(!inputFile.eof())  { 
         inputFile.clear(); 
         inputFile >> cola; 
-        if ( (!inputFile.good()) || inputFile.eof())   break;
+        if ( (!inputFile.good()) || inputFile.eof()) break;
         //cout << cola<< "    "<<colb<<endl;
         ysv.push_back(cola);
         cnt++;
@@ -253,9 +265,9 @@ size_t SInterp1D::ReadXYFromFile(string const& filename,double xmin,double xmax,
 
     ifstream inputFile;
     inputFile.open(filename.c_str(), ifstream::in);  
-    if(!inputFile.is_open()){
-        string emsg = "SInterp1D::ReadXYFromFile() problem opening";
-        emsg += " file "+filename;
+    if( !inputFile.is_open() ) {
+        string emsg = "SInterp1D::ReadXYFromFile() problem opening file ";
+        emsg += filename;
         throw runtime_error(emsg);
         }
 		
@@ -354,7 +366,7 @@ void SInterp2D::rangeChecks(vector<double>& xa, vector<double>& xb, TArray<doubl
 
 
 // 1 == a, 2 == b
-double SInterp2D::biLinear(double x1, double x2)
+double SInterp2D::biLinear(double x1, double x2) 
 {
     // x1 corresponds to rows direction of y (y-axis direction)
     // x2 corresponds to columns direction of y (x-axis direction)

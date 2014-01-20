@@ -11,21 +11,29 @@
  * @date 2008
  *
  */
+ 
 #ifndef GENEUTILS_SEEN
 #define GENEUTILS_SEEN
 
-#include "machdefs.h"
 #include <math.h>
+#include <vector>
+#include <algorithm>
+#include <iostream>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+
+// sophya
+#include "machdefs.h"
 // Sophya update v2.3 June 2013 replaces genericfunc with classfunc
 //#include "genericfunc.h"
 #include "classfunc.h"
 #include "histos.h"
 #include "tvector.h"
 #include "cspline.h"
-
-#include <vector>
-#include <algorithm>
-
+#include "pexceptions.h"
+#include "hisprof.h"
+#include "srandgen.h"
 
 namespace SOPHYA {
 
@@ -189,7 +197,7 @@ double SinNXsX(double x,unsigned long N,bool app=false);
 /** Calculate (sin(Nx)/sin(x))^2. Approximation used if sin(x)^2 ~ 1.5e-6/N^2
     @param x    x
     @param N    N
-    @param app  if true always use approximation   */  
+    @param app  if true always use approximation                              */  
 double SinNXsX_Sqr(double x, unsigned long N, bool app=false);
 
 //------- Integration functions ------------------------------------------------
@@ -352,7 +360,12 @@ double findMinimumPosition(vector<double> array, int& iElement);
 /** Find closest value within a vector to some given value
     @param values is a vector of doubles
     @param val is a double                                                    */
-int findClosestElement(vector<double> values,double val);
+int findClosestElement(vector<double> values, double val);
+
+/** Find closest value within a vector to some given value
+    @param values is a vector of doubles
+    @param val is a double                                                    */
+int findClosestElement(TVector<r_8> values, double val);
 
 /** Check if a vector is sorted in ascending order                            */
 bool sortCheck(vector<double> values);

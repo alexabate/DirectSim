@@ -7,6 +7,9 @@
  *       spaced far apart. Probably should code up a metric that flags 
  *       up when this happens - a simple (data-fit)^2 value should do
  *
+ * @note wrote this algorithm in python instead and it seems to work
+ *       see PZConvPS/python/em.py
+ *
  * @author Alex Abate, Michael Chen (Matlab version)
  * Contact: abate@email.arizona.edu
  *

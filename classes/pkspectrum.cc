@@ -1,15 +1,3 @@
-#include "machdefs.h"
-#include <iostream>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <math.h>
-#include <unistd.h>
-
-#include "pexceptions.h"
-
-#include "constcosmo.h"
-#include "geneutils.h"
 #include "pkspectrum.h"
 
 namespace SOPHYA {

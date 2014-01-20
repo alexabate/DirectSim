@@ -739,7 +739,7 @@ SchechterMassDist::SchechterMassDist(void)
 };
 
 
-// delete class variables
+/*// delete class variables
 void SchechterMassDist::Delete(void)
 {
    if(hmdndm_) delete hmdndm_;
@@ -747,7 +747,7 @@ void SchechterMassDist::Delete(void)
    hmass_.resize(0);
    tmass_.resize(0);
    ntrial_dir = ntrial_tab = 0;
-};
+};*/
 
 
 int SchechterMassDist::SetNgalLim(int ngalmax, int ngalmin, unsigned long nalea)
@@ -948,7 +948,7 @@ void SchechterMassDist::WritePPF(string ppfname)
 
 void SchechterMassDist::ReadPPF(string ppfname)
 {
-    Delete(); // De-allocate if already filled!
+    //Delete(); // De-allocate if already filled!
 
     char str[64];
     cout <<"SchechterMassDist::ReadPPF from "<< ppfname <<endl;

@@ -9,7 +9,9 @@
 #include <string>
 
 // sophya
-#include "genericfunc.h"
+// Sophya update v2.3 June 2013 replaces genericfunc with classfunc
+//#include "genericfunc.h"
+#include "classfunc.h"
 #include "sopnamsp.h"
 #include "mydefrg.h"
 //#include "pexceptions.h"
@@ -20,48 +22,55 @@
 #include "sinterp.h"
 
 
-
-/** AtomicCalcs
+/** @class AtomicCalcs
   *
   * Class that holds basic atomic calculations and constants mostly to do with
   * the Lyman series
   * 
   *
   */
-
 class AtomicCalcs
 {
 public:
+    /** Constructor */
     AtomicCalcs();
 
-    /** Return the Lyman Series 1) Wavelength in m 2) and in Angstroms and 3)frequency
+    /** Return the Lyman Series wavelength in meters
+        @param    n is the starting energy level for a Lyman transition (down to m=1)
+                  (minimum n is 2)                                              */
+    double returnWavelengthLymanSeries(int n);
+    
+    /** Return the Lyman Series wavelength in Angstroms
+        @param    n is the starting energy level for a Lyman transition (down to m=1)
+                  (minimum n is 2)                                              */
+    double returnWavelengthAngstrLymanSeries(int n);
+    
+    /** Return the Lyman Series wavelength in frequency
         @param  n is the starting energy level for a Lyman transition (down to m=1)
                 (minimum n is 2)                                              */
-    double returnWavelengthLymanSeries(int n);
-    double returnWavelengthAngstrLymanSeries(int n);
     double returnFrequencyLymanSeries(int n);
 
     /** Return Doppler width in meters with line center wavelength corresponding
         to Lyman series n \f$ \Delta\lambda=\lambda_i\frac{b}{c} \f$
-        @param nLine starting energy level of the Lyman line transition
-        @param dopplerParKMS doppler parameter in km/s                        */
+        @param nLine            starting energy level of the Lyman line transition
+        @param dopplerParKMS    doppler parameter in km/s                     */
     double returnDopplerWidthWL(int nLine, double dopplerParamKMS);
 
     /** Return Doppler width in s^-1 with line center frequency corresponding to 
         Lyman series n \f$ \Delta\nu=\nu_i\frac{b}{c} \f$
-        @param n starting energy level of the Lyman line transition
-        @param dopplerParKMS doppler parameter in km/s                        */
+        @param n              starting energy level of the Lyman line transition
+        @param dopplerParKMS  doppler parameter in km/s                       */
     double returnDopplerWidthFreq(int nLine, double dopplerParamKMS);
 
     /** Return the (unitless) wavelength difference relative to resonant wavelength
        in Doppler units
-       @param lambda wavelength in meters */
+       @param lambda     wavelength in meters                                 */
     double returnX(double lambda, int nLine, double dopplerPar);
 
-    /** Return the damping constant for the Lyman line beginning at nLine */
+    /** Return the damping constant for the Lyman line beginning at nLine     */
     double returnGamma(int nLine);
 
-    /** Return the Oscillator Strength for the Lyman line beginning at nLine */
+    /** Return the Oscillator Strength for the Lyman line beginning at nLine  */
     double returnOscillatorStrength(int nLine);
 
     /** Return (unitless) damping parameter a */            
@@ -75,13 +84,19 @@ public:
 
 protected:
     std::vector<double> gammaSeries_;   /**< damping constant of the Lyman series in s^-1 */
-    std::vector<double> fSeries_;       /**< oscillator strength of the Lyman series */
-    double sigmaLymanLimitCM2_;         /**< cross-section at the lyman limit in cm^2 */
-    double freqLymanLimitInvSec_;       /**< frequency of the lyman limit in s^-1 */
-    int nLymanAlpha_;                   /**< starting level of a lyman alpha transition */
-    int nLineMaxMax_;                   /**< maximum Lyman series line possible to use */
+    std::vector<double> fSeries_;       /**< oscillator strength of the Lyman series      */
+    double sigmaLymanLimitCM2_;         /**< cross-section at the lyman limit in cm^2     */
+    double freqLymanLimitInvSec_;       /**< frequency of the lyman limit in s^-1         */
+    int nLymanAlpha_;                   /**< starting level of a lyman alpha transition   */
+    int nLineMaxMax_;                   /**< maximum Lyman series line possible to use    */
 };
 
+
+/** @class HIColumnDensity
+  *
+  * 
+  *
+  */
 class HIColumnDensity
 {
 public:

@@ -13,11 +13,11 @@
 #ifndef LUC_H_SEEN
 #define LUC_H_SEEN
 
-#include "machdefs.h"
 #include <math.h>
 #include <iostream>
 
 // sophya
+#include "machdefs.h"
 #include "sopnamsp.h"
 #include "ctimer.h"
 #include "pexceptions.h"

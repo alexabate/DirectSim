@@ -828,7 +828,8 @@ double LineOfSightTrans::returnTransmission(double lambda, double zSource)
 int LineOfSightTrans::returnNumberOfAbsorbers(double zSource)
 {
     int numAbsorbers = 0;
-    for(int i=0; i<redshifts_.size(); i++) {
+    int nz = redshifts_.size();
+    for(int i=0; i<nz; i++) {
         if(redshifts_[i] < zSource)
             numAbsorbers++;
     }
@@ -865,6 +866,7 @@ double Madau::returnObserverFrameOpticalDepth(double lambdaObs, double zSource)
 	// Put the wavelength into the emission frame
 	double lambdaEm = lambdaObs / (1 + zSource);
 	
+	// this variable is set but not used
 	int cas = 0;  // Case whether pure Lyman series or Lyman series+continuum
 	
 	double lambdaAlpha = returnWavelengthLymanSeries(2);
