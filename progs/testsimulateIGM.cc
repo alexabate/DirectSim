@@ -28,7 +28,7 @@ void printRedshift(ProbabilityDistAbsorbers &pdist, int numTests, double z);
 int main()
 {
 //    cout << endl << endl << endl << endl;
-    double versionNum = 1.17;
+    double versionNum = 1.21;
     cout << endl << endl << "****           Version " << versionNum << "            ****" << endl << endl;
 
 

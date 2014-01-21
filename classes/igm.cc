@@ -3,6 +3,8 @@
 //#include <string>
 //#include <cmath>
 
+/*  */
+
 /******* AtomicCalcs **********************************************************/
 
 AtomicCalcs::AtomicCalcs()
@@ -526,9 +528,8 @@ double ProbabilityDistAbsorbers::drawDeltaZ(double zLast)
     double fz = absorberZDist_(zLast);
     double rn = rg_.Flat01();
 
-    // MAY NEED TO RETURN AND NORMALIZE THIS BEFORE INVERTING
     // p(\DeltaZ;z) = f(z)*exp( -f(z)*\DeltaZ )
-    double diff = log(fz)-log(rn);
+    double diff = -log(rn);
     double deltaZ = diff/fz;
 
     return deltaZ;
@@ -536,7 +537,7 @@ double ProbabilityDistAbsorbers::drawDeltaZ(double zLast)
 
 double ProbabilityDistAbsorbers::drawHIColumnDensity()
 {
-    double u1, u2, nhi;
+/*    double u1, u2, nhi;
 
     while(true) {
         u1 = log10Nl_ + (log10Nu_ - log10Nl_)*rg_.Flat01();
@@ -554,8 +555,32 @@ double ProbabilityDistAbsorbers::drawHIColumnDensity()
         }
     }
 
-    return pow(10., u1);
-    //return nhi;
+    return pow(10., u1);        */
+
+    //IMPLEMENTING THE TRANSFORMATION PERFORMED IN CODE BY
+    //INOOUE & IWATA FOR THEIR 2008 PUBLICATION
+
+    double beta1, beta2, Nl, Nc, Nu;
+    hiColumnDensity_.returnPowerLawIndex(beta1, beta2);
+    hiColumnDensity_.returnColDensityLimits(Nl, Nu);
+    hiColumnDensity_.returnColDensityBreak(Nc);
+
+    double nhi = 0.0;
+    double index1 = 1.0 / (1.0 - beta1);
+    double index2 = 1.0 / (1.0 - beta2);
+    double Rlc = pow((Nl/Nc),(1.0-beta1));
+    double Ruc = pow((Nu/Nc),(1.0-beta2));
+    double xc = (Rlc - 1.0) / (Rlc - 1.0 + (1.0 - Ruc) * ((beta1 - 1.0) / (beta2 - 1.0)));
+
+    double ran = rg_.Flat01();
+
+    if(ran < xc) {
+        nhi = Nc * pow((((xc-ran)*Rlc + ran) / (xc)), index1);
+    } else {
+        nhi = Nc * pow(((1.0 - ran + (ran-xc)*Ruc) / (1.0 - xc)), index2);
+    }
+
+    return nhi;
 };
 
 double ProbabilityDistAbsorbers::drawDoppler()

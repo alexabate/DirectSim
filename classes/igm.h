@@ -20,6 +20,7 @@
 #include "sinterp.h"
 
 
+/* */
 
 /** AtomicCalcs
   *
@@ -82,23 +83,49 @@ protected:
     int nLineMaxMax_;                   /**< maximum Lyman series line possible to use */
 };
 
+
+/** HIColumnDensity
+ *
+ * Class to calculate the HI column density distribution function
+ * Based on Inoue & Iwata 2008 eqn 4 g(N_HI)
+ *
+ */
 class HIColumnDensity
 {
 public:
     HIColumnDensity();
 
+    /** Calculate the normalization factor for the column density dist */
     void normalizeDist();
+
+    /** Given upper and lower bounds, numerically integrate a power law
+        @param low      The lower bound on the distribution
+        @param high     The upper bound on the distribution
+        @param power    The power of the power law to integate          */
     double integratePowerLaw(double low, double high, double power);
 
+    /** Given a column density, return the probability of encountering a
+        absorber with that column density                               */
     double returnColDensityDist(double NHI);
+
+    /** Return probability for the case when the column density is less
+        than Nc_                                                        */
     double returnFirstPowerLaw(double NHI);
+
+    /** Return probability for the case when the column density is 
+        larger than Nc_                                                 */
     double returnSecondPowerLaw(double NHI);
+
+    /** Return the value obtained for the normalization constant        */
     double returnNormB();
 
+    /** Functions that pass the various members variables by reference  */
     void returnPowerLawIndex(double &beta1, double &beta2);
     void returnColDensityLimits(double &Nl, double &Nu);
     void returnColDensityBreak(double &Nc);
 
+    /** Overload the function call operator to return the probability
+        of encountering a cloud with a specific column density          */
     virtual double operator()(double NHI)
         { return returnColDensityDist(NHI); }
 
@@ -113,42 +140,68 @@ public:
     void testClass();
 
 protected:
-    double beta1_;
-    double beta2_;
-    double Nl_;
-    double Nc_;
-    double Nu_;
-    double normB_;
+    double beta1_;      /**< Power for the lower power law          */
+    double beta2_;      /**< Power for the upper power law          */
+    double Nl_;         /**< Low bound for the column densities     */
+    double Nc_;         /**< Upper bound for the column densities   */
+    double Nu_;         /**< The central distrbution break density  */
+    double normB_;      /**< The normalization constant             */
 };
 
+/** AbsorberRedshiftDistribution
+ *
+ * Class to calculate the absorber redshift distribution function
+ * Based on Inoue & Iwata 2008 eqn 5 f(z)
+ *
+ */
 class AbsorberRedshiftDistribution
 {
 public:
+    /** Constructor */
     AbsorberRedshiftDistribution();
 
+    /** Return redshift distribution at value given */
     double returnRedshiftDist(double z);
+    
+    /** Return power law at z value given */
     double returnFirstPowerLaw(double z);
+
+    /** Return power law at z value given */
     double returnSecondPowerLaw(double z);
+
+    /** Return power law at z value given */
     double returnThirdPowerLaw(double z);
 
+    /** Return the power law indices */
     void returnPowerLawIndex(double &g1, double &g2, double &g3);
+
+    /** Return the redshift at the breaks */
     void returnRedshiftBreaks(double &z1, double &z2);
+
+    /** Return the normalization constant */
     double returnNormalization();
 
+    /** Return redshift distribution at z value given */
     virtual double operator()(double z)
         { return returnRedshiftDist(z); }
 
     void testClass();
 
 protected:
-    double A_;
-    double z1_;
-    double z2_;
-    double gamma1_;
-    double gamma2_;
-    double gamma3_;
+    double A_;          /**< (Normalization) Total number of absorber z=z1 with a column density 1e12<=NHI<=1e22 cm^-2 */
+    double z1_;         /**< Redshift value at first break */
+    double z2_;         /**< Redshift value at second break */
+    double gamma1_;     /**< Power law index */
+    double gamma2_;     /**< Power law index */
+    double gamma3_;     /**< Power law index */
 };
 
+/** DopperParDistribution
+ *
+ * Class to calculate the doppler parameter b distribution
+ * Based on Inoue & Iwata 2008 and Hui & Rutledge 1999
+ *
+ */
 class DopplerParDistribution
 {
 public:
