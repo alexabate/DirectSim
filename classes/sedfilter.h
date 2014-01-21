@@ -405,7 +405,7 @@ public:
         pointers pointing to each SED object 
         @param lmin minimum wavelength of SED in meters
         @param lmax maximum wavelength of SED in meters */
-    void readSeds(double lmin=1e-7,double lmax=1e-6);
+    void readSeds(double lmin=5e-8,double lmax=2.5e-6);
     
     /** If interpolating between the SEDs call this method straight after
         readSeds()
@@ -421,7 +421,7 @@ public:
     void reddenSeds(int nStepRed,double redMax);
     
     /** Write contents of sedArray to a file */
-    void writeSpectra(string outFile,double lmin=1e-7,double lmax=1e-6,
+    void writeSpectra(string outFile,double lmin=5e-8,double lmax=2.5e-6,
                                                                  int nl=1500);
                                                                  
     /** Return sedArray */
@@ -653,10 +653,10 @@ public:
         pointers pointing to each Filter object 
         @param lmin minimum wavelength of filter in meters
         @param lmax maximum wavelength of filter in meters */
-    void readFilters(double lmin=1e-7,double lmax=1e-6);
+    void readFilters(double lmin=5e-8,double lmax=2.5e-6);
     
     /** Write contents of filterArray to a file */
-    void writeFilters(string outFile,double lmin=1e-7,double lmax=1e-6,
+    void writeFilters(string outFile,double lmin=5e-8,double lmax=2.5e-6,
                                                                  int nl=1500);
                                                                  
     /** Return filterArray */
@@ -721,13 +721,13 @@ public:
 
     /** Constructor for calculating eigenvectors and eigenvalues from the spectra
         in sedArray */
-    TemplatePCA(vector<SED*> sedArray, double lmin=1e-7, double lmax=1e-6, 
+    TemplatePCA(vector<SED*> sedArray, double lmin=5e-8, double lmax=2.5e-6, 
                                                                  int nl=1500);
     
     /** Constructor for projecting the spectra in sedArray onto the eigenvectors 
         read from file eigVectFile */
-    TemplatePCA(vector<SED*> sedArray,string eigVectFile, double lmin=1e-7, 
-                                                double lmax=1e-6,int nl=1500);
+    TemplatePCA(vector<SED*> sedArray,string eigVectFile, double lmin=5e-8, 
+                                                double lmax=2.5e-6,int nl=1500);
                                                                 
     /** should add argument to here to reflect different normalization choices*/
     void normalizeSpectra();
