@@ -104,7 +104,7 @@ void SED::doRedden(double EBmV, int law, double RvCard)
 };
 
 // Main return function
-double SED::returnFlux(double lambda)
+double SED::returnFlux(double lambda) const
 {
 
     if (isInterp_&&!isRedden_)// if SED is to be interpolated
@@ -118,7 +118,7 @@ double SED::returnFlux(double lambda)
 
 };
 
-double SED::addReddening(double lambda)
+double SED::addReddening(double lambda) const
 {
     if (!isRedden_)
         throw ParmError("ERROR! Cannot redden spectrum");
@@ -134,7 +134,7 @@ double SED::addReddening(double lambda)
 };
 
 
-double SED::interpAddReddening(double lambda)
+double SED::interpAddReddening(double lambda) const
 {
 
     if (!isRedden_)
@@ -156,7 +156,7 @@ double SED::interpAddReddening(double lambda)
 };
 
 
-double SED::interpSED(double lambda)
+double SED::interpSED(double lambda) const
 {
 
     if (!isInterp_)

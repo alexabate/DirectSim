@@ -2,7 +2,6 @@
  * @file  analyzeBPZ.cc
  * @brief Analyzes BPZ output
  *
- * Could add more information here I think
  *
  * @author Alex Abate
  * Contact: abate@email.arizona.edu

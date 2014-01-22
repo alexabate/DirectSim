@@ -1,0 +1,27 @@
+/*!
+\page anal_bpz Analyze BPZ output
+
+<CODE> analyzeBPZ </CODE>
+
+Analyze the photometric redshift catalog created by BPZ, and optionally the
+PROBS file too that contains the PDF of each galaxy.
+
+Output: (to output/)
+    - [OUTROOT]_stats.txt
+    - [OUTROOT]_sumProbs.txt (optional)
+    
+Below are the usage instructions
+
+<CODE>Usage: analyzeBPZ [...options...]
+
+ -i INCAT: name of BPZ catalog to read in <BR>
+ -p PROBS: name of file containing galaxy PDF's to read in <BR>
+ -o OUTROOT: root name of file to output results to <BR>
+ -n NGAL: number of galaxies in the BPZ catalog <BR>
+ -b ZMIN,DZ,NZ: redshift bins to study photo-z distribution in [DEFAULT=0,0.6,5] <BR>
+ -z DZMIN,DZMAX,NDZ bins to use for dz distribution histogram [DEFAULT=-0.5,0.5,200] <BR>
+ -m MAGCUT: apply magnitude quality cut, only keep galaxies with MAG<=MAGCUT [DEFAULT MAGCUT=25.3] <BR>
+ -c ODDSCUT:  apply odds cut, only keep galaxies with ODDS>=ODDSCUT [DEFAULT ODDSCUT=0]<BR>
+ -s ISSPECBIN: bin based on spec-z instead of phot-z <BR> </CODE>
+
+*/

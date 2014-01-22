@@ -8,7 +8,7 @@
 
 //******* Constructors *******************************************************//
 
-Mass2Gal::Mass2Gal(TArray<r_8> drho,  SimpleUniverse& su, RandomGeneratorInterface& rg,int nbadplanes) 
+Mass2Gal::Mass2Gal(TArray<r_8> drho,  SimpleUniverse& su, RandomGeneratorInterface& rg, int nbadplanes) 
 : su_(su) , rg_(rg)
 // Reads in SimLSS output which is a 3D cube of delta values
 // NOTE: SimLSS outputs cube so:
@@ -27,21 +27,22 @@ Mass2Gal::Mass2Gal(TArray<r_8> drho,  SimpleUniverse& su, RandomGeneratorInterfa
 	cout << "    Mass2Gal::Mass2Gal(TArray<r_4> drho,  int nbadplanes=" << nbadplanes << ")" << endl;
   	mass_.Show();
 	
-	cout<<"    Length of each dimension of mass cube: "<<endl;
-	cout<<"    1st = "<<mass_.SizeX()<<", 2nd = "<<mass_.SizeY()<<", 3rd = "<<mass_.SizeZ()<<endl;
+	cout <<"    Length of each dimension of mass cube: "<<endl;
+	cout <<"    1st = "<< mass_.SizeX() <<", 2nd = "<< mass_.SizeY() ;
+	cout <<", 3rd = "<< mass_.SizeZ() <<endl;
 
 	// We have to initialize the distance to redshift conversion interpolator
 	int_8 nz=1000000;
 	vector<double> zrs, codist;
 	double minz=0, maxz=10;
 	double dz = (maxz-minz)/(nz-1);
-	for(int kk=0; kk<nz; kk++) 
-		{
-		  double zs=minz+kk*dz;
-		  su_.SetEmissionRedShift(zs);
-		  double cod =su_.RadialCoordinateMpc(); // radial distance 
-		  zrs.push_back(zs);
-		  codist.push_back(cod); 
+	for(int kk=0; kk<nz; kk++) {
+	
+        double zs=minz+kk*dz;
+        su_.SetEmissionRedShift(zs);
+        double cod =su_.RadialCoordinateMpc(); // radial distance 
+        zrs.push_back(zs);
+        codist.push_back(cod); 
 		}
 	double mind = codist[0];
 	double maxd = codist[codist.size()-1];
@@ -54,7 +55,7 @@ Mass2Gal::Mass2Gal(TArray<r_8> drho,  SimpleUniverse& su, RandomGeneratorInterfa
 	RandPos_ = false;
 }
 
-Mass2Gal::Mass2Gal(int_8 ng,SimpleUniverse& su,RandomGeneratorInterface& rg)
+Mass2Gal::Mass2Gal(int_8 ng,SimpleUniverse& su, RandomGeneratorInterface& rg)
 : ng_(ng) , su_(su) , rg_(rg)
 // Constructor for when simulating a catalog without clustering information
 // used by SimData class
@@ -66,13 +67,13 @@ Mass2Gal::Mass2Gal(int_8 ng,SimpleUniverse& su,RandomGeneratorInterface& rg)
 	vector<double> zrs, codist;
 	double minz=0, maxz=10;
 	double dz = (maxz-minz)/(nz-1);
-	for(int kk=0; kk<nz; kk++) 
-		{
-		  double zs=minz+kk*dz;
-		  su_.SetEmissionRedShift(zs);
-		  double cod =su_.RadialCoordinateMpc(); // radial distance 
-		  zrs.push_back(zs);
-		  codist.push_back(cod); 
+	for(int kk=0; kk<nz; kk++) {
+	
+        double zs=minz+kk*dz;
+        su_.SetEmissionRedShift(zs);
+        double cod =su_.RadialCoordinateMpc(); // radial distance 
+        zrs.push_back(zs);
+        codist.push_back(cod); 
 		}
 	double mind = codist[0];
 	double maxd = codist[codist.size()-1];
@@ -84,29 +85,6 @@ Mass2Gal::Mass2Gal(int_8 ng,SimpleUniverse& su,RandomGeneratorInterface& rg)
 	SFApplied = false;
 };
 
-Mass2Gal::Mass2Gal(SimpleUniverse& su,RandomGeneratorInterface& rg)
-: su_(su) , rg_(rg)
-// Constructor for when wanting to use MaxAbsMag() function
-// used by Cat2Grid class
-{
-
-	ng_=1;
-	SFApplied = false;
-};
-
-// copy constructor
-Mass2Gal::Mass2Gal(Mass2Gal const& a)
-:  su_(a.su_) , rg_(a.rg_)
-{
-	cout <<"    Mass2Gal COPY constructor"<<endl;
-	Set(a);
-}
-
-
-//-- Destructor 
-Mass2Gal::~Mass2Gal()
-{
-};
 
 // Copy Mass2Gal 
 Mass2Gal& Mass2Gal::Set(const Mass2Gal& a)
@@ -198,11 +176,12 @@ void Mass2Gal::ReadHeader(FitsInOutFile& fin)
 	DCref_=su_.RadialCoordinateMpc(); // radial distance of central pixel: Z COORD POS OF CENTRE PIXEL
 	
 	cout << "    check reading fits header ...."<<endl;
-	cout << "    dk's: (DKX,DKY,DKZ)="<<Dkx_<<","<<Dky_<<","<< Dkz_<<endl;
-	cout << "    dx's: (DX,DY,DZ)="<<Dx_<<","<<Dy_<<","<< Dz_<<endl;
-	cout << "    N's: (NX,NY,NZ)="<<Nx_<<","<<Ny_<<","<< Nz_<<endl;
-	cout << "    zref:"<< zref_<<endl;
-	cout << "    index of centre pixel (z,y,x)="<<idmidz_<<","<<idmidy_<<","<<idmidx_ <<endl<<endl;
+	cout << "    dk's: (DKX,DKY,DKZ)="<< Dkx_ <<","<< Dky_ <<","<< Dkz_ <<endl;
+	cout << "    dx's: (DX,DY,DZ)="<< Dx_ <<","<< Dy_ <<","<< Dz_ <<endl;
+	cout << "    N's: (NX,NY,NZ)="<< Nx_ <<","<< Ny_ <<","<< Nz_ <<endl;
+	cout << "    zref:"<< zref_ <<endl;
+	cout << "    index of centre pixel (z,y,x)="<< idmidz_ <<","<< idmidy_ <<",";
+	cout << idmidx_ <<endl<<endl;
 	
 	fg_readvals = true;
 	cout <<endl<<"    EXIT Mass2Gal::ReadHeader()"<<endl;
@@ -233,18 +212,19 @@ sa_size_t Mass2Gal::CleanNegativeMassCells()
 				if (mass_(ix, iy, iz)>-1.)  
 					mass_(ix, iy, iz) += (float)(1.);
 				else 
-					{mass_(ix, iy, iz) = (float)(0.);  nbad++; }
+					{ mass_(ix, iy, iz) = (float)(0.);  nbad++; }
 
 	cout <<"    Mass2Gal::CleanNegativeMassCells() nbad=" << nbad << endl;
 
 	cout <<"    Length of each dimension of mass cube: "<<endl;
-	cout <<"    1st = "<<mass_.SizeX()<<", 2nd = "<<mass_.SizeY()<<", 3rd = "<<mass_.SizeZ()<<endl;
+	cout <<"    1st = "<< mass_.SizeX() <<", 2nd = "<< mass_.SizeY() <<", 3rd = ";
+	cout << mass_.SizeZ() <<endl;
 
 	fg_cleancells=true;
 	
 	MeanSigma(mass_, mean, tmp);
-	mean_overdensity_=mean-1;
-	cout <<"    Mean over-density AFTER cell cleaning = "<<mean_overdensity_<<endl;
+	mean_overdensity_ = mean - 1;
+	cout <<"    Mean over-density AFTER cell cleaning = "<< mean_overdensity_ <<endl;
 	
 	cout <<"    EXIT Mass2Gal::CleanNegativeMassCells()"<<endl<<endl;
 	return nbad;
@@ -272,7 +252,7 @@ sa_size_t Mass2Gal::CheckNegativeMassCells()
 	return nbad;
 }
 
-void Mass2Gal::ConvertToMeanNGal(float conv,bool Simple)
+void Mass2Gal::ConvertToMeanNGal(float conv, bool Simple)
 // converts rho/rho^bar to a (mean) number of galaxies in the cell
 // follows the following logic:
 // Define quantities:
@@ -295,7 +275,7 @@ void Mass2Gal::ConvertToMeanNGal(float conv,bool Simple)
 	cout <<endl<<"    Mass2Gal::ConvertToMeanNGal()"<<endl;
 
 	if(Simple)
-		cout <<"    Simulating "<<conv<<" galaxies in each cell"<<endl;
+		cout <<"    Simulating "<< conv <<" galaxies in each cell"<<endl;
 	
 	if(fg_nodrho)
 		throw ParmError("No clustering information: cannot convert rho/rho^bar to ngal^bar");
@@ -303,30 +283,31 @@ void Mass2Gal::ConvertToMeanNGal(float conv,bool Simple)
 	if(!fg_readvals)
 		throw ParmError("ERROR!: SimLSS cube information not read in from FITS header");
 		
-	cout <<"    Conversion value="<<conv<<endl;
+	cout <<"    Conversion value="<< conv <<endl;
 	int ndim=3;
 	sa_size_t mydim[ndim];
-	mydim[0]=Nx_; mydim[1]=Ny_; mydim[2]=Nz_;
+	mydim[0] = Nx_; mydim[1] = Ny_; mydim[2] = Nz_;
 	ngals_.SetSize(ndim, mydim);
 	cout <<"    Length of each dimension of ngals cube: "<<endl;
     	cout<<"    1st = "<<ngals_.SizeX()<<", 2nd = "<<ngals_.SizeY()<<", 3rd = "<<ngals_.SizeZ()<<endl;
 
 	for(sa_size_t ix=0; ix<mass_.SizeZ(); ix++) // along sim's X-direction 
 		for(sa_size_t iy=0; iy<mass_.SizeY(); iy++) // along sim's Y-direction
-			for(sa_size_t iz=0; iz<mass_.SizeX(); iz++) // along sim's Z-direction
-				{
+			for(sa_size_t iz=0; iz<mass_.SizeX(); iz++) { // along sim's Z-direction
+				
 				if(Simple)
-					ngals_(ix,iy,iz)=conv;
+					ngals_(ix,iy,iz) = conv;
 				else
-					ngals_(ix,iy,iz)=(int_4)floor(mass_(iz,iy,ix)*conv);
+					ngals_(ix,iy,iz) = (int_4)floor(mass_(iz,iy,ix)*conv);
 				}
 
 	// total number of gals simulated				
-	ng_=ngals_.Sum(); // PLACE WHERE TOTAL NGALS IN SIM SET
-	cout <<"    Total number of galaxies="<<ng_<<endl;
+	ng_ = ngals_.Sum(); // PLACE WHERE TOTAL NGALS IN SIM SET
+	cout <<"    Total number of galaxies="<< ng_ <<endl;
 	
 	cout <<"    Length of each dimension of ngals cube: "<<endl;
-    cout<<"    1st = "<<ngals_.SizeX()<<", 2nd = "<<ngals_.SizeY()<<", 3rd = "<<ngals_.SizeZ()<<endl;
+    cout <<"    1st = "<< ngals_.SizeX() <<", 2nd = "<< ngals_.SizeY();
+    cout <<", 3rd = "<< ngals_.SizeZ() <<endl;
   
 	cout <<"    EXIT Mass2Gal::ConvertToMeanNGal()"<<endl<<endl;
 
@@ -344,18 +325,18 @@ sa_size_t Mass2Gal::ApplyPoisson()
 	sa_size_t totngals = 0;
 	for(sa_size_t iz=0; iz<ngals_.SizeZ(); iz++) 
 		for(sa_size_t iy=0; iy<ngals_.SizeY(); iy++) 
-		  for(sa_size_t ix=0; ix<ngals_.SizeX(); ix++) 
-			{
+		  for(sa_size_t ix=0; ix<ngals_.SizeX(); ix++) {
 			uint_8 ng = rg_.Poisson(ngals_(ix, iy, iz));
 			ngals_(ix, iy, iz) = ng; totngals += ng;
 			}
-	ng_=ngals_.Sum();
+	ng_ = ngals_.Sum();
 	cout <<"    EXIT Mass2Gal::ApplyPoisson()"<<endl<<endl;
 	return totngals;		
 };
 
 
-sa_size_t Mass2Gal::CreateGalCatalog(int idsim, string fitsname,GalFlxTypDist& gfd, bool extinct, bool AMcut, double SkyArea, bool ZisRad)
+sa_size_t Mass2Gal::CreateGalCatalog(int idsim, string fitsname, GalFlxTypDist& gfd, 
+    bool extinct, bool AMcut, double SkyArea, bool ZisRad)
 {
 	if(fg_nodrho)
 		throw ParmError("No clustering information: cannot apply Poisson fluctuations to ngal^bar");
@@ -366,20 +347,18 @@ sa_size_t Mass2Gal::CreateGalCatalog(int idsim, string fitsname,GalFlxTypDist& g
 	FitsInOutFile swf(fitsname, FitsInOutFile::Fits_Create);	
 	SwFitsDataTable gals(swf, 2048);
 	gals.AddLongColumn("GalID");
-	if (ZisRad)
-		{
+	if (ZisRad) {
 		gals.AddFloatColumn("x");
 		gals.AddFloatColumn("y");
 		}
-	else
-		{
+	else {
 		gals.AddFloatColumn("theta");
 		gals.AddFloatColumn("phi");
 		}
 	gals.AddFloatColumn("zs");
 	gals.AddFloatColumn("type");
 	gals.AddFloatColumn("MB");
-	// perhaps create option to output these too?
+	// @todo add option to output more/less info
 	//gals.AddFloatColumn("d_com"); 
 	//gals.AddFloatColumn("Ext");
 	//gals.AddFloatColumn("cz"); // cell redshift
@@ -396,18 +375,17 @@ sa_size_t Mass2Gal::CreateGalCatalog(int idsim, string fitsname,GalFlxTypDist& g
 	// Interpolate maximum observable absolute magnitude verses redshift
 	// If not cutting on absolute magnitude the interpolation function
 	// has no meaning
-	if(!AMcut)
-		{
+	if(!AMcut) {
 		// If not cutting just fill with junk MB(z) function
 		for (int i=0;i<10;i++)
 			{zv_.push_back(i+1); MBmax_.push_back(10);}
 		}
 	int nint=1000;
-	SInterp1D maxAM(zv_,MBmax_,zv_[0],zv_[zv_.size()-1],nint);
+	SInterp1D maxAM(zv_, MBmax_, zv_[0], zv_[zv_.size()-1], nint);
 	
 	// to create object id
 	uint_8 gid0=idsim*100000000000LL; // LL seems to be needed by some compilers
-	cout <<"    Simulation ID = "<<gid0<<endl;
+	cout <<"    Simulation ID = "<< gid0 <<endl;
 	uint_8 gid;
 	uint_8 seq=0,seq2=0;
 
@@ -416,87 +394,82 @@ sa_size_t Mass2Gal::CreateGalCatalog(int idsim, string fitsname,GalFlxTypDist& g
 	uint_8 nginfile=0,nginzfile=0;  // count of galaxies going into file, total gals simulated
 	
 	for(sa_size_t iz=0; iz<ngals_.SizeZ(); iz++)// Z direction (~redshift direction)
-          for(sa_size_t iy=0; iy<ngals_.SizeY(); iy++)// Y direction (transverse plane)
-	    for(sa_size_t ix=0; ix<ngals_.SizeX(); ix++)// X direction ( transverse plane) 
-		  {
-		  // pick a cell
-		  int_8 ng=ngals_(ix,iy,iz); // num galaxies in this cell
-		  // comoving distance to center of cell:
-		  double xc, yc, zc, dc;
-		  GetCellCoord(ix,iy,iz, xc, yc, zc); // given pixel indices (ix,iy,iz) get comoving coords
-		  double rx,ry,rz,rr,rtet,rphi,rreds;// note names theta,phi reverse of the usual spehric. coord convention
-		  double mag,gtype,gext;  // galaxy absolute magnitude and type and internal extinction
-		  dc = sqrt(xc*xc+yc*yc+zc*zc);// comoving distance to each pixel center
+        for(sa_size_t iy=0; iy<ngals_.SizeY(); iy++)// Y direction (transverse plane)
+            for(sa_size_t ix=0; ix<ngals_.SizeX(); ix++) {// X direction (transverse plane) 
+		  
+		        // pick a cell
+		        int_8 ng=ngals_(ix,iy,iz); // num galaxies in this cell
+		        // comoving distance to center of cell:
+		        double xc, yc, zc, dc;
+		        GetCellCoord(ix,iy,iz, xc, yc, zc); // given pixel indices (ix,iy,iz) get comoving coords
+		        double rx,ry,rz,rr,rtet,rphi,rreds;// note names theta,phi reverse of the usual spehric. coord convention
+		        double mag,gtype,gext;  // galaxy absolute magnitude and type and internal extinction
+		        dc = sqrt(xc*xc+yc*yc+zc*zc);// comoving distance to each pixel center
 
-		  for(int ing=0; ing<ng; ing++) // from gal 1 to gal n in cell...
-            {
+                for(int ing=0; ing<ng; ing++) { // from gal 1 to gal n in cell...
 			
-			if(RandPos_)
-				{
-				// We generate random positions with flat distribution inside the cell
-				rx = xc+rg_.Flatpm1()*(Dx_/2);
-				ry = yc+rg_.Flatpm1()*(Dy_/2);
-				rz = zc+rg_.Flatpm1()*(Dz_/2);
-				}
-			else
-				{
-				// Or we use cell center position
-				rx = xc;
-				ry = yc;
-				rz = zc;
-				}
+			        if(RandPos_) {
+				        // We generate random positions with flat distribution inside the cell
+				        rx = xc+rg_.Flatpm1()*(Dx_/2);
+				        ry = yc+rg_.Flatpm1()*(Dy_/2);
+				        rz = zc+rg_.Flatpm1()*(Dz_/2);
+				        }
+			        else {
+				        // Or we use cell center position
+				        rx = xc;
+				        ry = yc;
+				        rz = zc;
+				        }
 				
-			if (ZisRad)
-				Conv2ParaCoord(rz,rr);
-			else
-				Conv2SphCoord(rx,ry,rz,rr,rphi,rtet); 
+			    if (ZisRad)
+				    Conv2ParaCoord(rz,rr);
+			    else
+				    Conv2SphCoord(rx,ry,rz,rr,rphi,rtet); 
 			
-			// convert comoving distance into a redshift
-			rreds=dist2Redshift(rr);
+			    // convert comoving distance into a redshift
+			    rreds = dist2Redshift(rr);
 			
-			// draw the galaxy properties
-			mag = DrawMagType(gfd, gtype);
-			gext=0.;// extinction is set to 0 for now
-			ngsum++;// should be same as ng_
+			    // draw the galaxy properties
+			    mag = DrawMagType(gfd, gtype);
+			    gext=0.;// extinction is set to 0 for now
+			    ngsum++;// should be same as ng_
 			
-			double mAM =  maxAM(rreds); // given redshift of galaxy what's max (faintest) absolute mag possible
-			if((mag<mAM) && (rphi<SkyArea))   // magnitude cut and sky area selection
-				{
-				// object id, gal id starts at 1 not 0
-				seq++; // adding up TOTAL number of gals put into file
-				gid = gid0+seq;
+			    double mAM =  maxAM(rreds); // given redshift of galaxy what's max (faintest) absolute mag possible
+			    if((mag<mAM) && (rphi<SkyArea)) { // magnitude cut and sky area selection
+				
+				    // object id, gal id starts at 1 not 0
+				    seq++; // adding up TOTAL number of gals put into file
+				    gid = gid0+seq;
 
-				if (ZisRad)
-					{
-					row[0] = gid;
-					row[1] = rx; 
-					row[2] = ry; 
-					row[3] = rreds; 
-					row[4] = gtype; 
-					row[5] = mag; 
-					}
-				else
-					{
-					row[0] = gid;
-					row[1] = rtet; 
-					row[2] = rphi; 
-					row[3] = rreds; 
-					row[4] = gtype; 
-					row[5] = mag; 
-					//row[5] = nginfile;
+                    row[0] = gid;
+                    row[1] = rx; 
+                    row[2] = ry; 
+                    row[3] = rreds; 
+                    row[4] = gtype; 
+                    row[5] = mag; 
+                    //row[5] = nginfile;
 					//row[5] = gext;
 					//row[7] = creds;
-					}
+					
+				    if (ZisRad) {
+					    row[1] = rx; 
+					    row[2] = ry; 
+					    }
+				    else {
+					    row[1] = rtet; 
+					    row[2] = rphi; 
+					    }
 
-				gals.AddRow(row);
-				nginfile++;
-				}
+				    gals.AddRow(row);
+				    nginfile++;
+				    }
 
-			if(rphi<SkyArea) 
-				nginzfile++; // counts ALL in sim
+			    if(rphi<SkyArea) 
+				    nginzfile++; // counts ALL in sim
+				    
 			//For the ZONLY file (only if doing magnitude cut)
-			if( rphi<SkyArea&&AMcut )   // JUST sky area selection
-				{
+			if( rphi<SkyArea&&AMcut ) { // JUST sky area selection
+				
 				// object id, gal id starts at 1 not 0
 				seq2++; // adding up TOTAL number of gals put into file
 				gid = gid0+seq2;
@@ -505,11 +478,11 @@ sa_size_t Mass2Gal::CreateGalCatalog(int idsim, string fitsname,GalFlxTypDist& g
 				row2[1] = rreds; 
 
 				gals2.AddRow(row2);
-				nginzfile++;// adding number of gals in file
-				}// end of if gal is in cat*/
+				nginzfile++; // adding number of gals in file
+			    }
 				
-		   }  // end of loop over galaxies in the cell 
-		} // end of loop over ix (cells) 
+            }  // end of loop over galaxies in the cell 
+        } // end of loop over ix (cells) 
 	cout <<" Mass2Gal::CreateGalaxyCatalog() finished loop"<<endl;
 
 	// want to delete swf2 file if no magnitude cut, not sure how to do this
@@ -518,66 +491,64 @@ sa_size_t Mass2Gal::CreateGalCatalog(int idsim, string fitsname,GalFlxTypDist& g
 	gals.Info()["NBrightObject"]=nginfile;// ALL in file 1
 	gals.Info()["MeanOverDensity"]=mean_overdensity_;// important
 
-	if( AMcut )
-		{
+	if( AMcut ){
 		gals2.Info()["NAllObject"]=nginzfile;// ALL in sim
 		gals2.Info()["NBrightObject"]=nginfile;// ALL in file 1
 		gals2.Info()["MeanOverDensity"]=mean_overdensity_;// important
 		}
-	else		
-		{
+	else	 {
 		if( remove(fitsname2.c_str()) != 0 )
     			cout << "Error deleting ZTRUE file" << endl;
 		}
 
-	cout<<" Mass2Gal::CreateGalaxyCatalog() done - ng_ = " << ng_ << "(?=" <<  ngsum << " ) NGal in file = " << nginfile << endl;
-	cout<<"                                        seq = " << seq<<" (should == NGal in file)"<<endl;
+	cout <<" Mass2Gal::CreateGalaxyCatalog() done - ng_ = " << ng_;
+	cout << "(?=" <<  ngsum << " ) NGal in file = " << nginfile << endl;
+	cout <<"                                        seq = " << seq;
+	cout <<" (should == NGal in file)"<<endl;
 	cout<<"                                        Total NGal simulated = " << nginzfile <<endl;
 	return nginfile;
 }
 
-void Mass2Gal::CreateNzHisto(string ppfname,GalFlxTypDist& gfd, bool extinct,double SkyArea)
+void Mass2Gal::CreateNzHisto(string ppfname, GalFlxTypDist& gfd, bool extinct, double SkyArea)
 {
 	if(fg_nodrho)
-		throw ParmError("No clustering information: cannot create N(z) Histo");
+        throw ParmError("No clustering information: cannot create N(z) Histo");
 	
 	Timer tm("CreateNzHisto");
 	
-	cout <<  " Mass2Gal::CreateNzHisto start looping over cube cells NCells= " << ngals_.Size() << " NGals=" << ng_ << " ... "<<endl;
-	uint_8 ngsum=0;  // counter for checking  
+	cout <<  " Mass2Gal::CreateNzHisto start looping over cube cells NCells= ";
+	cout << ngals_.Size() << " NGals=" << ng_ << " ... "<<endl;
+	uint_8 ngsum=0;   // counter for checking  
 	uint_8 nginfile=0;// count of galaxies in fits
 	
 	int nbin=10000;
 	double minz=0, maxz=10;
 	Histo nz(minz,maxz,nbin);
 	
-	for(sa_size_t iz=0; iz<ngals_.SizeZ(); iz++)// Z direction (~redshift direction)
-      		for(sa_size_t iy=0; iy<ngals_.SizeY(); iy++)// Y direction (transverse plane)
-		    for(sa_size_t ix=0; ix<ngals_.SizeX(); ix++)// X direction ( transverse plane) 
-			  {
+	for(sa_size_t iz=0; iz<ngals_.SizeZ(); iz++) // Z direction (~redshift direction)
+        for(sa_size_t iy=0; iy<ngals_.SizeY(); iy++) // Y direction (transverse plane)
+		    for(sa_size_t ix=0; ix<ngals_.SizeX(); ix++) { // X direction ( transverse plane) 
+			  
 			  // pick a cell
-			  int_8 ng=ngals_(ix,iy,iz); // num galaxies in this cell
+			  int_8 ng = ngals_(ix,iy,iz); // num galaxies in this cell
 			  // comoving distance to center of cell:
 			  double xc, yc, zc, dc;
 			  GetCellCoord(ix,iy,iz, xc, yc, zc);
 			  //cout << "(xc,yc,zc) = ("<<xc<<","<<yc<<","<<zc<<") ";
-			  double rx,ry,rz,rr,rtet,rphi,rreds;   // note names theta,phi reverse of the usual spehric. coord convention
+			  double rx,ry,rz,rr,rtet,rphi,rreds; // note names theta,phi reverse of the usual sph. coord convention
 			  double mag,gtype,gext;  // galaxy absolute magnitude and type and internal extinction
 			  dc = sqrt(xc*xc+yc*yc+zc*zc);
 			  //double creds = dist2Redshift(dc);  // the cell center redshift
 			  //cout <<" dc = "<<dc<<", z_c = "<<creds<<endl;
-			  for(int ing=0; ing<ng; ing++) // from gal 1 to gal n in cell...
-		    	  	{
-			
-				if(RandPos_)
-					{
+			  for(int ing=0; ing<ng; ing++) { // from gal 1 to gal n in cell...
+		    	  	
+				if(RandPos_) {
 					// We generate random positions with flat distribution inside the cell
 					rx = xc+rg_.Flatpm1()*(Dx_/2);
 					ry = yc+rg_.Flatpm1()*(Dy_/2);
 					rz = zc+rg_.Flatpm1()*(Dz_/2);
 					}
-				else
-					{
+				else {
 					rx = xc;
 					ry = yc;
 					rz = zc;
@@ -585,29 +556,28 @@ void Mass2Gal::CreateNzHisto(string ppfname,GalFlxTypDist& gfd, bool extinct,dou
 				
 				Conv2SphCoord(rx,ry,rz,rr,rphi,rtet); 
 			
-				rreds=dist2Redshift(rr);
+				rreds = dist2Redshift(rr);
 				mag = DrawMagType(gfd, gtype);
-				gext=0.;
+				gext = 0.;
 				ngsum++; 
 			
 				if(rphi<SkyArea)  // sky area selection ONLY
 					nz.Add(rreds);
 				
 				
-		   		}  // end of loop over galaxies in the cell 
-		} // end of loop over ix (cells) 
+                } // end of loop over galaxies in the cell 
+		    } // end of loop over ix (cells) 
 	cout <<" Mass2Gal::CreateNzHisto() finished loop"<<endl;
 	
 	POutPersist pos(ppfname);
 	//FitsInOutFile fos(fitsname, FitsInOutFile::Fits_Create);
 	pos << nz;
 	//FitsManager::Write(fos, nz);
-
 	
 	cout<<" Mass2Gal::CreateNzHisto() done - ng_= " << ng_ << "(?=" <<  ngsum << endl; 
 }
 
-sa_size_t Mass2Gal::CreateTrueZFile(int idsim,string fitsname,double SkyArea)
+sa_size_t Mass2Gal::CreateTrueZFile(int idsim, string fitsname, double SkyArea)
 {
 	if(fg_nodrho)
 		throw ParmError("No clustering information: cannot apply Poisson fluctuations to ngal^bar");
@@ -631,74 +601,69 @@ sa_size_t Mass2Gal::CreateTrueZFile(int idsim,string fitsname,double SkyArea)
 	uint_8 gid;
 	uint_8 seq=0;// counter for checking ngal file1 = ngal file 2
 	
-	for(sa_size_t iz=0; iz<ngals_.SizeZ(); iz++)// Z direction (~redshift direction)
-      for(sa_size_t iy=0; iy<ngals_.SizeY(); iy++)// Y direction (transverse plane)
-	    for(sa_size_t ix=0; ix<ngals_.SizeX(); ix++)// X direction ( transverse plane) 
-		  {
-		  // pick a cell
-		  int_8 ng=ngals_(ix,iy,iz); // num galaxies in this cell
-		  // comoving distance to center of cell:
-		  double xc, yc, zc, dc;
-		  GetCellCoord(ix,iy,iz, xc, yc, zc); // given pixel indices (ix,iy,iz) get comoving coords
-		  double rx,ry,rz,rr,rtet,rphi,rreds;// note names theta,phi reverse of the usual spehric. coord convention
-		  //double mag,gtype,gext;  // galaxy absolute magnitude and type and internal extinction
-		  dc = sqrt(xc*xc+yc*yc+zc*zc);// comoving distance to each pixel center
+    for(sa_size_t iz=0; iz<ngals_.SizeZ(); iz++) // Z direction (~redshift direction)
+        for(sa_size_t iy=0; iy<ngals_.SizeY(); iy++) // Y direction (transverse plane)
+            for(sa_size_t ix=0; ix<ngals_.SizeX(); ix++) { // X direction ( transverse plane) 
+		  
+                // pick a cell
+		        int_8 ng = ngals_(ix,iy,iz); // num galaxies in this cell
+		        // comoving distance to center of cell:
+		        double xc, yc, zc, dc;
+		        GetCellCoord(ix,iy,iz, xc, yc, zc); // given pixel indices (ix,iy,iz) get comoving coords
+		        double rx,ry,rz,rr,rtet,rphi,rreds;// note names theta,phi reverse of the usual spehric. coord convention
+		        //double mag,gtype,gext;  // galaxy absolute magnitude and type and internal extinction
+		        dc = sqrt(xc*xc+yc*yc+zc*zc);// comoving distance to each pixel center
 
-		  for(int ing=0; ing<ng; ing++) // from gal 1 to gal n in cell...
-            {
+		        for(int ing=0; ing<ng; ing++) { // from gal 1 to gal n in cell...
 			
-			if(RandPos_)
-				{
-				// We generate random positions with flat distribution inside the cell
-				rx = xc+rg_.Flatpm1()*(Dx_/2);
-				ry = yc+rg_.Flatpm1()*(Dy_/2);
-				rz = zc+rg_.Flatpm1()*(Dz_/2);
-				}
-			else
-				{
-				// Or we use cell center position
-				rx = xc;
-				ry = yc;
-				rz = zc;
-				}
+			        if(RandPos_) {
+            				// We generate random positions with flat distribution inside the cell
+				        rx = xc+rg_.Flatpm1()*(Dx_/2);
+				        ry = yc+rg_.Flatpm1()*(Dy_/2);
+				        rz = zc+rg_.Flatpm1()*(Dz_/2);
+				        }
+			        else {
+				        // Or we use cell center position
+				        rx = xc;
+				        ry = yc;
+				        rz = zc;
+				        }
 				
-			Conv2SphCoord(rx,ry,rz,rr,rphi,rtet); 
+			        Conv2SphCoord(rx,ry,rz,rr,rphi,rtet); 
 			
-			// convert comoving distance into a redshift
-			rreds=dist2Redshift(rr);
+			        // convert comoving distance into a redshift
+			        rreds=dist2Redshift(rr);
 			
-
-			ngsum++;// should be same as ng_
+			        ngsum++;// should be same as ng_
 			
-			if(rphi<SkyArea)   // JUST sky area selection
-			  {
+			        if(rphi<SkyArea) { // JUST sky area selection
 				
-				// object id, gal id starts at 1 not 0
-				seq++; // adding up TOTAL number of gals put into file
-				gid = gid0+seq;
+				        // object id, gal id starts at 1 not 0
+				        seq++; // adding up TOTAL number of gals put into file
+				        gid = gid0+seq;
 
-				row[0] = gid;
-				row[1] = rreds; 
+				        row[0] = gid;
+				        row[1] = rreds; 
 
-				gals.AddRow(row);
-				nginfile++;// adding number of gals in file
+				        gals.AddRow(row);
+				        nginfile++;// adding number of gals in file
 
-					
-			  }// end of if gal is in cat
-		   }// end of loop over galaxies in the cell 
-		}// end of loop over cells
+			            }// end of if gal is in cat
+		            }// end of loop over galaxies in the cell 
+		        }// end of loop over cells
 	cout <<" Mass2Gal::CreateTrueZFile() finished loop"<<endl;
 	
 	gals.Info()["NAllObject"]=ng_;// ALL in sim
 	gals.Info()["NBrightObject"]=nginfile;// ALL in file 1 (ng_ minus angle cut)
 
 	cout <<"    Number of galaxies in file = "<<nginfile<<endl;	
-	cout <<"    Mass2Gal::CreateTrueZFile() done - ng_ = " << ng_ << "(?=" <<  ngsum << " ) NGal in file = " << nginfile << endl; 
+	cout <<"    Mass2Gal::CreateTrueZFile() done - ng_ = " << ng_;
+	cout << "(?=" <<  ngsum << " ) NGal in file = " << nginfile << endl; 
 	cout <<"                                        seq = " << seq<<" (should == NGal in file)"<<endl;
 	return nginfile;
 }
 
-sa_size_t Mass2Gal::CreateSimpleCatalog(int idsim,string fitsname,double SkyArea)
+sa_size_t Mass2Gal::CreateSimpleCatalog(int idsim, string fitsname, double SkyArea)
 {
 	if(fg_nodrho)
 		throw ParmError("No clustering information: cannot apply Poisson fluctuations to ngal^bar");
@@ -724,86 +689,81 @@ sa_size_t Mass2Gal::CreateSimpleCatalog(int idsim,string fitsname,double SkyArea
 	
 	// to create object id
 	uint_8 gid0=idsim*100000000000LL; // LL seems to be needed by some compilers
-	cout << "    Simulation ID = "<<gid0<<endl;
+	cout << "    Simulation ID = "<< gid0 <<endl;
 	uint_8 gid;
 	uint_8 seq=0;// counter for checking ngal file1 = ngal file 2
 	
-	for(sa_size_t iz=0; iz<ngals_.SizeZ(); iz++)// Z direction (~redshift direction)
-      for(sa_size_t iy=0; iy<ngals_.SizeY(); iy++)// Y direction (transverse plane)
-	    for(sa_size_t ix=0; ix<ngals_.SizeX(); ix++)// X direction ( transverse plane) 
-		  {
-		  // pick a cell
-		  int_8 ng=ngals_(ix,iy,iz); // num galaxies in this cell
-		  // comoving distance to center of cell:
-		  double xc, yc, zc, dc;
-		  GetCellCoord(ix,iy,iz, xc, yc, zc); // given pixel indices (ix,iy,iz) get comoving coords
-		  double rx,ry,rz,rr,rtet,rphi,rreds;// note names theta,phi reverse of the usual spehric. coord convention
-		  //double mag,gtype,gext;  // galaxy absolute magnitude and type and internal extinction
-		  dc = sqrt(xc*xc+yc*yc+zc*zc);// comoving distance to each pixel center
+    for(sa_size_t iz=0; iz<ngals_.SizeZ(); iz++) // Z direction (~redshift direction)
+        for(sa_size_t iy=0; iy<ngals_.SizeY(); iy++) // Y direction (transverse plane)
+            for(sa_size_t ix=0; ix<ngals_.SizeX(); ix++) { // X direction ( transverse plane) 
+		  
+		        // pick a cell
+		        int_8 ng = ngals_(ix,iy,iz); // num galaxies in this cell
+		        // comoving distance to center of cell:
+		        double xc, yc, zc, dc;
+		        GetCellCoord(ix,iy,iz, xc, yc, zc); // given pixel indices (ix,iy,iz) get comoving coords
+		        double rx,ry,rz,rr,rtet,rphi,rreds;// note names theta,phi reverse of the usual spehric. coord convention
+		        //double mag,gtype,gext;  // galaxy absolute magnitude and type and internal extinction
+		        dc = sqrt(xc*xc+yc*yc+zc*zc);// comoving distance to each pixel center
 
-		  for(int ing=0; ing<ng; ing++) // from gal 1 to gal n in cell...
-            {
+		        for(int ing=0; ing<ng; ing++) { // from gal 1 to gal n in cell...
 			
-			if(RandPos_)
-				{
-				// We generate random positions with flat distribution inside the cell
-				rx = xc+rg_.Flatpm1()*(Dx_/2);
-				ry = yc+rg_.Flatpm1()*(Dy_/2);
-				rz = zc+rg_.Flatpm1()*(Dz_/2);
-				}
-			else
-				{
-				// Or we use cell center position
-				rx = xc;
-				ry = yc;
-				rz = zc;
-				}
+			    if(RandPos_) {
+				    // We generate random positions with flat distribution inside the cell
+				    rx = xc+rg_.Flatpm1()*(Dx_/2);
+				    ry = yc+rg_.Flatpm1()*(Dy_/2);
+				    rz = zc+rg_.Flatpm1()*(Dz_/2);
+				    }
+			    else {
+				    // Or we use cell center position
+				    rx = xc;
+				    ry = yc;
+			        	rz = zc;
+				    }
 				
-			Conv2SphCoord(rx,ry,rz,rr,rphi,rtet); 
+			    Conv2SphCoord(rx,ry,rz,rr,rphi,rtet); 
 			
-			// convert comoving distance into a redshift
-			rreds=dist2Redshift(rr);
+			    // convert comoving distance into a redshift
+			    rreds=dist2Redshift(rr);
 			
-
-			ngsum++;// should be same as ng_
+			    ngsum++;// should be same as ng_
 			
-			if(rphi<SkyArea)   // JUST sky area selection
-			  {
+			    if(rphi<SkyArea) { // JUST sky area selection
 				
-				// object id, gal id starts at 1 not 0
-				seq++; // adding up TOTAL number of gals put into file
-				gid = gid0+seq;
+				    // object id, gal id starts at 1 not 0
+				    seq++; // adding up TOTAL number of gals put into file
+				    gid = gid0+seq;
 
-				/*row[0] = gid;
-				row[1] = rtet;
-				row[2] = rphi;
-				row[3] = rreds; 
-				row[4] = rr; 
-				row[5] = rx; 
-				row[6] = ry; 
-				row[7] = rz;*/
+				    /*row[0] = gid;
+				    row[1] = rtet;
+				    row[2] = rphi;
+				    row[3] = rreds; 
+				    row[4] = rr; 
+				    row[5] = rx; 
+				    row[6] = ry; 
+				    row[7] = rz;*/
 
-				row[0] = rtet;
-				row[1] = rphi;
-				row[2] = rreds; 
-				row[3] = rr; 
-				row[4] = rx; 
-				row[5] = ry; 
-				row[6] = rz;
-				gals.AddRow(row);
-				nginfile++;// adding number of gals in file
+				    row[0] = rtet;
+				    row[1] = rphi;
+				    row[2] = rreds; 
+				    row[3] = rr; 
+				    row[4] = rx; 
+				    row[5] = ry; 
+				    row[6] = rz;
+				    gals.AddRow(row);
+				    nginfile++;// adding number of gals in file
 
-					
-			  }// end of if gal is in cat
-		   }// end of loop over galaxies in the cell 
-		}// end of loop over cells
+			        }// end of if gal is in cat
+		        }// end of loop over galaxies in the cell 
+		    }// end of loop over cells
 	cout <<" Mass2Gal::CreateSimpleCatalog() finished loop"<<endl;
 	
 	gals.Info()["NAllObject"]=ng_;// ALL in sim
 	gals.Info()["NBrightObject"]=nginfile;// ALL in file 1 (ng_ minus angle cut)
 
-	cout <<"    Number of galaxies in file = "<<nginfile<<endl;	
-	cout <<"    Mass2Gal::CreateSimpleCatalog() done - ng_ = " << ng_ << "(?=" <<  ngsum << " ) NGal in file = " << nginfile << endl; 
+	cout <<"    Number of galaxies in file = "<< nginfile <<endl;	
+	cout <<"    Mass2Gal::CreateSimpleCatalog() done - ng_ = " << ng_;
+	cout << "(?=" <<  ngsum << " ) NGal in file = " << nginfile << endl; 
 	cout <<"                                        seq = " << seq<<" (should == NGal in file)"<<endl;
 	return nginfile;
 };
@@ -869,8 +829,8 @@ void Mass2Gal::MaxAbsMag()
 		
 		// distance modulus
 		su_.SetEmissionRedShift(z);
-		double dL=su_.LuminosityDistanceMpc();
-		double mu=5*log10(dL)+25;
+		double dL = su_.LuminosityDistanceMpc();
+		double mu = 5.*log10(dL) + 25.;
 		
 		// MB = Xdepth - mu - kBX
 		// To get MAX MB want Xdepth MAX and kBX MIN 
@@ -879,7 +839,6 @@ void Mass2Gal::MaxAbsMag()
 		double eps=1e-10;
 		double dmsMax=eps;
 		for (int j=0; j<nSEDs; j++) {
-		
 		    for (int k=0; k<nFilters; k++) {
 		        double dms = depths[k] - photoCalcs.Kcorr(z,(*sedArray[j]),
 		                                        (*LSSTfilters[k]),(*BFilter[0]));
@@ -890,7 +849,6 @@ void Mass2Gal::MaxAbsMag()
 		    }
 		    
 		MBmax_.push_back(dmsMax - mu);
-		
 		}
 
 };
@@ -910,13 +868,11 @@ void Mass2Gal::ApplyPZConv(string pzcf)
 	sa_size_t mydim[ndim];
 	mydim[0]=ngals_.SizeX(); mydim[1]=ngals_.SizeY(); mydim[2]=ngals_.SizeZ();
 	
-	if (ngalssm_.NbDimensions()<2)
-		{
+	if (ngalssm_.NbDimensions()<2) {
 		ngalssm_.SetSize(ndim, mydim);
 		ngalssm_=0.; // does this definitely zero all elements?
 		}
-	if (randgsm_.NbDimensions()<2)
-		{
+	if (randgsm_.NbDimensions()<2) {
 		randgsm_.SetSize(ndim, mydim);
 		randgsm_=0;
 		}
@@ -924,39 +880,47 @@ void Mass2Gal::ApplyPZConv(string pzcf)
 	SInterp1D pzcfi;
 	pzcfi.ReadXYFromFile(pzcf);
 	double dzmin=pzcfi.XMin(), dzmax=pzcfi.XMax();
+	// integrate over distribution
 	double IntDist=IntegrateFunc(pzcfi,dzmin,dzmax);
 	
-	for(sa_size_t ix=0; ix<ngals_.SizeX(); ix++)  
-		{
-		cout << "ix="<<ix<<"/"<<ngals_.SizeX()<<endl;
+	for(sa_size_t ix=0; ix<ngals_.SizeX(); ix++)  {
+		cout << "ix="<< ix <<"/"<< ngals_.SizeX() <<endl;
 		for(sa_size_t iy=0; iy<ngals_.SizeY(); iy++) 
-			for(sa_size_t iz=0; iz<ngals_.SizeZ(); iz++)
-				{
-				
-				int_8 rg=randgsm_(ix,iy,iz);
-				int_8 ng=ngalssm_(ix,iy,iz); // num galaxies in this pixel
+			for(sa_size_t iz=0; iz<ngals_.SizeZ(); iz++) {
+
+				// current pixel
+				int_8 rg = randgsm_(ix,iy,iz); // random value in this pixel
+				int_8 ng = ngalssm_(ix,iy,iz); // num galaxies in this pixel
 				double tmp1,tmp2,zc;
-				GetCellZBounds(ix,iy,iz,tmp1,zc,tmp2);// redshift of pixel center
+				GetCellZBounds(ix,iy,iz,tmp1,zc,tmp2);// redshift of this pixel center
 				
-				//vector<double> frac_sm;
+				// loop over all pixels along z dimension with x,y fixed to current
+				// pixel's values
 				// for all pixels along this z dim smear galaxies
 				double sumg=0, sumgr=0;
-				for (int izz=0; izz<ngals_.SizeZ(); izz++)
-					{
+				for (int izz=0; izz<ngals_.SizeZ(); izz++) {
+					
 					double zl,zh,tmp;
 					GetCellZBounds(ix,iy,izz,zl,tmp,zh);
-					
+
+					// difference between pixel lowest redshift and current pixel's 
+					// central redshift
 					double dzl=zc-zl;
+					// difference between pixel highest redshift and current pixel's 
+					// central redshift
 					double dzh=zc-zh;
 					
 					// want to integrate pzcfi between dzh to dzl
 					if (dzh>dzl)
 						cout <<"somthing's wrong"<<endl;
 					double IntChunk=IntegrateFunc(pzcfi,dzh,dzl);
-					double frac_sm = IntChunk/IntDist;
-					
-					ngalssm_(ix,iy,izz)+=round(ng*frac_sm);
-					randgsm_(ix,iy,izz)+=round(rg*frac_sm);
+
+					// fraction of galaxies of current pixel that are smeared into this pixel
+					double frac_sm = IntChunk/IntDist; 
+
+					// add fraction of galaxies in current pixel to this pixel
+					ngalssm_(ix,iy,izz) += round(ng*frac_sm);
+					randgsm_(ix,iy,izz) += round(rg*frac_sm);
 					
 					sumg+=ng*frac_sm;
 					sumgr+=round(ng*frac_sm);
@@ -979,7 +943,8 @@ void Mass2Gal::ApplyPZConv(string pzcf)
 };
 
 
-void Mass2Gal::GetCellZBounds(sa_size_t i, sa_size_t j, sa_size_t k,double& zl, double& zc, double& zh)
+void Mass2Gal::GetCellZBounds(sa_size_t i, sa_size_t j, sa_size_t k,
+                                        double& zl, double& zc, double& zh)
 {
 
 	double x,y,z,dc;
@@ -995,23 +960,25 @@ void Mass2Gal::GetCellZBounds(sa_size_t i, sa_size_t j, sa_size_t k,double& zl, 
 
 void Mass2Gal::SetRandomGrid(int mean_dens)
 {
-	mean_dens_=mean_dens;
+	mean_dens_ = mean_dens;
 	cout <<"    Setting mean density of unclustered distribution to "<<mean_dens_<<endl<<endl;
 };
 
 
-TArray<r_8> Mass2Gal::ExtractSubArray(sa_size_t x1, sa_size_t x2, sa_size_t y1, sa_size_t y2, sa_size_t z1, sa_size_t z2)
+TArray<r_8> Mass2Gal::ExtractSubArray(sa_size_t x1, sa_size_t x2, sa_size_t y1, 
+                                        sa_size_t y2, sa_size_t z1, sa_size_t z2)
 // x1, x2 refer to 3RD dimension of array
 // y1, y2 refer to 2ND dimension of array
 // z1, z2 refer to 1ST dimension of array
 {
 
 	cout <<"    Extracting the following pixels ... "<<endl;
-	cout <<"    1st dim (z dim): "<<z1<<","<<z2<<endl;
-	cout <<"    2nd dim (y dim): "<<y1<<","<<y2<<endl;
-	cout <<"    3rd dim (x dim): "<<x1<<","<<x2<<endl;
+	cout <<"    1st dim (z dim): "<< z1 <<","<< z2 <<endl;
+	cout <<"    2nd dim (y dim): "<< y1 <<","<< y2 <<endl;
+	cout <<"    3rd dim (x dim): "<< x1 <<","<< x2 <<endl;
 
-	cout <<"    Size of mass array = "<<mass_.SizeX()<<","<<mass_.SizeY()<<","<<mass_.SizeZ()<<endl;
+	cout <<"    Size of mass array = "<< mass_.SizeX() <<","<< mass_.SizeY();
+	cout <<","<< mass_.SizeZ() <<endl;
 	TArray<r_8> submass = mass_(Range(z1,z2),Range(y1,y2),Range(x1,x2)).PackElements();
 	return submass;
 
@@ -1026,7 +993,8 @@ TArray<r_8> Mass2Gal::ExtractSubArray(double Z, sa_size_t nx, sa_size_t ny, sa_s
 
 	sa_size_t i,j,k;
 	double zclose = FindPixelAtZ(Z,nz,ny,nx,i,j,k);
-	cout <<"    Pixel closest to z = "<<Z<<" is "<<i<<","<<j<<","<<k<<" (has z = "<<zclose<<")"<<endl;
+	cout <<"    Pixel closest to z = "<< Z <<" is "<< i <<","<< j <<","<< k;
+	cout <<" (has z = "<<zclose<<")"<<endl;
 
 
 	sa_size_t iz_start, iz_end, iy_start, iy_end, ix_start, ix_end;
@@ -1036,11 +1004,11 @@ TArray<r_8> Mass2Gal::ExtractSubArray(double Z, sa_size_t nx, sa_size_t ny, sa_s
 	GetRange(k,nz,ix_start,ix_end);
 	
 	cout <<"    Extracting the following pixels ... "<<endl;
-	cout <<"    1st dim: "<<ix_start<<","<<ix_end<<endl;
-	cout <<"    2nd dim: "<<iy_start<<","<<iy_end<<endl;
-	cout <<"    3rd dim: "<<iz_start<<","<<iz_end<<endl;
+	cout <<"    1st dim: "<< ix_start <<","<< ix_end <<endl;
+	cout <<"    2nd dim: "<< iy_start <<","<< iy_end <<endl;
+	cout <<"    3rd dim: "<< iz_start <<","<< iz_end <<endl;
 	
-	TArray<r_8> submass = mass_(Range(ix_start,ix_end),Range(iy_start,iy_end),Range(iz_start,iz_end)).PackElements();
+	TArray<r_8> submass = mass_(Range(ix_start,ix_end), Range(iy_start,iy_end), Range(iz_start,iz_end)).PackElements();
 	return submass;
 };
 
@@ -1137,9 +1105,9 @@ double Mass2Gal::DrawMagType(GalFlxTypDist& gfd, double& type)
 // type 40 = SB3_kin_fix2.txt
 // type 50 = SB2_kin_fix2.txt
 
-int a1=0,  b1=5; //early (1)
-int a2=6,  b2=40;//late  (2)
-int a3=41,  b3=50;//starburst (3)
+    int a1=0,  b1=5;    //early (1)
+    int a2=6,  b2=40;   //late  (2)
+    int a3=41, b3=50;   //starburst (3)
 
 // Then type 1 (early) : a1-b1 (0-5)
 //		type 2 (late)  : a2-b2 (6-40)
@@ -1178,31 +1146,31 @@ int a3=41,  b3=50;//starburst (3)
 //MB_.SetSize(ng_);
 //typeint_.SetSize(ng_);
 //extincBmV_.SetSize(ng_);
-  int typ; double mag;
+    int typ; double mag;
 
-  int t123;
-  gfd.GetGalaxy(typ,mag); 
-  t123=typ; // simulates whether galaxy is early (if=1), late (if=2) or starburst (if=3)
+    int t123;
+    gfd.GetGalaxy(typ,mag); 
+    t123=typ; // simulates whether galaxy is early (if=1), late (if=2) or starburst (if=3)
 	
-// simulate more precise type
-  switch (t123) {
-    case 1 :
-	  { double typ1=floor(a1+(b1-a1)*rg_.Flat01()+0.5); 
-	  type=1.0+typ1/100.0; }
-	  break;
-	case 2 :
-	  { double typ2=floor(a2+(b2-a2)*rg_.Flat01()+0.5); 
-		type=2.0+typ2/100.0; }
-	  break;
-	case 3 :
-	  { double typ3=floor(a3+(b3-a3)*rg_.Flat01()+0.5); 
-		type=3.0+typ3/100.0; }
-	break;
-    default:
-	  throw RangeCheckError("Mass2Gal::DrawMagType()/ERROR bad type < 1 or > 3 !");
-	  break;
-	}
-  return mag;
+    // simulate more precise type
+    switch (t123) {
+        case 1 : {
+	        double typ1=floor(a1+(b1-a1)*rg_.Flat01()+0.5); 
+	        type=1.0+typ1/100.0; }
+	        break;
+	    case 2 :
+	        { double typ2=floor(a2+(b2-a2)*rg_.Flat01()+0.5); 
+		    type=2.0+typ2/100.0; }
+	        break;
+	    case 3 :
+	        { double typ3=floor(a3+(b3-a3)*rg_.Flat01()+0.5); 
+		    type=3.0+typ3/100.0; }
+	        break;
+        default:
+	        throw RangeCheckError("Mass2Gal::DrawMagType()/ERROR bad type < 1 or > 3 !");
+	        break;
+	    }
+    return mag;
 };
 
 
@@ -1233,10 +1201,9 @@ double Mass2Gal::FindPixelAtZ(double Z, sa_size_t nx, sa_size_t ny, sa_size_t nz
 	cout << "    Center pixel 3rd (x) dimension must be >= "<< xcen_min <<" & <= "<< xcen_max <<endl;
 
 	double diffz=1e10, zclose = -1; 
-	for(sa_size_t ix=0; ix<mass_.SizeZ(); ix++)// X direction, 3rd dim ( transverse plane) 
-        	for(sa_size_t iy=0; iy<mass_.SizeY(); iy++)// Y direction, 2nd dim (transverse plane)
-	    		for(sa_size_t iz=0; iz<mass_.SizeX(); iz++)// Z direction, 3rd dim (redshift direction) 
-		  		{
+	for(sa_size_t ix=0; ix<mass_.SizeZ(); ix++) // X direction, 3rd dim (transverse plane) 
+        	for(sa_size_t iy=0; iy<mass_.SizeY(); iy++) // Y direction, 2nd dim (transverse plane)
+	    		for(sa_size_t iz=0; iz<mass_.SizeX(); iz++) { // Z direction, 3rd dim (redshift direction) 
 
 		  		// comoving distance to center of cell:
 		  		double xc, yc, zc, dc, zsc;
@@ -1245,23 +1212,19 @@ double Mass2Gal::FindPixelAtZ(double Z, sa_size_t nx, sa_size_t ny, sa_size_t nz
 				// convert comoving distance into a redshift
 				zsc=dist2Redshift(dc);
 
-				if ( (abs(zsc-Z)<diffz)&&(ix!=0)&&(iy!=0)&&(iz!=0) )
-					{
+				if ( (abs(zsc-Z)<diffz)&&(ix!=0)&&(iy!=0)&&(iz!=0) ) {
 					// perform extra check to make sure sub-array can 
 					// actually be within the array at each pixel
 					
-					if ( (iz>=zcen_min)&&(iz<=zcen_max)&&(iy>=ycen_min)&&(iy<=ycen_max)&&(ix>=xcen_min)&&(ix<=xcen_max) )
-						{
+					if ( (iz>=zcen_min)&&(iz<=zcen_max)&&(iy>=ycen_min)&&(iy<=ycen_max)
+					                        &&(ix>=xcen_min)&&(ix<=xcen_max) ) {
 						i = iz; 
 						j = iy;
 						k = ix; 
 						diffz = abs(zsc-Z);
 						zclose = zsc;
 						}
-					
 					}
-
-
 				}
 
 	return zclose;
@@ -1272,14 +1235,12 @@ double Mass2Gal::FindPixelAtZ(double Z, sa_size_t nx, sa_size_t ny, sa_size_t nz
 void Mass2Gal::GetRange(sa_size_t i, sa_size_t ni, sa_size_t& istart, sa_size_t& iend)
 {
 
-	if (ni%2==0) // if size is EVEN (a%b gives remainder after dividing a/b)
-		{
+	if (ni%2==0) { // if size is EVEN (a%b gives remainder after dividing a/b)
 		cout <<"    sub-array dimension pixel number is even: ni = "<<ni<<endl;
 		istart = i - (ni/2 -1);
 		iend =   i  + ni/2;
 		}
-	else // ni is ODD
-		{
+	else {// ni is ODD
 		cout <<"    sub-array dimension pixel number is odd: ni = "<<ni<<endl;
 		sa_size_t ni2 = floor((double)ni/2);
 		istart = i - ni2;

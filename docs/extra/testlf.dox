@@ -1,0 +1,18 @@
+/*!
+\page test_lf Draw from luminosity function 
+
+<CODE>testLF</CODE>
+
+Testing program for drawing type, absolute magnitude values from input 
+luminosity function that varies with galaxy type and redshift.  For a series of
+redshift bins, draws galaxy type and absolute magnitude values writes to a file.
+
+Output: (to testfiles/)
+    - [rootname]_bin[#].txt
+    
+    
+Below are the usage instructions
+
+<CODE>Usage: testLF -o rootname </CODE>
+
+*/

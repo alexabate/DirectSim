@@ -1,0 +1,32 @@
+/*!
+\page test_kcorr K-correction computation
+
+<CODE> testKcorrColors</CODE>
+
+Program to test K-correction and color computations. Calculates as a function of
+z:
+	- the g-r and r-i color (LSST filters): C_gr, C_ri
+	- B-R and R-I color (GOODS filters): C_BR, C_RI
+	- k-correction for an elliptical galaxy in B,V,R (GOODS filters): k[BVR]e
+	- k-correction for an Sbc galaxy in B,V,R (GOODS filters): k[BVR]s1
+	- k-correction for an Scd galaxy in B,V,R (GOODS filters): k[BVR]s2
+	- k-correction for an Im galaxy in B,V,R (GOODS filters): k[BVR]i
+	- k-correction for an elliptical galaxy in g (LSST filter): kge
+
+Output: (to testfiles/)
+    - [outfile].txt
+    
+Outputs a file with the following columns:
+
+redshift C_gr C_ri C_BR CRI kBe kVe kRe kBs1 kVs1 kRs1 kBs2 kVs2 kRs2 kBi kVi kRi kge
+
+* Compare kBe(z),kVe(z), kRe(z), kBs1(z), kVs1(z), kRs1(z), kBs2(z), kVs2(z), 
+kRs2(z), kBi(z), kVi(z), kRi(z) to figure 9 in deLapparent et al(2004)
+
+* Compare C_gr vs C_ri to figure 2 in Padmanabhan et al (2005) (diamonds in the top panel)
+    
+
+Below are the usage instructions
+
+<CODE>Usage: testKcorrColors [outfile]
+*/

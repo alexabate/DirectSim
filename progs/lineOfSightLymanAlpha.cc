@@ -24,11 +24,26 @@
 void usage(void);
 void usage(void) {
 	cout << endl<<" Usage: lineOfSightLymanAlpha [...options...]" << endl<<endl;
+<<<<<<< HEAD
 	cout << " -o: OUTFILEROOT: write files to filename beginning OUTROOT (saved to output/)"<<endl;
 	cout << " -z: ZSOURCE: redshift of source quasar(s) "<<endl;
 	cout << " -c: NHIMIN,NHIMAX: set min and max column density values of absorbers"<<endl;
 	cout << " -n: NLINES: number of lines of sight to quasars "<<endl;
 	cout << " -w: NL: wavelength resolution "<<endl;
+=======
+	
+	cout << " Simulates absorber distributions along NLINES lines of sight to a "<<endl;
+	cout << " galaxy at redshift ZSOURCE. The transmission as a function of "<<endl;
+	cout << " wavelength with resolution NL after absorption by just "<<endl;
+	cout << " Lyman-alpha and by the whole Lyman series is calculated"<< endl;
+	
+	cout << " -o: OUTFILEROOT: write files to filename beginning OUTROOT"<<endl;
+	cout << "     (saved to output/)"<<endl;
+	cout << " -z: ZSOURCE: redshift of source galaxy [DEFAULT=3.5] "<<endl;
+	cout << " -n: NLINES: number lines of sight [DEFAULT=20]"<<endl; 
+	cout << " -w: NL: wavelength resolution [DEFAULT=10000]"<<endl;
+	
+>>>>>>> b174eb658571fc61c81d79c7fa2a0db330092148
 	cout << endl;
     };
 

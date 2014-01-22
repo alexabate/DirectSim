@@ -1,5 +1,7 @@
 /*!
-\page rdlss How to simulate basic galaxy properties <B>with clustering</B>: <CODE>rdlss</CODE>
+\page rdlss How to simulate basic galaxy properties, with clustering
+
+<CODE>rdlss</CODE>
 
 
  EXAMPLE 1: Simulate a galaxy catalog from an over-density distribution<BR>

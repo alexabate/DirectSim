@@ -1,0 +1,24 @@
+/*!
+\page sim_lines Simulate absorber distributions (Meiksin)
+
+<CODE>simulateAbsorberLinesOfSight</CODE>
+
+Simulate absorber distributions along lines of sight according
+to the Meiksin prescription
+
+Output: (to output/)
+    - [rootname]_fullTransMeiksin_lineOfSight[LINE#]_toRedshift[ZSOURCE].txt
+    
+The output absorber distributions can be used as input data to 
+<CODE>lineOfSightMagnitude</CODE>
+    
+Below are the usage instructions
+
+<CODE>Usage: simulateAbsorberLinesOfSight [...options...]
+
+-o: OUTROOT: write files to filename beginning OUTROOT <BR>
+-z: ZSOURCE: redshift of source galaxy [DEFAULT=3.5] <BR>
+-n: NLINES: number lines of sight [DEFAULT=1000] <BR>
+-w: NL: wavelength resolution [DEFAULT=1000] <BR></CODE>
+
+*/

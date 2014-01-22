@@ -16,11 +16,15 @@
 #include "luc.h"
 #include "ctimer.h"
 
-#define PI 3.141592
+#include "constcosmo.h"
 
 namespace SOPHYA {
 
-// Class that holds power spectrum parameters DEFUNCT?
+/** PSparam class
+  *  
+  * Class that holds power spectrum parameters 
+  * @todo is this class DEFUNCT? 
+  */
 class PSparam {
 public:
 	PSparam(double spec_index = 1,  double h_power = 1, double sigma_8=0.8)
@@ -43,36 +47,73 @@ protected:
 	double spec_index_, h_power_, sigma_8_;
 };
 
-// Class for calculating the mass function
 
-class MassFunc : public GenericFunc {
+/** MassFunc classe
+  *  
+  * Class for calculating the (dark matter) mass function of universe 
+  * @todo Update to take different power spectrum class PkAltNorm
+  */
+class MassFunc : public ClassFunc1D {
 public:
-	MassFunc(SimpleUniverse&, PkSpectrumZ&, double zref, double sig8, bool TypeLog=false, bool IntType = 1, int MFType = 0);
-  	virtual ~MassFunc(void);
+
+    /** Constructor
+        @param su       class for cosmological calculations
+        @param pkz      class that calculates matter power spectrum
+        @param zref     redshift of mass function
+        @param sig8     \f$\sigma_8$/f normalization of power spectrum
+        @param TypeLog  if true return dn/dlogM instead of dn/dM
+        @param IntType  if true do integration some way?
+        @param MFType   Which mass function to return, 0 = Sheth-Torman       */
+	MassFunc(SimpleUniverse& su, PkSpecCalc& pkz, double zref, double sig8, 
+	                    bool TypeLog=false, bool IntType = 1, int MFType = 0);
+
+	/** Destructor */        
+  	virtual ~MassFunc(void){ };
   
 
+    /** Return mass function value at mass m 
+        @param m    mass in solar masses?                                     */
 	virtual double operator() (double m) {  
-						if (TypeLog_)
-							return (rhobar0()/m)*fST(m)*abs(dlnsigdlnm(m,lmstep_))*log(10);
-						else
-							return (rhobar0()/(m*m))*fST(m)*abs(dlnsigdlnm(m,lmstep_))*log(10);    }
-	double FindVar(double R);
-	double fST(double mv);
-	double sigsqM(double mv);
-	double dlnsigdlnm(double mv, double lmstep);
-	void Setlmstep(double lmstep) { lmstep_ = lmstep; return; }
+				if (TypeLog_)
+					return (rhobar0()/m)*fST(m)*abs(dlnsigdlnm(m,lmstep_))*log(10);
+				else
+					return (rhobar0()/(m*m))*fST(m)*abs(dlnsigdlnm(m,lmstep_))*log(10);    };
 
-	// to change zref of mass function
-	void SetZ(double z)
-		{	
+	/** Return variance in sphere of radius @param R
+	    @param R    radius of sphere in Mpc?                                  */		
+	double FindVar(double R);
+
+	/** Sheth-Torman function 
+	    @param m    mass in solar masses?                                     */
+	double fST(double mv);
+
+	/** Mass variance as a function of mass
+	    @param mv   mass in solar masses?                                     */
+	double sigsqM(double mv);
+
+	/** Return \f$ d\log\sigma / d\logm $/f: log of mass variance differentiated
+	    with respect to the log of the mass
+	    @param mv       mass in soloar masses?
+	    @param lmstep   step in log mass                                      */
+	double dlnsigdlnm(double mv, double lmstep);
+
+	/** Set the step in the log of the mass           
+	    @param lmstep   step size in log of the mass                          */
+	void Setlmstep(double lmstep) { lmstep_ = lmstep; return; };
+
+	/** Set redshift of mass function 
+	    @param z    redshift of mass function                                 */
+	void SetZ(double z) {
 		zref_ = z;
 		pk_.SetZ(zref_);
 		return;
 		}
 
-	// integration function
-	double Integrate(double Mmin,double Mmax,int npt=100) 
-		{
+	/** Integrate mass function between two masses
+	    @param Mmin     minimum mass in solar masses?
+	    @param Mmax     maximum mass in solar masses?
+	    @param npt      number of points to use for integration               */
+	double Integrate(double Mmin,double Mmax,int npt=100) {
 		 if(npt<1) npt = 100;
 		 double perc=0.01, dlxinc=(Mmax-Mmin)/npt, dlxmax=10.*dlxinc; 
 		 unsigned short glorder=4;
@@ -80,60 +121,56 @@ public:
 		 return sum;
 		 }
 
-	// Mean matter density today (z=0)
+	/** Return mean matter density today (z=0)                                */
 	inline double rhobar0() { return rho_crit()*Om_; }
 
-	// Output the power spectrum
+	/** Write out the power spectrum (for debugging)
+	    @param outfile  file name to output power spectrum to                 */
 	void WritePS2File(string outfile);
 
 	// --------- Useful Constants 
 	
-
-	// Solar mass in KG
-	static inline double SolarMassKG() { return MSolar_Cst; }
-	// Gravitational constant
-	static inline double Gconst() { return G_Newton_Cst; }
-	// Mpc in meters
-	static inline double MpctoM() { return MpctoMeters_Cst; }
-	// Solar mass * Gravitational Constant in units s^-2 Msolar^-1 Mpc^3
+	/** Return solar mass in KG                                               */
+	static inline double SolarMassKG() { return SOLARMASS_IN_KG; }
+	/** Return Gravitational constant in SI units                             */
+	static inline double Gconst() { return G_NEWTON_SI; }
+	/** Return number of meters in a Mpc                                      */
+	static inline double MpctoM() { return NMETERS_IN_MPC; }
+	/** Return Solar mass * Gravitational Constant in units s^-2 Msolar^-1 Mpc^3 */
 	static inline double Gcosmo() { return (Gconst()*SolarMassKG())/pow(MpctoM(),3); }
-	// Delta_c: overdensity for collapse (spherical model)
-	static inline double deltac() { return delta_c_Cst; }
-	// H0 in units of h/s
+	/** Return \f$\delta_c$\f: overdensity for collapse (spherical model)     */
+	static inline double deltac() { return DELTA_C; }
+	/** Return H0 in units of h/s                                             */
 	static inline double H0hs() { return 100.*1.e3/MpctoM(); }
-	// Critical density in units of h^2 M_solar / Mpc^3
+	/** Return critical density in units of h^2 M_solar / Mpc^3                */
 	static inline double rho_crit() { return (3*H0hs()*H0hs()) / (8*PI*Gcosmo()); }
 	
-	// Sheth-Torman mass function parameters
+	/** Return Sheth-Torman mass function parameter \f$a$\f                   */
 	static inline double aST() { return a_ST_Cst; }
+	/** Return Sheth-Torman mass function parameter \f$A$\f                   */
 	static inline double AST() { return A_ST_Cst; }
+	/** Return Sheth-Torman mass function parameter \f$Q$\f                   */
 	static inline double QST() { return Q_ST_Cst; }
-	// CMB temperature
-	static inline double TCMB() { return TCMB_Cst; }
+	/** Return CMB temperature                                                */
+	static inline double TCMB() { return T_CMB_K; }
+	
 protected:
-	SimpleUniverse& su_;	    // Holds cosmological parameters
-	PkSpectrumZ& pk_;	    // Holds power spectrum 
-	double zref_;		    // redshift of mass function
-	bool TypeLog_; 		    // if true return dn/dlogm rather than dn/dm
-	int MFType_; 		    // Which mass function to return, 0 = Sheth-Torman
-	double lmstep_;		    // step with which to compute derivation of dlnsig/dlnm
-	double Om_;
-	bool IntType_;
+	SimpleUniverse& su_;	    /**< Holds cosmological parameters/calculations   */
+	PkSpecCalc& pk_;	    /**< Holds power spectrum                         */
+	double zref_;		    /**< redshift of mass function                    */
+	bool TypeLog_; 		    /**< if true return dn/dlogm rather than dn/dm    */
+	int MFType_; 		    /**< Which mass function to return, 0 = Sheth-Torman */
+	double lmstep_;		    /**< step with which to compute derivation of dlnsig/dlnm */
+	double Om_;             /**< \f$\Omega_m$\f */
+	bool IntType_;          /**< if true does more accurate integration?      */
 
 	// constants
-	static double MSolar_Cst;	// Solar mass in KG
-	static double delta_c_Cst;	// Overdensity for collapse (spherical model)
-	static double a_ST_Cst;		// Sheth-Torman mass function parameter
-	static double A_ST_Cst;		// Sheth-Torman mass function parameter
-	static double Q_ST_Cst;      	// Sheth-Torman mass function parameter
-	static double G_Newton_Cst; 
-	static double MpctoMeters_Cst;
-	static double TCMB_Cst;
+	static double a_ST_Cst;	/**< Sheth-Torman mass function parameter         */
+	static double A_ST_Cst;	/**< Sheth-Torman mass function parameter         */
+	static double Q_ST_Cst;	/**< Sheth-Torman mass function parameter         */
 
 };
 
 
-
 } // end of namespace SOPHYA
-
 #endif

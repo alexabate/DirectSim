@@ -1,0 +1,23 @@
+/*!
+\page los_lyalpha Calculate Ly-alpha/Ly-series transmissions
+
+<CODE>lineOfSightLymanAlpha</CODE>
+
+Simulates absorber distributions along NLINES lines of sight to a galaxy at 
+redshift ZSOURCE. The transmission as a function of wavelength with resolution 
+NL after absorption by just Lyman-alpha, and by the whole Lyman series is 
+calculated
+
+Output: (to output/)
+    - [rootname]_transLineofsight_[LINE#].txt
+    
+Below are the usage instructions
+
+<CODE>Usage: lineOfSightLymanAlpha [...options...]
+	
+-o: OUTFILEROOT: write files to filename beginning OUTROOT <BR>
+-z: ZSOURCE: redshift of source galaxy [DEFAULT=3.5] <BR>
+-n: NLINES: number lines of sight [DEFAULT=20] <BR>
+-w: NL: wavelength resolution [DEFAULT=10000] <BR></CODE>
+	
+*/

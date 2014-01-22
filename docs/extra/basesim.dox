@@ -1,5 +1,7 @@
 /*!
-\page BaseSimulation How to simulate basic galaxy properties: <CODE>baseSimulation</CODE>
+\page BaseSimulation How to simulate basic galaxy properties
+
+<CODE>baseSimulation</CODE>
 
 This program draws redshifts, absolute magnitudes (i.e. luminosity) and galaxy
 types values using input luminosity functions.  The luminosity functions describe
