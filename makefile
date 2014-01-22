@@ -55,24 +55,14 @@ MINUIT = -lMinuit
 all : progs tests tests
 
 progs : analyzeBPZ baseSimulation calculateKcorrections colorDistributions \
-<<<<<<< HEAD
 convertSEDS fitLSSTspectra lineOfSightLymanAlpha lineOfSightMagnitude lsstPicklesLibrary \
 pcaTemplates photoZdist priorFitter projectTemplates rdlss sdssElColors sdssPicklesLibrary \
 simdensity simulateAbsorberLinesOfSight simulateLSSTobsFromTruth simulateLSSTobs
-=======
-convertSEDS fitLSSTspectra lineOfSightLymanAlpha lineOfSightMagnitude \
-pcaTemplates photoZdist priorFitter projectTemplates rdlss sdssElColors simdensity \
-simulateAbsorberLinesOfSight simulateLSSTobsFromTruth simulateLSSTobs
->>>>>>> b174eb658571fc61c81d79c7fa2a0db330092148
 
 tests : test2Dinterp testbasesim testErrors testEMalgorithm testgoodsmagsim    \
 testKcorrColors testKcorrMethod testLF testMadau testMeiksin \
  testTemplateFitting testsimdensity 
 #testSimReadKcorr testsimulateIGM testSimulation
-<<<<<<< HEAD
-
-=======
->>>>>>> b174eb658571fc61c81d79c7fa2a0db330092148
 
 clean : 
 	rm  $(OBJ)/* $(EXE)/*
@@ -132,12 +122,9 @@ rdlss : $(EXE)/rdlss
 	
 sdssElColors : $(EXE)/sdssElColors
 	@echo 'makefile : sdssElColors made'
-<<<<<<< HEAD
 
 sdssPicklesLibrary : $(EXE)/sdssPicklesLibrary
 	@echo 'makefile : sdssPicklesLibrary made'
-=======
->>>>>>> b174eb658571fc61c81d79c7fa2a0db330092148
 	
 simdensity : $(EXE)/simdensity
 	@echo 'makefile : simdensity made'
@@ -408,7 +395,6 @@ $(EXE)/sdssElColors : $(OBJ)/sdssElColors.o $(LIBO)
 $(OBJ)/sdssElColors.o : $(PROGS)/sdssElColors.cc $(LIBH)  
 	mkdir -p $(OBJ)
 	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/sdssElColors.o $(PROGS)/sdssElColors.cc 
-<<<<<<< HEAD
 
 # CALCULATE SDSS COLORS FOR PICKLES' LIBRARY OF STARS 
 $(EXE)/sdssPicklesLibrary : $(OBJ)/sdssPicklesLibrary.o $(LIBO) 
@@ -420,8 +406,6 @@ $(EXE)/sdssPicklesLibrary : $(OBJ)/sdssPicklesLibrary.o $(LIBO)
 $(OBJ)/sdssPicklesLibrary.o : $(PROGS)/sdssPicklesLibrary.cc $(LIBH)
 	mkdir -p $(OBJ)
 	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/sdssPicklesLibrary.o $(PROGS)/sdssPicklesLibrary.cc
-=======
->>>>>>> b174eb658571fc61c81d79c7fa2a0db330092148
 	
 # SIMULATE OVERDENSITY GRID
 $(EXE)/simdensity : $(OBJ)/simdensity.o $(LIBO) 
