@@ -1,5 +1,4 @@
-#include "machdefs.h"
-#include "sopnamsp.h"
+
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -7,6 +6,8 @@
 #include <typeinfo>
 
 // sophya libraries
+#include "machdefs.h"
+#include "sopnamsp.h"
 //#include "histinit.h"
 #include "fiosinit.h"
 #include "mydefrg.h"

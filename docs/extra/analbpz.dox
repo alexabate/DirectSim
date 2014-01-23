@@ -4,7 +4,7 @@
 <CODE> analyzeBPZ </CODE>
 
 Analyze the photometric redshift catalog created by BPZ, and optionally the
-PROBS file too that contains the PDF of each galaxy.
+PROBS file too that contains the PDF of each galaxy. 
 
 Output: (to output/)
     - [OUTROOT]_stats.txt

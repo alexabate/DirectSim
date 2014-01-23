@@ -31,7 +31,7 @@ LIBH := $(MYCL)/cosmocalcs.h $(MYCL)/geneutils.h $(MYCL)/gftdist.h \
 $(MYCL)/schechter.h $(MYCL)/sinterp.h $(MYCL)/simdata.h $(MYCL)/reddening.h \
 $(MYCL)/sedfilter.h $(MYCL)/genefluct3d.h  $(MYCL)/pkspectrum.h \
 $(MYCL)/mass2gal.h $(MYCL)/powerspec.h $(MYCL)/matrix.h $(MYCL)/igm.h \
-$(MYCL)/hpoly.h $(MYCL)/shapelets.h $(MYCL)/em.h
+$(MYCL)/hpoly.h $(MYCL)/shapelets.h $(MYCL)/em.h $(MYCL)/cat2grid.h
 #$(MYCL)/constcosmo.h
 #$(MYCL)/root_plots.h
 
@@ -39,7 +39,7 @@ LIBO := $(OBJ)/cosmocalcs.o $(OBJ)/geneutils.o $(OBJ)/gftdist.o \
 $(OBJ)/schechter.o $(OBJ)/sinterp.o $(OBJ)/simdata.o $(OBJ)/reddening.o \
 $(OBJ)/sedfilter.o $(OBJ)/genefluct3d.o  $(OBJ)/pkspectrum.o $(OBJ)/mass2gal.o \
 $(OBJ)/powerspec.o $(OBJ)/matrix.o $(OBJ)/igm.o $(OBJ)/hpoly.o $(OBJ)/shapelets.o\
-$(OBJ)/em.o
+$(OBJ)/em.o $(OBJ)/cat2grid.o
 #$(OBJ)/root_plots.o
 
 # root libraries
@@ -63,6 +63,8 @@ tests : test2Dinterp testbasesim testErrors testEMalgorithm testgoodsmagsim \
 testKcorrColors testKcorrMethod testLF testMadau testMeiksin \
 testTemplateFitting testSimReadKcorr testsimulateIGM testSimulation
 # testsimdensity 
+
+bao : addGausszerr, getsf
 
 clean : 
 	rm  $(OBJ)/* $(EXE)/*
@@ -123,6 +125,13 @@ simulateLSSTobs : $(EXE)/simulateLSSTobs
 simulateLSSTobsFromTruth : $(EXE)/simulateLSSTobsFromTruth
 	@echo 'makefile : simulateLSSTobsFromTruth made'
 
+# BAO PROGS
+
+addGausszerr : $(EXE)/addGausszerr
+	@echo 'makefile : addGausszerr made'
+	
+getsf : $(EXE)/getsf
+	@echo 'makefile : getsf made'
 
 # TESTING PROGS
 
@@ -379,8 +388,33 @@ $(OBJ)/simulateLSSTobsFromTruth.o : $(PROGS)/simulateLSSTobsFromTruth.cc $(LIBH)
 	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/simulateLSSTobsFromTruth.o \
 	$(PROGS)/simulateLSSTobsFromTruth.cc 
 	
+###################### BAO PROGRAMS ############################################
 
+# ADD GAUSSIAN Z ERROR TO CATALOG
+$(EXE)/addGausszerr : $(OBJ)/addGausszerr.o $(LIBO)
+	mkdir -p $(EXE)
+	mkdir -p $(ROOTOUT)
+	$(CXXLINK) -o $(EXE)/addGausszerr $(OBJ)/addGausszerr.o $(LIBO) \
+	$(SOPHYAEXTSLBLIST) $(MYLIB) $(ROOTLIB)
+
+$(OBJ)/addGausszerr.o : $(PROGS)/addGausszerr.cc $(LIBH)
+	mkdir -p $(OBJ)
+	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/addGausszerr.o \
+	$(PROGS)/addGausszerr.cc 
 	
+# CALCULATE SELECTION FUNCTION OF OBSERVED CATALOG
+$(EXE)/getsf : $(OBJ)/getsf.o $(LIBO)
+	mkdir -p $(EXE)
+	mkdir -p $(ROOTOUT)
+	$(CXXLINK) -o $(EXE)/getsf $(OBJ)/getsf.o $(LIBO) \
+	$(SOPHYAEXTSLBLIST) $(MYLIB) $(ROOTLIB)
+
+$(OBJ)/getsf.o : $(PROGS)/getsf.cc $(LIBH)
+	mkdir -p $(OBJ)
+	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/getsf.o \
+	$(PROGS)/getsf.cc 
+
+
 ###################### TESTING PROGRAMS ########################################
 
 # TEST 2D INTERPOLATION

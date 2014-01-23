@@ -64,7 +64,7 @@ public:
 	DecaySineFunc(double amp, double h, double decay = 1.4) 
     	: amp_(amp) , h_(h) , decay_(decay) {};
     	
-    /** Return decaying sinusoid function \f$ 1+Ak\exp(-(k/0.1h)^d)\sin(2\pik/k_a)\f$
+    /** Return decaying sinusoid function \f$ 1+Ak\exp(-(k/0.1h)^d)\sin(2\pi k/k_a) \f$
         @param k    
         @param ka                                                             */
   	virtual double operator()(double k, double ka) {

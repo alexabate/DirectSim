@@ -530,7 +530,7 @@ void Cat2Grid::SetGrid(int_8 Nx, int_8 Ny, int_8 Nz, double R, double zref)
 };
 
 
-void Cat2Grid::SaveSelecFunc(string SFTextFile, string FullCat, string ZCol, int Nfiles)
+void Cat2Grid::SaveSelecFunc(string SFTextFile, string FullCat, string ZCol)
 // Create Histo of observed redshifts/true redshifts and save to
 // a text file called [SFTextFile]_nofz.txt
 // Reads in a Fits file containing ALL the true redshifts in the
@@ -542,12 +542,18 @@ void Cat2Grid::SaveSelecFunc(string SFTextFile, string FullCat, string ZCol, int
 	cout <<"    Cat2Grid::SaveSelecFunc()"<<endl;
 	Timer tm("SaveSelecFunc");
 	
-	// Set name of catalog containing the "full" set of z's
+	// Get full catalog file name(s)
+	string delim=",";
+    vector<string> fnames;
+    stringSplit(FullCat,delim,fnames);
+    int Nfiles = fnames.size();
+	
+	/*// Set name of catalog containing the "full" set of z's
 	string FullCatFile;
 	if(Nfiles>1)
 		cout <<"    Reading in "<< Nfiles <<" full catalog files"<<endl; 
 	else
-		FullCatFile = FullCat;
+		FullCatFile = FullCat;*/
 	
 	// Initialise random generator to specified seed
 	long seed=1;
@@ -563,44 +569,13 @@ void Cat2Grid::SaveSelecFunc(string SFTextFile, string FullCat, string ZCol, int
 	
 	// Read in Fits file containing column with all true redshifts
 	// FULL CATALOG		
-	double minzt,maxzt;
-	// if just reading from 1 file
-	if(Nfiles<2) {
-		cout <<"    Read in full catalog redshifts from "<< FullCatFile;
-		cout <<" from column labelled "<< ZCol <<endl;
-		FitsInOutFile fin(FullCatFile,FitsInOutFile::Fits_RO);
-		fin.MoveAbsToHDU(2);
-		SwFitsDataTable dt(fin,512,false);
-		cout <<endl;
-		
-		sa_size_t ncat = dt.NEntry();
-		sa_size_t Izs = dt.IndexNom(ZCol);
-		dt.GetMinMax(Izs,minzt,maxzt); 
-		DataTableRow rowin = dt.EmptyRow();
-		cout <<"    Number of galaxies in FULL catalog = "<< ncat <<endl;
-		cout <<"    Min z of FULL catalog = "<< minzt;
-		cout <<", max z of FULL catalog = "<< maxzt <<endl;
-		
-		cout <<"    Histogram up FULL catalog"<<endl;
-		for(sa_size_t i=0; i<ncat; i++) {
-			dt.GetRow(i, rowin);
-			double zs=rowin[Izs];
-			nzFC.Add(zs);
-			}
-		}
-	// if reading from more than one file
-	else {
-		
-		std::stringstream ss2;
-		ss2<<Nfiles;
-		
-		for (int ic=0;ic<Nfiles;ic++) {
-		
-			std::stringstream ss;
-			ss << (ic+1);
-			FullCatFile = FullCat + "_" + ss.str()+"of"+ss2.str()+".fits";
+	double minzt, maxzt;
+	
+	for (int ic=0; ic<Nfiles; ic++) {
+	
+			string FullCatFile = fnames[ic];
 			cout <<"    Read in full catalog redshifts from "<< FullCatFile;
-			cout <<" from column labelled "<<ZCol<<endl;
+			cout <<" from column labelled "<< ZCol <<endl;
 			FitsInOutFile fin(FullCatFile,FitsInOutFile::Fits_RO);
 			fin.MoveAbsToHDU(2);
 			SwFitsDataTable dt(fin,512,false);
@@ -621,7 +596,7 @@ void Cat2Grid::SaveSelecFunc(string SFTextFile, string FullCat, string ZCol, int
 				nzFC.Add(zs);
 				}
 			}
-		}
+
 		
 	sa_size_t ngFC = nzFC.NEntries();
 	 
