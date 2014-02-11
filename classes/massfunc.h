@@ -13,7 +13,7 @@
 #include "genericfunc.h"
 #include "geneutils.h"
 #include "pkspectrum.h"
-#include "luc.h"
+#include "cosmocalcs.h"
 #include "ctimer.h"
 
 #include "constcosmo.h"

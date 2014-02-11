@@ -17,6 +17,8 @@ OBJ = ${GALSIM}/objs
 
 EXE = ${GALSIM}/exe
 
+BAOPROGS = ${GALSIM}/baoprogs
+
 ROOTOUT = ${GALSIM}/root
 
 TESTS =${GALSIM}/testfiles
@@ -31,7 +33,8 @@ LIBH := $(MYCL)/cosmocalcs.h $(MYCL)/geneutils.h $(MYCL)/gftdist.h \
 $(MYCL)/schechter.h $(MYCL)/sinterp.h $(MYCL)/simdata.h $(MYCL)/reddening.h \
 $(MYCL)/sedfilter.h $(MYCL)/genefluct3d.h  $(MYCL)/pkspectrum.h \
 $(MYCL)/mass2gal.h $(MYCL)/powerspec.h $(MYCL)/matrix.h $(MYCL)/igm.h \
-$(MYCL)/hpoly.h $(MYCL)/shapelets.h $(MYCL)/em.h $(MYCL)/cat2grid.h
+$(MYCL)/hpoly.h $(MYCL)/shapelets.h $(MYCL)/em.h $(MYCL)/cat2grid.h \
+$(MYCL)/fitkbaoscale.h $(MYCL)/chisqstats.h
 #$(MYCL)/constcosmo.h
 #$(MYCL)/root_plots.h
 
@@ -39,7 +42,7 @@ LIBO := $(OBJ)/cosmocalcs.o $(OBJ)/geneutils.o $(OBJ)/gftdist.o \
 $(OBJ)/schechter.o $(OBJ)/sinterp.o $(OBJ)/simdata.o $(OBJ)/reddening.o \
 $(OBJ)/sedfilter.o $(OBJ)/genefluct3d.o  $(OBJ)/pkspectrum.o $(OBJ)/mass2gal.o \
 $(OBJ)/powerspec.o $(OBJ)/matrix.o $(OBJ)/igm.o $(OBJ)/hpoly.o $(OBJ)/shapelets.o\
-$(OBJ)/em.o $(OBJ)/cat2grid.o
+$(OBJ)/em.o $(OBJ)/cat2grid.o $(OBJ)/fitkbaoscale.o $(OBJ)/chisqstats.o
 #$(OBJ)/root_plots.o
 
 # root libraries
@@ -64,7 +67,7 @@ testKcorrColors testKcorrMethod testLF testMadau testMeiksin \
 testTemplateFitting testSimReadKcorr testsimulateIGM testSimulation
 # testsimdensity 
 
-bao : addGausszerr, getsf
+bao : addGausszerr, getsf, grid_data, subfromfull, computepsfromarray, fitkbao
 
 clean : 
 	rm  $(OBJ)/* $(EXE)/*
@@ -130,8 +133,20 @@ simulateLSSTobsFromTruth : $(EXE)/simulateLSSTobsFromTruth
 addGausszerr : $(EXE)/addGausszerr
 	@echo 'makefile : addGausszerr made'
 	
+computepsfromarray : $(EXE)/computepsfromarray
+	@echo 'makefile : computepsfromarray made'
+
+fitkbao : $(EXE)/fitkbao
+	@echo 'makefile : fitkbao made'
+	
 getsf : $(EXE)/getsf
 	@echo 'makefile : getsf made'
+	
+grid_data : $(EXE)/grid_data
+	@echo 'makefile : grid_data made'
+	
+subfromfull : $(EXE)/subfromfull
+	@echo 'makefile : subfromfull made'
 
 # TESTING PROGS
 
@@ -397,10 +412,34 @@ $(EXE)/addGausszerr : $(OBJ)/addGausszerr.o $(LIBO)
 	$(CXXLINK) -o $(EXE)/addGausszerr $(OBJ)/addGausszerr.o $(LIBO) \
 	$(SOPHYAEXTSLBLIST) $(MYLIB) $(ROOTLIB)
 
-$(OBJ)/addGausszerr.o : $(PROGS)/addGausszerr.cc $(LIBH)
+$(OBJ)/addGausszerr.o : $(BAOPROGS)/addGausszerr.cc $(LIBH)
 	mkdir -p $(OBJ)
 	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/addGausszerr.o \
-	$(PROGS)/addGausszerr.cc 
+	$(BAOPROGS)/addGausszerr.cc 
+	
+# COMPUTE POWER SPECTRA
+$(EXE)/computepsfromarray : $(OBJ)/computepsfromarray.o $(LIBO)
+	mkdir -p $(EXE)
+	mkdir -p $(ROOTOUT)
+	$(CXXLINK) -o $(EXE)/computepsfromarray $(OBJ)/computepsfromarray.o $(LIBO) \
+	$(SOPHYAEXTSLBLIST) $(MYLIB) $(ROOTLIB)
+
+$(OBJ)/computepsfromarray.o : $(BAOPROGS)/computepsfromarray.cc $(LIBH)
+	mkdir -p $(OBJ)
+	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/computepsfromarray.o \
+	$(BAOPROGS)/computepsfromarray.cc 
+	
+# FIT K BAO
+$(EXE)/fitkbao : $(OBJ)/fitkbao.o $(LIBO)
+	mkdir -p $(EXE)
+	mkdir -p $(ROOTOUT)
+	$(CXXLINK) -o $(EXE)/fitkbao $(OBJ)/fitkbao.o $(LIBO) \
+	$(SOPHYAEXTSLBLIST) $(MYLIB) $(ROOTLIB)
+
+$(OBJ)/fitkbao.o : $(BAOPROGS)/fitkbao.cc $(LIBH)
+	mkdir -p $(OBJ)
+	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/fitkbao.o \
+	$(BAOPROGS)/fitkbao.cc
 	
 # CALCULATE SELECTION FUNCTION OF OBSERVED CATALOG
 $(EXE)/getsf : $(OBJ)/getsf.o $(LIBO)
@@ -409,10 +448,34 @@ $(EXE)/getsf : $(OBJ)/getsf.o $(LIBO)
 	$(CXXLINK) -o $(EXE)/getsf $(OBJ)/getsf.o $(LIBO) \
 	$(SOPHYAEXTSLBLIST) $(MYLIB) $(ROOTLIB)
 
-$(OBJ)/getsf.o : $(PROGS)/getsf.cc $(LIBH)
+$(OBJ)/getsf.o : $(BAOPROGS)/getsf.cc $(LIBH)
 	mkdir -p $(OBJ)
 	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/getsf.o \
-	$(PROGS)/getsf.cc 
+	$(BAOPROGS)/getsf.cc 
+	
+# GRID GALAXY DATA
+$(EXE)/grid_data : $(OBJ)/grid_data.o $(LIBO)
+	mkdir -p $(EXE)
+	mkdir -p $(ROOTOUT)
+	$(CXXLINK) -o $(EXE)/grid_data $(OBJ)/grid_data.o $(LIBO) \
+	$(SOPHYAEXTSLBLIST) $(MYLIB) $(ROOTLIB)
+
+$(OBJ)/grid_data.o : $(BAOPROGS)/grid_data.cc $(LIBH)
+	mkdir -p $(OBJ)
+	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/grid_data.o \
+	$(BAOPROGS)/grid_data.cc 
+	
+# GET DATA SUB GRID
+$(EXE)/subfromfull : $(OBJ)/subfromfull.o $(LIBO)
+	mkdir -p $(EXE)
+	mkdir -p $(ROOTOUT)
+	$(CXXLINK) -o $(EXE)/subfromfull $(OBJ)/subfromfull.o $(LIBO) \
+	$(SOPHYAEXTSLBLIST) $(MYLIB) $(ROOTLIB)
+
+$(OBJ)/subfromfull.o : $(BAOPROGS)/subfromfull.cc $(LIBH)
+	mkdir -p $(OBJ)
+	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/subfromfull.o \
+	$(BAOPROGS)/subfromfull.cc
 
 
 ###################### TESTING PROGRAMS ########################################

@@ -1,0 +1,82 @@
+/*!
+\page computeps Compute power spectrum from gridded data
+
+<CODE> computepsfromarray </CODE>
+
+Compute power spectrum from gridded galaxy data. The     
+output power spectrum is correctly normalized and the    
+distortion in the simulated density distribution (from   
+setting over-densities with \f$ \delta<-1 \f$ equal to -1) is     
+properly taken account of. This had to be done because   
+ \f$ \delta<-1 \f$ corresponds to a negative (unphysical) density. 
+This can be interpreted to arise from structure formation   
+on nonlinear scales not included in the simulation method.
+	
+	
+The file containing the gridded data for power spectrum  
+analysis is supplied with option <CODE>-C</CODE>. This file is        
+probably output from the <CODE>subfromfull</CODE> program.            
+	
+	
+In order to do the correction described above, either the
+power spectra of the undistorted and distorted over-     
+density distribution must be supplied to the program, or 
+the original over-density distribution itself (so those  
+power spectra can be computed here). The file containing 
+the density distribution or its power spectra are        
+supplied with option <CODE>-S</CODE>. The density distribution file   
+is probably output from the <CODE>simdensity</CODE> program.          
+	
+	
+The shot noise power spectrum is also computing using    
+gridded data made from a random catalog read in from the 
+same file as the gridded galaxy data. 
+	
+	
+The mean density of the over-density distribution is     
+needed to properly normalized the power spectrum. It is  
+either read from the file header, or using option <CODE>-a</CODE> it  
+is passed to the program as an argument (overriding any  
+value in the file header).                               
+	
+	
+If the galaxies have approximately Gaussian photo-z errors
+the magnitude of this error \f$ \sigma_z \f$ (in format \f$ \sigma_z(1+z) \f$)
+should be supplied to the program with the <CODE>-e</CODE> option. Then
+the power spectrum can be undampled accordingly. To turn  
+off the undamping even if the photo-z error is non-zero  
+use option <CODE>-d</CODE>.                                               
+	
+	
+The maximum k to use in the power spectrum analysis is set
+with option <CODE>-m</CODE>.                                          
+	
+	
+This code uses the cosmology of double \f$h=0.71, \Omega_M=0.267804, \Omega_L=0.73 \f$.
+
+	
+EXAMPLE: 
+	
+	
+<CODE> $ computepsfromarray -C subgrids.fits -S overdensity.fits -O powerspectra -d -m 0.5            <CODE>
+	
+	                                   
+
+Below are the usage instructions
+	
+<CODE>Usage: computepsfromarray [...options...] 
+opt |       argument  | description
+----|-----------------|---------------------------------------------
+-C  | infile          | file containing gridded data  <BR>
+-S  | overdensityfile | file containing over-density distribution or over-density power spectra <BR>
+-O  | outfileroot     | root filename of text file the galaxy power spectra are written to <BR>      
+-a  | meandens        | mean density of overdensity distribution <BR>
+-c  | [noarg]         | compute power spectrum of simlss from same sub-grid as galaxy data <BR>          
+-d  | [noarg]         | don't undamp photo-z error damping of Fourier coefficients <BR>
+-e  | photoZerror     | size of photometric redshift error   <BR>
+-m  | maxk_in_calc    | maximum kradial used in power spectrum computation <BR>
+-x  | [noarg]         | turn off pixel shape correction <BR>
+-o  | debug_out       | root stem of debug files  <BR>
+</CODE> 
+
+*/

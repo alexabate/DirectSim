@@ -711,7 +711,6 @@ void Cat2Grid::SaveSelecFunc(string SFTextFile, string FullCat, string ZCol)
 
 void Cat2Grid::GalGrid(double SkyArea)
 // Lays grid over data and counts the number of galaxies in each cell
-// cs: cellsize of grid
 // Cartesian z-direction will be radial direction from observer to center 
 // of survey area
 {
@@ -949,13 +948,13 @@ void Cat2Grid::GetCellCoord(sa_size_t i, sa_size_t j, sa_size_t k, double& x, do
 };
 
 
-void Cat2Grid::RandomGrid(double nc,bool SaveArr)
+void Cat2Grid::RandomGrid(double nc, bool SaveArr)
 // Compute random weighted grid with same selection function as data
 {
 	cout <<endl<<"    Cat2Grid::RandomGrid()"<<endl;
 	Timer tm("RandomGrid");
 	
-	cout <<"    Random catalog mean density = "<<nc<<endl;
+	cout <<"    Random catalog mean density = "<< nc <<endl;
 	if (!sfcompute_)
 		cout <<"    Selection function should be CONSTANT with z, check this ..."<<endl;
 	else

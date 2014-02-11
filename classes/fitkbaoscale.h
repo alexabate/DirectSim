@@ -39,7 +39,7 @@
 
 // DirectSim
 #include "pkspectrum.h"
-#include "luc.h"
+#include "cosmocalcs.h"
 #include "chisqstats.h"
 #include "constcosmo.h"
 

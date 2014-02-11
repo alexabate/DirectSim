@@ -96,11 +96,11 @@ public:
 
 	/** Constructor - Normal usage
 	    @param dt       data table containing galaxy catalog
-	    @param su       cosmology
+	    @param su       cosmology calculator
 	    @param rg       random number generator
-	    @param fos      FITS file
-	    @param ZOCol    name of column in data table containing observed z
-	    @param ZSCol    name of column in data table containgin spec z
+	    @param fos      FITS file containing gridded galaxy data
+	    @param ZOCol    name of column in galaxy catalog containing observed z
+	    @param ZSCol    name of column in galaxy catalog containing spec z
 	    @param RadialZ  if true sets the z-dimension to be radial direction 
 	    @param PZErr    size of Gaussian photo-z error 
 	    @param Print    if true prints extra to the screen                    */
@@ -112,7 +112,7 @@ public:
 	    calculating them every time so you can use the Row2Record, 
 	    Rec2EuclidCoord functions
 	    @param dt       data table containing galaxy catalog
-	    @param su       cosmology
+	    @param su       cosmology calculator
 	    @param rg       random number generator
 	    @param dist2z   distance to redshift conversion table
 	    @param z2dist   redshift to distance conversion table
@@ -150,11 +150,11 @@ public:
 	    @param R	 pixel size of grid cell in Mpc                           */	   
 	void SetGrid(double Phi=0, double zl=-1, double zh=-1,double R=8);
 	
-	/** Set grid over the galaxy data by specifying redshift of central pixel 
-	    and number of pixels along each dimension
-	    @param Nx    number of pixels along x-dimension
-	    @param Ny    number of pixels along y-dimension
-	    @param Nz    number of pixels along z-dimension
+	/** Set grid over the galaxy data by specifying redshift of central pixel, 
+	    size of the pixels, and (approx) number of pixels along each dimension
+	    @param Nx    (approx) number of pixels along x-dimension
+	    @param Ny    (approx) number of pixels along y-dimension
+	    @param Nz    (approx) number of pixels along z-dimension
 	    @param R     pixel size in Mpc
 	    @param zref  redshift of central pixel                                */
 	void SetGrid(int_8 Nx, int_8 Ny, int_8 Nz, double R, double zref); 
@@ -174,11 +174,11 @@ public:
 	    cout <<"    Set selection function"<<endl; };
 	    
 	/** Project the galaxy distribution into the grid, fill grid arrays
-	    @param SkyArea    only fill pixels within sky area/pixels not within
-	                      sky area are not taken account of later             */
+	    @param SkyArea    angle covered by observation cone                   */
 	void GalGrid(double SkyArea = 999);
 	
-	/** Count up number of grid pixels that are within observed sky area      */
+	/** Count up number of grid pixels that are within observed sky area as
+	    defined by SkyArea variable                                           */
 	sa_size_t ObsPixels();
 	
 	/** Convert row from catalog data table into a GalRecord                  */
@@ -446,7 +446,7 @@ protected:
 	bool sfcompute_;	  /**< true if selection function has been set        */
 	bool RadialZ_;		  /**< if true z-dimension IS radial direction        */
 
-	FitsInOutFile& fos_; 	/**< output FITS file stream                         */
+	FitsInOutFile& fos_; 	/**< FITS file containing gridded galaxy data     */
 	string debugoutroot_; 	/**< root file name to save things to when debugging */
 	
 	double PZErr_;      /**< size of photo-z error                            */
