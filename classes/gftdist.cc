@@ -24,17 +24,24 @@ void CumulDistZ::SetUp(LFParameters& lfpars, SimpleUniverse& su, double zmin,
 	// if nptinteg = 1000 it will take around 28s for each nptinterp
 	// (so total time in s is 28*nptinterp)
 	
-	// This code is calculating the equation for F_z(z) in Gorecki et al 2012 in prep
+	// This code is calculating the equation for C_z(z) in Gorecki et al 2013
+	// Eq. 2
 	
 	// The below class returns phi(z) = [int phi(M|z) dM]*dV(z)
+<<<<<<< HEAD
+	SchechterZVol schZ(lfpars_,su_);
+	
+	// We want to integrate the above phi(z) between 0 and the current value of z
+=======
 	SchechterZVol schZ(lfpars_, su_);
+>>>>>>> b174eb658571fc61c81d79c7fa2a0db330092148
 
 	// set up interpolation table for int phi(z) dz
 	
 	Timer tm("CumulDistZ::SetUp",false);
 	tm.Split();
 	
-	double dz=(zmax-zmin)/(nptinterp_-1);
+	double dz=(zmax_-zmin_)/(nptinterp_-1);
 	for (int i=0; i<nptinterp_; i++) {
 		if (prt>0)
 			cout <<"     On "<<i+1<<" of "<<nptinterp_<<endl;                           

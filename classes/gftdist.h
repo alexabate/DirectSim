@@ -528,8 +528,14 @@ public:
         @param sa   solid angle in steradians                                 */
 	virtual long operator() (double zmin, double zmax, double sa) {
 	
+<<<<<<< HEAD
+	    // The below class returns phi(z) = [int phi(M|z) dM]*dV(z)
+		SchechterZVol schZ(lfpars_,su_);
+		schZ.SetInteg(zmin,zmax,npt_);
+=======
 		SchechterZVol schZ(lfpars_, su_);
 		schZ.SetInteg(zmin, zmax, npt_);
+>>>>>>> b174eb658571fc61c81d79c7fa2a0db330092148
 		double val=schZ.Integrate();
 		long ntot=(long)val*sa;
 		return ntot; 

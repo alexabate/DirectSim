@@ -135,6 +135,23 @@ void SInterp1D::DefinePoints(double xmin, double xmax, vector<double>& yreg)
 void SInterp1D::DefinePoints(vector<double>& xs, vector<double>& ys, 
                                            double xmin, double xmax, size_t npt)
 {
+<<<<<<< HEAD
+	if ((xs.size() != ys.size())||(xs.size()<2)) {
+		string emsg = "SInterp1D::DefinePoints() Bad parameters ";
+		emsg+="(xs.size() != ys.size())||(xs.size()<2) ";
+		throw range_error(emsg);
+		}
+	for(size_t k=1; k<xs.size(); k++) 
+		{
+		if (xs[k-1]>=xs[k])  
+			{ 
+			stringstream ss;
+			ss << k;
+			string emsg =  "SInterp1D::DefinePoints()  unsorted xs (k=" + ss.str() +")";
+			throw range_error(emsg);
+			}
+		}
+=======
 
     // check sizes
     if ((xs.size() != ys.size())||(xs.size()<2)) {
@@ -151,6 +168,7 @@ void SInterp1D::DefinePoints(vector<double>& xs, vector<double>& ys,
             throw range_error(emsg);
             }
         }
+>>>>>>> b174eb658571fc61c81d79c7fa2a0db330092148
 		
     xs_ = xs;
     ys_ = ys;

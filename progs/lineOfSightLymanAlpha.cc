@@ -38,11 +38,11 @@ void usage(void) {
 	cout << " -w: NL: wavelength resolution [DEFAULT=10000]"<<endl;
 	
 	cout << endl;
-};
+    };
 
 int main(int narg, char* arg[]) {
 
-	cout << " ==== lineOfSightLymanAlpha.cc program ==== "<<endl;
+    cout << " ==== lineOfSightLymanAlpha.cc program ==== "<<endl;
 
 	// make sure SOPHYA modules are initialized 
 	SophyaInit();  
@@ -53,11 +53,12 @@ int main(int narg, char* arg[]) {
     double zSource = 3.5;
     int nLines = 20;
     int nl = 10000;
+    double NHImin = 1e12, NHImax = 1e17;
   
 	//--- decoding command line arguments 
 	cout << " ==== decoding command line arguments ===="<<endl;
 	char c;
-    while((c = getopt(narg,arg,"ho:z:n:w:")) != -1) {
+    while((c = getopt(narg,arg,"ho:z:c:n:w:")) != -1) {
 	    switch (c)  {
 	        case 'o' :
 	            outfileroot = optarg;
@@ -65,6 +66,9 @@ int main(int narg, char* arg[]) {
 	            break;
 	        case 'z' :
 	            sscanf(optarg,"%lf",&zSource);
+	            break;
+	        case 'c' :
+	            sscanf(optarg,"%lf,%lf",&NHImin,&NHImax);
 	            break;
 	        case 'n' :
 	            sscanf(optarg,"%d",&nLines);
@@ -81,6 +85,7 @@ int main(int narg, char* arg[]) {
     //-- end command line arguments
     cout <<"     Writing to files beginning "<< outfileroot <<endl;
     cout <<"     Redshift of source = " << zSource << endl;
+    cout <<"     Column densities between "<< NHImin <<"/cm^2 and "<< NHImax <<"/cm^2"<<endl;
     cout <<"     Number of lines of sight = "<< nLines << endl;
     cout <<"     Wavelength resolution = "<< nl << endl;
     cout << endl;
@@ -96,7 +101,8 @@ int main(int narg, char* arg[]) {
 	cout <<"     Calculating absorber HI column density distribution"<<endl;
     double beta1=1.6, beta2=1.3;
     int nStep = 10000;
-    HIColumnDensity hiColumnDensity;//(beta1,beta2,1.6e17,1e12,1e22, nStep);
+    double Nc = 1.6e17;
+    HIColumnDensity hiColumnDensity(beta1,beta2,Nc,NHImin,NHImax, nStep);
     double Nl, Nu;
     hiColumnDensity.returnColDensityLimits(Nl,Nu);
     //double intVal = hiColumnDensity.checkIntegration(nStep);
@@ -133,13 +139,19 @@ int main(int narg, char* arg[]) {
     int nLya = 2; // lyman-alpha only
     
     // observed frame wavelengths in meters
-    double lmin = 3.5e-7, lmax = 5.5e-7;
+    // set by limit of trustworthy rest-frame SEDs
+    double lmin = 3.e-8, lmax = 5.5e-7;
 	double dl = (lmax - lmin)/(nl - 1);
+	
+	stringstream ssn;
+	ssn << nLines;
+	stringstream ssz;
+	ssz << zSource;
 	                                                
 	double zStart = 0, zMax =6;                                       
 	// Now simulate the lines of sight
 	for (int i=0; i<nLines; i++) {
-	    cout <<"     Simulating line of sight "<< i+1 <<" of "<< nLines <<endl;
+	    
 	    
 	    stringstream ss;
 	    ss << i+1;
@@ -148,32 +160,32 @@ int main(int narg, char* arg[]) {
 	    probDistAbsorbers.simulateLineOfSight(zStart,zMax,redshifts, dopplers, 
 	                                                columnDensities, outfile);
 
-
-
         // Lyman-alpha only
         LineOfSightTrans lightOfSightTransLya(redshifts, dopplers, columnDensities);
         lightOfSightTransLya.setMaxLine(nLya);
         lightOfSightTransLya.setLymanSeriesOnly();
         
         // Lyman-series only
-        LineOfSightTrans lightOfSightTransSeries(redshifts, dopplers, columnDensities);
-        lightOfSightTransSeries.setLymanSeriesOnly();
+        //LineOfSightTrans lightOfSightTransSeries(redshifts, dopplers, columnDensities);
+        //lightOfSightTransSeries.setLymanSeriesOnly();
 
 
 	    // open file
-	    outfile = outfileroot + "_transLineofsight"+ss.str()+".txt";
+	    outfile = outfileroot + "_zSource" + ssz.str() + "_LyaTrans_SightLine";
+	    outfile += ss.str() + "of" + ssn.str() + ".txt";
         cout << "     Writing to "<< outfile.c_str() << endl;
 		outp.open(outfile.c_str(), ofstream::out);
 		
 		// loop over wavelengths
-	    for (int i=0; i<nl; i++) {
-	        cout <<"     On wavelength "<<i+1<<" of "<<nl<<endl;
-	        double lam = lmin + i*dl;
+	    for (int j=0; j<nl; j++) {
+	        cout <<"     Line of sight "<< i+1 <<"/"<< nLines <<",";
+	        cout <<" wavelength "<<j+1<<" of "<<nl<<endl;
+	        double lam = lmin + j*dl;
 	            
 	        double transLa = lightOfSightTransLya(lam, zSource);
-            double transLs = lightOfSightTransSeries(lam, zSource);
-
-	        outp << lam <<"  "<< lam/(1+zSource) <<"  "<< transLa <<"  "<< transLs <<endl;
+            //double transLs = lightOfSightTransSeries(lam, zSource);
+	        //outp << lam <<"  "<< lam/(1+zSource) <<"  "<< transLa <<"  "<< transLs <<endl;
+	        outp << lam <<"  "<< transLa << endl;
 	        }
         outp.close();
         }

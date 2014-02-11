@@ -256,6 +256,7 @@ SimData::SimData(vector<SED*> sedArray, vector<Filter*> filterArray,
 	nStarbursts_ = nsed_ - nEllipticals_ - nSpirals_;
 	
 	isAddMadau_ = true;
+	isLyC_ = true;
 	isReadKcorr_ = false;
 	
 	setLSSTPars();
@@ -328,7 +329,7 @@ double SimData::GetMag(double zs, double sedtype, double amag, double ext,
 	    kcorr = Kcorr(zs,sedReddened,filter,restFrameFilter); 
         }*/
     tm.Split();
-    cout <<"Time to do k-corr part = "<< tm.PartialElapsedTimems() <<" ms"<<endl;
+    //cout <<"Time to do k-corr part = "<< tm.PartialElapsedTimems() <<" ms"<<endl;
     
     tm.Split();
 	// magnitude
@@ -639,7 +640,7 @@ double SimData::calcKcorr(SED& sed, Filter& filter, Filter& restFrameFilter, dou
     double kcorr;
     if (isAddMadau_) {
         // add Madau absorption
-        SEDMadau sedMadau(sed, zs);
+        SEDMadau sedMadau(sed, zs, isLyC_);
     
         // redden SED
         SEDGOODSRedfix sedReddened(sedMadau,zs,ext,law);

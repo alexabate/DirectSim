@@ -53,6 +53,7 @@ void usage(void) {
 	
 	cout << " -i: INFILE: read in files with name beginning INFILEROOT"<<endl;
     cout << " -o: OUTFILEROOT: write files to filename beginning OUTROOT (saved to output/)"<<endl;
+    cout << " -i: INFILEROOT: read IGM transmission from filenames beginning INFILEROOT"<<endl;
 	cout << " -n: NLINES: simulate [NLINES] lines of sight "<<endl;
 	cout << " -z: ZSOURCE: redshift to simulate line of sight to"<<endl;
 	cout << endl;
@@ -148,10 +149,10 @@ int main(int narg, char* arg[]) {
 	int nElliptical = 1;
     int nSpiral = 2;
 	SimData simgal(sedArray,LSSTfilters,su,rg,nElliptical,nSpiral);
-	
-    cout << endl;
+	cout << endl;
 
-    vector<int> nAbsorbers;
+    stringstream ssn;
+	ssn << nLines;
     stringstream ssz;
     ssz << zSource;
     
@@ -170,23 +171,23 @@ int main(int narg, char* arg[]) {
         int sedNo = 7;
     
         // read in file with IGM transmission
-        infile = infileroot + "_fullTransMeiksin_lineOfSight"+ss.str()+"_toRedshift" + ssz.str() +".txt";
+        infile = infileroot + ss.str() + "of" + ssn.str() + ".txt";
         string line;
         inp.open(infile.c_str());
         getline(inp,line);
         string nAbsString;
-        if (line.size()>25)
-            nAbsString = line[line.size()-2] + line[line.size()-1];
-        else
-            nAbsString = line[line.size()-1];
-        int nAbs = atoi(nAbsString.c_str());
-        //cout <<"     Number of absorbers = "<<nAbs <<endl;
+        stringstream num;
+        for (int i=24; i<line.size(); i++)
+            num << line[i];
+        int nAbs = atoi(num.str().c_str());
+        cout <<"     Number of absorbers = "<<nAbs <<endl;
 
         IGMTransmission igmTransmission(infile);
-        SEDIGM sedIGM(*(sedArray[sedNo]), igmTransmission, zs);
-        SEDMadau sedMadau(*(sedArray[sedNo]), zs);
+        //SEDIGM sedIGM(*(sedArray[sedNo]), igmTransmission, zs);
+        //SEDMadau sedMadau(*(sedArray[sedNo]), zs);
         
         /*//////////////// THIS PART IS FOR DEBUGGING/CHECKING 
+        // Basically this bit is now addIGMToSED
         int nl =10000;
         double dl = (lmax-lmin)/(nl-1);
         outfile = outfileroot + "_trans" + ss.str() + ".txt";
@@ -221,8 +222,9 @@ int main(int narg, char* arg[]) {
     double dz = (zmax - zmin)/(nz - 1);
     cout << zmin <<"<z<"<< zmax <<endl;
     
-    SimData simgalNoIGM(sedArray,LSSTfilters,su,rg,nElliptical,nSpiral);
-	simgalNoIGM.setMadau(false);
+    SimData simgalNoVaryIGM(sedArray,LSSTfilters,su,rg,nElliptical,nSpiral);
+    //bool isLyC=false;
+    //simgalNoVaryIGM.setMadau(true, isLyC);
     
     outfile = outfileroot + "_magsZ.txt";
 	outp.open(outfile.c_str());
@@ -233,9 +235,13 @@ int main(int narg, char* arg[]) {
         double ext = 0.;
         double type = 3.007;
         
-        double uMag=simgalNoIGM.GetMag(zs,type,am,ext,0,(*goodsBFilter[0]));
-		double gMag=simgalNoIGM.GetMag(zs,type,am,ext,1,(*goodsBFilter[0]));
-        outp << zs <<"  "<< uMag <<"  "<< gMag <<"  " <<endl;
+        double uMag = simgalNoVaryIGM.GetMag(zs,type,am,ext,0,(*goodsBFilter[0]));
+		double gMag = simgalNoVaryIGM.GetMag(zs,type,am,ext,1,(*goodsBFilter[0]));
+		simgalNoVaryIGM.setMadau(false);//, isLyC);
+		double uMagNoIGM = simgalNoVaryIGM.GetMag(zs,type,am,ext,0,(*goodsBFilter[0]));
+		double gMagNoIGM = simgalNoVaryIGM.GetMag(zs,type,am,ext,1,(*goodsBFilter[0]));
+		simgalNoVaryIGM.setMadau(true);//, isLyC);
+        outp << zs <<"  "<< uMag <<"  "<< gMag <<"  "<< uMagNoIGM <<"  "<< gMagNoIGM <<endl;
         }
     outp.close();
     

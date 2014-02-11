@@ -1,4 +1,3 @@
-// -*- LSST-C++ -*-
 #include "igm.h"
 //#include <string>
 //#include <cmath>
@@ -334,11 +333,41 @@ void HIColumnDensity::testClass()
 };
 
 
+<<<<<<< HEAD
+int ProbabilityDistAbsorbers::simulateLineOfSight(double zStart,double zMax,
+    vector<double>& redshifts, vector<double>& dopplerPars,
+                                  vector<double>& columnDensities, string outfile)
+{
+
+    double zCurrent = zStart;
+    int iAbsorber = 0;
+    
+    while ( zCurrent < zMax ) {
+	    //cout <<"     On absorber "<<iAbsorber+1<<endl;
+	    double zDraw, bdopp, NHI;
+	    simulateAbsorber(zCurrent,zDraw,bdopp,NHI);
+	    
+	    redshifts.push_back(zDraw);
+	    dopplerPars.push_back(bdopp);
+	    columnDensities.push_back(NHI);	    
+	    
+	    zCurrent = zDraw;
+	    iAbsorber++;
+	    }
+	int nAbsorbers = columnDensities.size();
+    cout <<"     Total number of absorbers along line of sight = "<<nAbsorbers<<".";
+	cout <<" Max redshift = "<<redshifts[redshifts.size()-1]<<endl;
+	
+	writeToFile(outfile, redshifts, dopplerPars, columnDensities);
+
+    return nAbsorbers;
+=======
 /******* AbsorberRedshiftDistribution *********************************************/
 AbsorberRedshiftDistribution::AbsorberRedshiftDistribution() 
 : A_(400.), z1_(1.2), z2_(4.0), gamma1_(0.2), gamma2_(2.5), gamma3_(4.0)
 {
 
+>>>>>>> b174eb658571fc61c81d79c7fa2a0db330092148
 };
 
 /******* AbsorberRedshiftDistribution methods *************************************/
@@ -912,7 +941,7 @@ double Madau::returnObserverFrameOpticalDepth(double lambdaObs, double zSource)
 		cas = 1;
 	}
 	// If emission wavelength is BELOW lyman limit
-	else if (lambdaEm <= WAVE_LYMANLIM_METERS) { //eq 16
+	else if (lambdaEm <= WAVE_LYMANLIM_METERS && isLyC_) { //eq 16
 
         // Do Lyman series first
 		for (int n = 2; n<=nLineMax_; n++) {

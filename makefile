@@ -55,12 +55,12 @@ MINUIT = -lMinuit
 
 ################################################################################
 
-all : progs tests test
+all : progs tests tests
 
 progs : analyzeBPZ baseSimulation calculateKcorrections colorDistributions \
-convertSEDS fitLSSTspectra lineOfSightLymanAlpha lineOfSightMagnitude \
-pcaTemplates photoZdist priorFitter projectTemplates rdlss sdssElColors simdensity \
-simulateAbsorberLinesOfSight simulateLSSTobsFromTruth simulateLSSTobs
+convertSEDS fitLSSTspectra lineOfSightLymanAlpha lineOfSightMagnitude lsstPicklesLibrary \
+pcaTemplates photoZdist priorFitter projectTemplates rdlss sdssElColors sdssPicklesLibrary \
+simdensity simulateAbsorberLinesOfSight simulateLSSTobsFromTruth simulateLSSTobs
 
 tests : test2Dinterp testbasesim testErrors testEMalgorithm testgoodsmagsim \
 testKcorrColors testKcorrMethod testLF testMadau testMeiksin \
@@ -74,14 +74,20 @@ clean :
 	
 # MAIN PROGS
 
+addIGMToSED : $(EXE)/addIGMToSED
+	@echo 'makefile : addIGMToSED made'
+
 analyzeBPZ : $(EXE)/analyzeBPZ
 	@echo 'makefile : analyzeBPZ made'
 
 baseSimulation : $(EXE)/baseSimulation
 	@echo 'makefile : baseSimulation made'
 	
-calculateKcorrections	: $(EXE)/calculateKcorrections
+calculateKcorrections : $(EXE)/calculateKcorrections
 	@echo 'makefile : calculateKcorrections made'
+	
+cfhtColors : $(EXE)/cfhtColors
+	@echo 'makefile : cfhtColors made'
 	
 colorDistributions	: $(EXE)/colorDistributions
 	@echo 'makefile : colorDistributions made'
@@ -97,6 +103,12 @@ lineOfSightLymanAlpha : $(EXE)/lineOfSightLymanAlpha
 
 lineOfSightMagnitude : $(EXE)/lineOfSightMagnitude
 	@echo 'makefile : lineOfSightMagnitude made'
+
+lsstPicklesLibrary : $(EXE)/lsstPicklesLibrary
+	@echo 'makefile : lsstPicklesLibrary made'
+	
+lymanAlphaToDensity : $(EXE)/lymanAlphaToDensity
+	@echo 'makefile : lymanAlphaToDensity made'
 	
 pcaTemplates : $(EXE)/pcaTemplates
 	@echo 'makefile : pcaTemplates made'
@@ -115,12 +127,18 @@ rdlss : $(EXE)/rdlss
 	
 sdssElColors : $(EXE)/sdssElColors
 	@echo 'makefile : sdssElColors made'
+
+sdssPicklesLibrary : $(EXE)/sdssPicklesLibrary
+	@echo 'makefile : sdssPicklesLibrary made'
 	
 simdensity : $(EXE)/simdensity
 	@echo 'makefile : simdensity made'
 
 simulateAbsorberLinesOfSight : $(EXE)/simulateAbsorberLinesOfSight
 	@echo 'makefile : simulateAbsorberLinesOfSight made'
+
+simulateCFHTobs : $(EXE)/simulateCFHTobs
+	@echo 'makefile : simulateCFHTobs made'
 	
 simulateLSSTobs : $(EXE)/simulateLSSTobs
 	@echo 'makefile : simulateLSSTobs made'	
@@ -176,6 +194,9 @@ testKcorrMethod : $(EXE)/testKcorrMethod
 
 testLF : $(EXE)/testLF 
 	@echo 'makefile :testLF made'
+	
+testLymanAlphaAbs : $(EXE)/testLymanAlphaAbs 
+	@echo 'makefile :testLymanAlphaAbs made'
 
 testMadau : $(EXE)/testMadau
 	@echo 'makefile : testMadau made'
@@ -204,6 +225,16 @@ testsimdensity : $(EXE)/testsimdensity
 	@echo 'makefile :  testsimdensity made'
 	
 ###################### MAIN PROGRAMS ###########################################
+
+# ADD LINE OF SIGHT TRANSMISSON TO SEDS IN A LIBRARY
+$(EXE)/addIGMToSED : $(OBJ)/addIGMToSED.o $(LIBO) 
+	mkdir -p $(EXE)
+	$(CXXLINK) -o $(EXE)/addIGMToSED $(OBJ)/addIGMToSED.o $(LIBO) \
+	$(SOPHYAEXTSLBLIST)	$(MYLIB) $(ROOTLIB)
+
+$(OBJ)/addIGMToSED.o : $(PROGS)/addIGMToSED.cc $(LIBH)  
+	mkdir -p $(OBJ)
+	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/addIGMToSED.o $(PROGS)/addIGMToSED.cc
 
 # ANALYZE A BPZ CATALOG
 $(EXE)/analyzeBPZ : $(OBJ)/analyzeBPZ.o $(LIBO) 
@@ -236,6 +267,17 @@ $(EXE)/calculateKcorrections : $(OBJ)/calculateKcorrections.o $(LIBO)
 $(OBJ)/calculateKcorrections.o : $(PROGS)/calculateKcorrections.cc $(LIBH)  
 	mkdir -p $(OBJ)
 	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/calculateKcorrections.o $(PROGS)/calculateKcorrections.cc
+	
+# CALCULATE U-G, I-Z CFHT colors w/ and wo/ host galaxy reddening
+$(EXE)/cfhtColors : $(OBJ)/cfhtColors.o $(LIBO) 
+	mkdir -p $(EXE)
+	mkdir -p $(KCORR)
+	$(CXXLINK) -o $(EXE)/cfhtColors $(OBJ)/cfhtColors.o $(LIBO) \
+	$(SOPHYAEXTSLBLIST) $(MYLIB) $(ROOTLIB)
+
+$(OBJ)/cfhtColors.o : $(PROGS)/cfhtColors.cc $(LIBH)  
+	mkdir -p $(OBJ)
+	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/cfhtColors.o $(PROGS)/cfhtColors.cc
 	
 # COLOR DISTRIBUTIONS
 $(EXE)/colorDistributions : $(OBJ)/colorDistributions.o $(LIBO) 
@@ -289,6 +331,28 @@ $(EXE)/lineOfSightMagnitude : $(OBJ)/lineOfSightMagnitude.o $(LIBO)
 $(OBJ)/lineOfSightMagnitude.o : $(PROGS)/lineOfSightMagnitude.cc $(LIBH)  
 	mkdir -p $(OBJ)
 	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/lineOfSightMagnitude.o $(PROGS)/lineOfSightMagnitude.cc
+
+# CALCULATE LSST COLORS FOR PICKLES' LIBRARY OF STARS 
+$(EXE)/lsstPicklesLibrary : $(OBJ)/lsstPicklesLibrary.o $(LIBO) 
+	mkdir -p $(EXE)
+	mkdir -p $(ROOTOUT)
+	$(CXXLINK) -o $(EXE)/lsstPicklesLibrary $(OBJ)/lsstPicklesLibrary.o $(LIBO) \
+	$(SOPHYAEXTSLBLIST) $(MYLIB) $(ROOTLIB)
+
+$(OBJ)/lsstPicklesLibrary.o : $(PROGS)/lsstPicklesLibrary.cc $(LIBH)
+	mkdir -p $(OBJ)
+	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/lsstPicklesLibrary.o $(PROGS)/lsstPicklesLibrary.cc
+	
+# LYMAN ALPHA ALONG LINE OF SIGHT CONVERTED TO DENSITY
+$(EXE)/lymanAlphaToDensity : $(OBJ)/lymanAlphaToDensity.o $(LIBO) 
+	mkdir -p $(EXE)
+	mkdir -p $(ROOTOUT)
+	$(CXXLINK) -o $(EXE)/lymanAlphaToDensity $(OBJ)/lymanAlphaToDensity.o $(LIBO) \
+	$(SOPHYAEXTSLBLIST) $(MYLIB) $(ROOTLIB)
+
+$(OBJ)/lymanAlphaToDensity.o : $(PROGS)/lymanAlphaToDensity.cc $(LIBH)  
+	mkdir -p $(OBJ)
+	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/lymanAlphaToDensity.o $(PROGS)/lymanAlphaToDensity.cc
 	
 # TEMPLATE PCA
 $(EXE)/pcaTemplates : $(OBJ)/pcaTemplates.o $(LIBO) 
@@ -355,6 +419,17 @@ $(EXE)/sdssElColors : $(OBJ)/sdssElColors.o $(LIBO)
 $(OBJ)/sdssElColors.o : $(PROGS)/sdssElColors.cc $(LIBH)  
 	mkdir -p $(OBJ)
 	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/sdssElColors.o $(PROGS)/sdssElColors.cc 
+
+# CALCULATE SDSS COLORS FOR PICKLES' LIBRARY OF STARS 
+$(EXE)/sdssPicklesLibrary : $(OBJ)/sdssPicklesLibrary.o $(LIBO) 
+	mkdir -p $(EXE)
+	mkdir -p $(ROOTOUT)
+	$(CXXLINK) -o $(EXE)/sdssPicklesLibrary $(OBJ)/sdssPicklesLibrary.o $(LIBO) \
+	$(SOPHYAEXTSLBLIST) $(MYLIB) $(ROOTLIB)
+
+$(OBJ)/sdssPicklesLibrary.o : $(PROGS)/sdssPicklesLibrary.cc $(LIBH)
+	mkdir -p $(OBJ)
+	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/sdssPicklesLibrary.o $(PROGS)/sdssPicklesLibrary.cc
 	
 # SIMULATE OVERDENSITY GRID
 $(EXE)/simdensity : $(OBJ)/simdensity.o $(LIBO) 
@@ -378,6 +453,18 @@ $(OBJ)/simulateAbsorberLinesOfSight.o : $(PROGS)/simulateAbsorberLinesOfSight.cc
 	mkdir -p $(OBJ)
 	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/simulateAbsorberLinesOfSight.o \
 	$(PROGS)/simulateAbsorberLinesOfSight.cc 
+	
+# SIMULATE CFHT OBSERVATIONS FROM BASE SIMULATION
+$(EXE)/simulateCFHTobs : $(OBJ)/simulateCFHTobs.o $(LIBO)
+	mkdir -p $(EXE)
+	mkdir -p $(ROOTOUT)
+	$(CXXLINK) -o $(EXE)/simulateCFHTobs $(OBJ)/simulateCFHTobs.o $(LIBO) \
+	$(SOPHYAEXTSLBLIST) $(MYLIB) $(ROOTLIB)
+
+$(OBJ)/simulateCFHTobs.o : $(PROGS)/simulateCFHTobs.cc $(LIBH)
+	mkdir -p $(OBJ)
+	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/simulateCFHTobs.o \
+	$(PROGS)/simulateCFHTobs.cc 
 	
 # SIMULATE LSST OBSERVATIONS FROM BASE SIMULATION
 $(EXE)/simulateLSSTobs : $(OBJ)/simulateLSSTobs.o $(LIBO)
@@ -567,6 +654,17 @@ $(EXE)/testLF : $(OBJ)/testLF.o $(LIBO)
 $(OBJ)/testLF.o : $(PROGS)/testLF.cc $(LIBH)  
 	mkdir -p $(OBJ)
 	$(CXXCOMPILE) -I$(MYCL) -o $(OBJ)/testLF.o $(PROGS)/testLF.cc 
+
+# TEST Lyman-alpha absorption calculation parts 
+$(EXE)/testLymanAlphaAbs : $(OBJ)/testLymanAlphaAbs.o $(LIBO) 
+	mkdir -p $(EXE)
+	mkdir -p $(TESTS)
+	$(CXXLINK) -o $(EXE)/testLymanAlphaAbs $(OBJ)/testLymanAlphaAbs.o $(LIBO) \
+	$(SOPHYAEXTSLBLIST) $(MYLIB) $(ROOTLIB)
+
+$(OBJ)/testLymanAlphaAbs.o : $(PROGS)/testLymanAlphaAbs.cc $(LIBH)  
+	mkdir -p $(OBJ)
+	$(CXXCOMPILE) -I$(MYCL) -o $(OBJ)/testLymanAlphaAbs.o $(PROGS)/testLymanAlphaAbs.cc 
 	
 # TEST MADAU
 $(EXE)/testMadau : $(OBJ)/testMadau.o $(LIBO) 
