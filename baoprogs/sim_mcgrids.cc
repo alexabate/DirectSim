@@ -352,7 +352,7 @@ int main(int narg, char* arg[])
 	double schmin=-24, schmax=-13;// units of "M-5log10h70"
 	int schnpt=10000;
 	cout <<"    ... integrating from Mbright="<<schmin<<" "<<MstarUnits<<" to Mfaint="<<schmax<<" "<<MstarUnits<<", with step="<<schnpt<<endl;
-	double nz3=schAz3.Integrate(schmin,schmax,schnpt);
+	double nz3=schAz3.Integrate();//(schmin,schmax,schnpt);
 	cout <<"    ... number density of galaxies: "<<nz3<<" Mpc^-3"<<endl;
 	double pixVol=m2g.ReturnPixVol();
 	cout <<"    pixel volume="<< pixVol<<" Mpc^3"<<endl;

@@ -55,19 +55,21 @@ MINUIT = -lMinuit
 
 ################################################################################
 
-all : progs tests tests
+all : progs tests bao
 
-progs : analyzeBPZ baseSimulation calculateKcorrections colorDistributions \
-convertSEDS fitLSSTspectra lineOfSightLymanAlpha lineOfSightMagnitude lsstPicklesLibrary \
-pcaTemplates photoZdist priorFitter projectTemplates sdssElColors sdssPicklesLibrary \
-simdensity simulateAbsorberLinesOfSight simulateLSSTobsFromTruth simulateLSSTobs
+progs : addIGMToSED analyzeBPZ baseSimulation calculateKcorrections cfhtColors \
+colorDistributions convertSEDS fitLSSTspectra lineOfSightLymanAlpha lineOfSightMagnitude \
+lsstPicklesLibrary lymanAlphaToDensity pcaTemplates photoZdist priorFitter \
+projectTemplates rdlss sdssElColors sdssPicklesLibrary simdensity  \
+simulateAbsorberLinesOfSight simulateLSSTobs simulateLSSTobsFromTruth 
 
-tests : test2Dinterp testbasesim testErrors testEMalgorithm testgoodsmagsim \
-testKcorrColors testKcorrMethod testLF testMadau testMeiksin \
-testTemplateFitting testSimReadKcorr testsimulateIGM testSimulation
+tests : test2Dinterp testbasesim testEMalgorithm testErrors testgoodsmagsim \
+testKcorrColors testKcorrMethod testLF testLymanAlphaAbs testMadau testMeiksin \
+testSimReadKcorr testsimulateIGM testSimulation testTemplateFitting
 # testsimdensity 
 
-bao : addGausszerr getsf grid_data subfromfull computepsfromarray fitkbao rdlss
+bao : addGausszerr computepsfromarray fitkbao getpzconvf getsf grid_data \
+sim_mcgrids subfromfull 
 
 clean : 
 	rm  $(OBJ)/* $(EXE)/*
@@ -121,6 +123,9 @@ priorFitter : $(EXE)/priorFitter
 	
 projectTemplates : $(EXE)/projectTemplates
 	@echo 'makefile : projectTemplates made'
+
+rdlss : $(EXE)/rdlss
+	@echo 'makefile : rdlss made'
 	
 sdssElColors : $(EXE)/sdssElColors
 	@echo 'makefile : sdssElColors made'
@@ -154,14 +159,17 @@ computepsfromarray : $(EXE)/computepsfromarray
 fitkbao : $(EXE)/fitkbao
 	@echo 'makefile : fitkbao made'
 	
+getpzconvf : $(EXE)/getpzconvf
+	@echo 'makefile : getpzconvf made'
+	
 getsf : $(EXE)/getsf
 	@echo 'makefile : getsf made'
 	
 grid_data : $(EXE)/grid_data
 	@echo 'makefile : grid_data made'
 	
-rdlss : $(EXE)/rdlss
-	@echo 'makefile : rdlss made'
+sim_mcgrids : $(EXE)/sim_mcgrids
+	@echo 'makefile : sim_mcgrids made'
 	
 subfromfull : $(EXE)/subfromfull
 	@echo 'makefile : subfromfull made'
@@ -528,6 +536,18 @@ $(OBJ)/fitkbao.o : $(BAOPROGS)/fitkbao.cc $(LIBH)
 	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/fitkbao.o \
 	$(BAOPROGS)/fitkbao.cc
 	
+# CALCULATE PHOTO-Z CONVOLUTION FUNCTION
+$(EXE)/getpzconvf : $(OBJ)/getpzconvf.o $(LIBO)
+	mkdir -p $(EXE)
+	mkdir -p $(ROOTOUT)
+	$(CXXLINK) -o $(EXE)/getpzconvf $(OBJ)/getpzconvf.o $(LIBO) \
+	$(SOPHYAEXTSLBLIST) $(MYLIB) $(ROOTLIB)
+
+$(OBJ)/getpzconvf.o : $(BAOPROGS)/getpzconvf.cc $(LIBH)
+	mkdir -p $(OBJ)
+	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/getpzconvf.o \
+	$(BAOPROGS)/getpzconvf.cc 
+	
 # CALCULATE SELECTION FUNCTION OF OBSERVED CATALOG
 $(EXE)/getsf : $(OBJ)/getsf.o $(LIBO)
 	mkdir -p $(EXE)
@@ -551,6 +571,18 @@ $(OBJ)/grid_data.o : $(BAOPROGS)/grid_data.cc $(LIBH)
 	mkdir -p $(OBJ)
 	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/grid_data.o \
 	$(BAOPROGS)/grid_data.cc
+	
+# SIMULATE RANDOM CATALOGS
+$(EXE)/sim_mcgrids : $(OBJ)/sim_mcgrids.o $(LIBO)
+	mkdir -p $(EXE)
+	mkdir -p $(ROOTOUT)
+	$(CXXLINK) -o $(EXE)/sim_mcgrids $(OBJ)/sim_mcgrids.o $(LIBO) \
+	$(SOPHYAEXTSLBLIST) $(MYLIB) $(ROOTLIB)
+
+$(OBJ)/sim_mcgrids.o : $(BAOPROGS)/sim_mcgrids.cc $(LIBH)
+	mkdir -p $(OBJ)
+	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/sim_mcgrids.o \
+	$(BAOPROGS)/sim_mcgrids.cc
 	
 # GET DATA SUB GRID
 $(EXE)/subfromfull : $(OBJ)/subfromfull.o $(LIBO)

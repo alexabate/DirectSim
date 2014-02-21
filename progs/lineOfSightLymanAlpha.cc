@@ -99,14 +99,14 @@ int main(int narg, char* arg[]) {
 	
 	// Calculates g(N_HI) given in eqn 4 Inoue & Iwata 2008
 	cout <<"     Calculating absorber HI column density distribution"<<endl;
-    double beta1=1.6, beta2=1.3;
-    int nStep = 10000;
-    double Nc = 1.6e17;
-    HIColumnDensity hiColumnDensity(beta1,beta2,Nc,NHImin,NHImax, nStep);
+    //double beta1=1.6, beta2=1.3;
+    //int nStep = 10000;
+    //double Nc = 1.6e17;
+    HIColumnDensity hiColumnDensity;//(beta1,beta2,Nc,NHImin,NHImax, nStep);
     double Nl, Nu;
     hiColumnDensity.returnColDensityLimits(Nl,Nu);
     //double intVal = hiColumnDensity.checkIntegration(nStep);
-    nStep=500000;
+    int nStep=500000;
     double logNl=log(Nl);
     double dlogN=(log(Nu)-logNl)/(nStep-1);
     cout << endl;

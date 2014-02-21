@@ -112,7 +112,7 @@ int main(int narg, char* arg[]) {
     
     OpticalDepth opticalDepth;
     opticalDepth.setLymanSeriesOnly();
-    opticalDepth.setnLineMax(nLine);
+    opticalDepth.setMaxLine(nLine);
     
     outfile = outfileroot + "_crosssect.txt";
 	outp.open(outfile.c_str(), ofstream::out);

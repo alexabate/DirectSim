@@ -1249,7 +1249,7 @@ void Mass2Gal::GetRange(sa_size_t i, sa_size_t ni, sa_size_t& istart, sa_size_t&
 
 };
 
-/*void Mass2Gal::ApplySF(SelectionFunctionInterface& sf)
+void Mass2Gal::ApplySF(SelectionFunctionInterface& sf)
 // Apply and correct for selection function to simulated
 // galaxy catalog AND random catalog
 {
@@ -1315,7 +1315,7 @@ void Mass2Gal::GetRange(sa_size_t i, sa_size_t ni, sa_size_t& istart, sa_size_t&
 	cout << "    Number of random galaxies left after selection applied = "<< rg_left<<endl;
 	
 cout <<" END Mass2Gal::ApplySF()"<<endl<<endl;
-}*/
+}
 
 
 

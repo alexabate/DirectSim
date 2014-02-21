@@ -38,6 +38,7 @@
 #include "sinterp.h"
 #include "cosmocalcs.h"
 #include "simdata.h"
+#include "selectfunc.h"
 
 //namespace SOPHYA {
 
@@ -156,8 +157,7 @@ public:
 			      
     //----- Added methods Feb 2011 (AA)
     //inline void SetSelectionFunction(SelectionFunctionInterface& sf) { selfuncp_=&sf;}
-    // below needed by sim_mcgrids so will prob have to uncomment at some point
-    //void ApplySF(SelectionFunctionInterface& sf);	
+    void ApplySF(SelectionFunctionInterface& sf);	
 
     /** Apply photo-z convolution */
     void ApplyPZConv(string pzcf);
@@ -342,7 +342,8 @@ public:
     bool fg_readvals;	/**< A flag to identify if the SimLSS FITS header has been read in            */
     bool fg_cleancells;	/**< A flag to identify if haven't cleaned cells                              */
     bool SFApplied;		/**< Flag turns to true when selection function applied to simulated catalogs */
-
+    SelectionFunctionInterface* selfuncp_;/**< pointer to selection function */
+    
     /* arrays */
     TArray<r_8> mass_;          /**< 3D array holding rho/rho^bar             */
     vector<double> MBmax_;      /**< Maximum observable absolute magnitude as a function of z     */
@@ -350,6 +351,8 @@ public:
     TArray<int_8> ngals_;		/**< 3D array holding total galaxy number in each pixel           */
     TArray<r_8> ngalssm_;       /**< array of n galaxies per cell after applying photo-z smearing */
     TArray<r_8> randgsm_;       /**< array of random grid after applying photo-z smearing         */
+    
+
 };
 
 //} // End namespace SOPHYA
