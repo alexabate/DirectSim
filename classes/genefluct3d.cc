@@ -690,41 +690,48 @@ void GeneFluct3D::ComputeFourier(ClassFunc1D& pk_at_z)
 //                sum(F(nu_i)^2) = S*N
 //                                          sum(fb(x_i)^2) = S*N^2
 {
- // --- RaZ of table
- T_ = complex<GEN3D_TYPE>(0.);
+    // --- RaZ of table
+    T_ = complex<GEN3D_TYPE>(0.);
 
- // --- Fill with a realization
- if(lp_>0) cout<<"--- ComputeFourier ---"<<endl;
- long lmod = Nx_/10; if(lmod<1) lmod=1;
- for(long i=0;i<Nx_;i++) 
-	{
-	long ii = (i>Nx_/2) ? Nx_-i : i;
-	double kx = ii*Dkx_;  kx *= kx;
-	if(lp_>0 && i%lmod==0) cout<<"i="<<i<<" ii="<<ii<<endl;
-	for(long j=0;j<Ny_;j++) 
-		{
-		long jj = (j>Ny_/2) ? Ny_-j : j;
-		double ky = jj*Dky_;  ky *= ky;
-		for(long l=0;l<NCz_;l++) 
-			{
-			double kz = l*Dkz_;  kz *= kz;
-			if(i==0 && j==0 && l==0) continue;
-			double k = sqrt(kx+ky+kz);
-			// cf normalisation: Peacock, Cosmology, formula 16.38 p504
-			double pk = pk_at_z(k)/Vol_;
-			// Explanation of the /2: see perandom.cc
-			// or equally Coles & Lucchin, Cosmology formula 13.7.2 p279
-			T_(l,j,i) = ComplexGaussianRand(sqrt(pk/2.));
-			}
-		}
-	}
+    // --- Fill with a realization
+    if(lp_>0) 
+        cout<<"--- ComputeFourier ---"<<endl;
+ 
+    long lmod = Nx_/10; if(lmod<1) lmod=1;
+    for(long i=0;i<Nx_;i++) {
+    
+	    long ii = (i>Nx_/2) ? Nx_-i : i;
+	    double kx = ii*Dkx_;  kx *= kx;
+	    
+	    if(lp_>0 && i%lmod==0) 
+	        cout<<"i="<<i<<" ii="<<ii<<endl;
+	        
+	    for(long j=0;j<Ny_;j++) {
+	    
+		    long jj = (j>Ny_/2) ? Ny_-j : j;
+		    double ky = jj*Dky_;  ky *= ky;
+		
+		    for(long l=0;l<NCz_;l++) {
+		    
+			    double kz = l*Dkz_;  kz *= kz;
+			    if(i==0 && j==0 && l==0) continue;
+			    
+			    double k = sqrt(kx+ky+kz);
+			    // cf normalisation: Peacock, Cosmology, formula 16.38 p504
+			    double pk = pk_at_z(k)/Vol_;
+			    // Explanation of the /2: see perandom.cc
+			    // or equally Coles & Lucchin, Cosmology formula 13.7.2 p279
+			    T_(l,j,i) = ComplexGaussianRand(sqrt(pk/2.));
+			    }
+		    }
+	    }
 
- array_type = 2;
- manage_coefficients();   // big effect for the spectra that use it !
+    array_type = 2;
+    manage_coefficients();   // big effect for the spectra that use it !
 
- if(lp_>0) cout<<"...computing power"<<endl;
- double p = compute_power_carte();
- if(lp_>0) cout<<"Power in the realisation: "<<p<<endl;
+    if(lp_>0) cout<<"...computing power"<<endl;
+    double p = compute_power_carte();
+    if(lp_>0) cout<<"Power in the realisation: "<< p <<endl;
 
 }
 

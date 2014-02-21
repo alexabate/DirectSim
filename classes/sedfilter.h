@@ -342,41 +342,26 @@ protected:
 class SEDMadau : public ClassFunc1D
 {
 public:
-<<<<<<< HEAD
-    /** Constructor */
-    SEDMadau(GenericFunc& S, double zSED, bool isLyC=true)
-    : sed_(S) , zSED_(zSED) , isLyC_(isLyC) { };
-=======
     /** Constructor 
         @param S       SED to add Madau absorption to 
-        @param zSED    redshift of galaxy SED                                 */
-    SEDMadau(ClassFunc1D& S, double zSED)
-    : sed_(S) , zSED_(zSED) { };
->>>>>>> b174eb658571fc61c81d79c7fa2a0db330092148
+        @param zSED    redshift of galaxy SED                                 
+        @param isLyC   include Lyman continuum absorption                     */
+    SEDMadau(ClassFunc1D& S, double zSED, bool isLyC=true)
+    : sed_(S) , zSED_(zSED) , isLyC_(isLyC) { };
     
     /** Return SED with Madau absorption applied
         @param lambda   rest-frame wavelength */
-<<<<<<< HEAD
-    virtual double operator()(double lambda) {
-        Madau madau(5,isLyC_);
-=======
     virtual double operator()(double lambda) const {
-        Madau madau;
->>>>>>> b174eb658571fc61c81d79c7fa2a0db330092148
+        Madau madau(5,isLyC_); // 5 refers to max number of Lyman lines
         // THINK THIS SHOULD BE RETURNING THE REST FRAME TRANSMISSION
         double trans = madau.returnRestFrameTransmission(lambda, zSED_);
         return (sed_(lambda)*trans);
         };
 
 protected:
-<<<<<<< HEAD
-    GenericFunc& sed_;      /**< SED to add Madau absorption to               */
-    double zSED_;           /**< redshift of SED                              */ 
-    bool isLyC_;            /**< include Lyman continuum                      */       
-=======
     ClassFunc1D& sed_;       /**< SED to add Madau absorption to              */
-    double zSED_;            /**< redshift of SED                             */        
->>>>>>> b174eb658571fc61c81d79c7fa2a0db330092148
+    double zSED_;            /**< redshift of SED                             */
+    bool isLyC_;            /**< include Lyman continuum absorption           */     
 };
 
 
@@ -431,11 +416,7 @@ public:
         pointers pointing to each SED object 
         @param lmin minimum wavelength of SED in meters
         @param lmax maximum wavelength of SED in meters */
-<<<<<<< HEAD
-    void readSeds(double lmin=5e-8,double lmax=2.5e-6);
-=======
-    void readSeds(double lmin=1e-7, double lmax=1e-6);
->>>>>>> b174eb658571fc61c81d79c7fa2a0db330092148
+    void readSeds(double lmin=5e-8, double lmax=2.5e-6);
     
     /** If interpolating between the SEDs call this method straight after
         readSeds()
@@ -451,11 +432,7 @@ public:
     void reddenSeds(int nStepRed, double redMax);
     
     /** Write contents of sedArray to a file */
-<<<<<<< HEAD
-    void writeSpectra(string outFile,double lmin=5e-8,double lmax=2.5e-6,
-=======
-    void writeSpectra(string outFile, double lmin=1e-7, double lmax=1e-6,
->>>>>>> b174eb658571fc61c81d79c7fa2a0db330092148
+    void writeSpectra(string outFile, double lmin=5e-8, double lmax=2.5e-6,
                                                                  int nl=1500);
                                                                  
     /** Return sedArray */
@@ -691,17 +668,10 @@ public:
         pointers pointing to each Filter object 
         @param lmin minimum wavelength of filter in meters
         @param lmax maximum wavelength of filter in meters */
-<<<<<<< HEAD
-    void readFilters(double lmin=5e-8,double lmax=2.5e-6);
+    void readFilters(double lmin=5e-8, double lmax=2.5e-6);
     
     /** Write contents of filterArray to a file */
-    void writeFilters(string outFile,double lmin=5e-8,double lmax=2.5e-6,
-=======
-    void readFilters(double lmin=1e-7, double lmax=1e-6);
-    
-    /** Write contents of filterArray to a file */
-    void writeFilters(string outFile, double lmin=1e-7, double lmax=1e-6,
->>>>>>> b174eb658571fc61c81d79c7fa2a0db330092148
+    void writeFilters(string outFile, double lmin=5e-8, double lmax=2.5e-6,
                                                                  int nl=1500);
                                                                  
     /** Return filterArray */

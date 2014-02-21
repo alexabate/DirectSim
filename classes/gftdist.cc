@@ -28,13 +28,9 @@ void CumulDistZ::SetUp(LFParameters& lfpars, SimpleUniverse& su, double zmin,
 	// Eq. 2
 	
 	// The below class returns phi(z) = [int phi(M|z) dM]*dV(z)
-<<<<<<< HEAD
-	SchechterZVol schZ(lfpars_,su_);
+	SchechterZVol schZ(lfpars_, su_);
 	
 	// We want to integrate the above phi(z) between 0 and the current value of z
-=======
-	SchechterZVol schZ(lfpars_, su_);
->>>>>>> b174eb658571fc61c81d79c7fa2a0db330092148
 
 	// set up interpolation table for int phi(z) dz
 	

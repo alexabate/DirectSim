@@ -332,8 +332,8 @@ void HIColumnDensity::testClass()
     return;
 };
 
-
-<<<<<<< HEAD
+// AA: I think the below conflict should be removed? Left in just in case
+/*<<<<<<< HEAD
 int ProbabilityDistAbsorbers::simulateLineOfSight(double zStart,double zMax,
     vector<double>& redshifts, vector<double>& dopplerPars,
                                   vector<double>& columnDensities, string outfile)
@@ -361,13 +361,13 @@ int ProbabilityDistAbsorbers::simulateLineOfSight(double zStart,double zMax,
 	writeToFile(outfile, redshifts, dopplerPars, columnDensities);
 
     return nAbsorbers;
-=======
+=======*/
 /******* AbsorberRedshiftDistribution *********************************************/
 AbsorberRedshiftDistribution::AbsorberRedshiftDistribution() 
 : A_(400.), z1_(1.2), z2_(4.0), gamma1_(0.2), gamma2_(2.5), gamma3_(4.0)
 {
 
->>>>>>> b174eb658571fc61c81d79c7fa2a0db330092148
+//>>>>>>> b174eb658571fc61c81d79c7fa2a0db330092148
 };
 
 /******* AbsorberRedshiftDistribution methods *************************************/

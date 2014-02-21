@@ -59,7 +59,7 @@ all : progs tests tests
 
 progs : analyzeBPZ baseSimulation calculateKcorrections colorDistributions \
 convertSEDS fitLSSTspectra lineOfSightLymanAlpha lineOfSightMagnitude lsstPicklesLibrary \
-pcaTemplates photoZdist priorFitter projectTemplates rdlss sdssElColors sdssPicklesLibrary \
+pcaTemplates photoZdist priorFitter projectTemplates sdssElColors sdssPicklesLibrary \
 simdensity simulateAbsorberLinesOfSight simulateLSSTobsFromTruth simulateLSSTobs
 
 tests : test2Dinterp testbasesim testErrors testEMalgorithm testgoodsmagsim \
@@ -67,7 +67,7 @@ testKcorrColors testKcorrMethod testLF testMadau testMeiksin \
 testTemplateFitting testSimReadKcorr testsimulateIGM testSimulation
 # testsimdensity 
 
-bao : addGausszerr, getsf, grid_data, subfromfull, computepsfromarray, fitkbao
+bao : addGausszerr getsf grid_data subfromfull computepsfromarray fitkbao rdlss
 
 clean : 
 	rm  $(OBJ)/* $(EXE)/*
@@ -122,9 +122,6 @@ priorFitter : $(EXE)/priorFitter
 projectTemplates : $(EXE)/projectTemplates
 	@echo 'makefile : projectTemplates made'
 	
-rdlss : $(EXE)/rdlss
-	@echo 'makefile : rdlss made'
-	
 sdssElColors : $(EXE)/sdssElColors
 	@echo 'makefile : sdssElColors made'
 
@@ -162,6 +159,9 @@ getsf : $(EXE)/getsf
 	
 grid_data : $(EXE)/grid_data
 	@echo 'makefile : grid_data made'
+	
+rdlss : $(EXE)/rdlss
+	@echo 'makefile : rdlss made'
 	
 subfromfull : $(EXE)/subfromfull
 	@echo 'makefile : subfromfull made'
@@ -397,17 +397,17 @@ $(EXE)/projectTemplates : $(OBJ)/projectTemplates.o $(LIBO)
 $(OBJ)/projectTemplates.o : $(PROGS)/projectTemplates.cc $(LIBH)  
 	mkdir -p $(OBJ)
 	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/projectTemplates.o $(PROGS)/projectTemplates.cc 
-	
-# SIMULATE CATALOG OF BASIC GALAXY PROPERTIES FROM OVERDENSITY GRID
-$(EXE)/rdlss : $(OBJ)/rdlss.o $(LIBO) 
+
+# SIMULATE CATALOG OF BASIC GALAXY PROPERTIES FROM OVER-DENSITY GRID
+$(EXE)/rdlss : $(OBJ)/rdlss.o $(LIBO)
 	mkdir -p $(EXE)
 	mkdir -p $(ROOTOUT)
 	$(CXXLINK) -o $(EXE)/rdlss $(OBJ)/rdlss.o $(LIBO) \
 	$(SOPHYAEXTSLBLIST) $(MYLIB) $(ROOTLIB)
 
-$(OBJ)/rdlss.o : $(PROGS)/rdlss.cc $(LIBH)  
+$(OBJ)/rdlss.o : $(PROGS)/rdlss.cc $(LIBH)
 	mkdir -p $(OBJ)
-	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/rdlss.o $(PROGS)/rdlss.cc 
+	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/rdlss.o $(PROGS)/rdlss.cc
 	
 # CALCULATE SDSS COLORS OF ELLIPTICAL GALAXY
 $(EXE)/sdssElColors : $(OBJ)/sdssElColors.o $(LIBO) 
@@ -550,7 +550,7 @@ $(EXE)/grid_data : $(OBJ)/grid_data.o $(LIBO)
 $(OBJ)/grid_data.o : $(BAOPROGS)/grid_data.cc $(LIBH)
 	mkdir -p $(OBJ)
 	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/grid_data.o \
-	$(BAOPROGS)/grid_data.cc 
+	$(BAOPROGS)/grid_data.cc
 	
 # GET DATA SUB GRID
 $(EXE)/subfromfull : $(OBJ)/subfromfull.o $(LIBO)

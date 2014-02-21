@@ -1,6 +1,9 @@
 /*!
 \page install Installation instructions
 
+You may skip directly to item 4. if you already have sophya and the external libraries installed.
+If installing on cosmo.physics.arizona.edu or at CC-IN2P3 this should be the case.
+
 <OL> 
 <LI> Install the external libraries </LI>
     <UL>
@@ -72,9 +75,12 @@
 <LI> Download the git repo </LI>
 
     <UL>
-    <LI> [instructions to get repo] </LI>
+    <LI> Make sure the environment variables described in step 3. are set </LI>
+    <LI> cd to directory where you'd like to install the code </LI>
+    <LI> type <CODE>git clone https://github.com/alexabate/DirectSim.git </CODE></LI>
     <LI> cd <CODE>DirectSim</CODE> </LI>
     <LI> type <CODE>make</CODE></LI>
+    <LI> Hope and/or pray: if fails email for help</LI>
     </UL>
 
 </OL>
