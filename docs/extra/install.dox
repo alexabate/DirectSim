@@ -1,7 +1,7 @@
 /*!
 \page install Installation instructions
 
-You may skip directly to item 4. if you already have sophya and the external libraries installed.
+You may skip directly to item 5. if you already have sophya and the external libraries installed.
 If installing on cosmo.physics.arizona.edu or at CC-IN2P3 this should be the case.
 
 <OL> 
@@ -71,11 +71,17 @@ If installing on cosmo.physics.arizona.edu or at CC-IN2P3 this should be the cas
     and names as well as standard compilation and link options for various current OS and compilers.
     (please see:&nbsp;&nbsp; <CODE> more $SOPHYABASE/include/sophyamake.inc</CODE>)</LI>
     </UL>
+
+<LI> ROOT </LI>
+    <UL>
+    <LI> Install <a href="http://root.cern.ch/drupal/content/installing-root-source"> root </a> </LI>
+    <LI> Make sure the line <CODE> . [path_to_root]/bin/thisroot.sh </CODE> is run in your log in script </LI>
+    </UL>
     
 <LI> Download the git repo </LI>
 
     <UL>
-    <LI> Make sure the environment variables described in step 3. are set </LI>
+    <LI> Make sure the environment variables described in step 3. are set, and ROOT script in step 4 is run</LI>
     <LI> cd to directory where you'd like to install the code </LI>
     <LI> type <CODE>git clone https://github.com/alexabate/DirectSim.git </CODE></LI>
     <LI> cd <CODE>DirectSim</CODE> </LI>
