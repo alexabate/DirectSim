@@ -581,6 +581,7 @@ double ProbabilityDistAbsorbers::drawHIColumnDensity()
     }
 
     return nhi;
+
 };
 
 double ProbabilityDistAbsorbers::drawDoppler()
@@ -828,13 +829,17 @@ LineOfSightTrans::LineOfSightTrans(vector<double>& redshifts, vector<double>& do
 
 double LineOfSightTrans::returnOpticalDepth(double lambda, double zSource)
 {
-    int numAbsorbers = returnNumberOfAbsorbers(zSource);
+//    int numAbsorbers = returnNumberOfAbsorbers(zSource);
+    int numAbsorbers = redshifts_.size();
     double tau = 0.0;
 
     for(int i=0; i<numAbsorbers; i++) {
         double z = redshifts_[i];
         double nhi = columnDensities_[i];
         double b = dopplerPars_[i];
+
+        if(z > zSource)
+            break;
 
         double tauAbsorber = returnObserverFrameOpticalDepth(lambda, z, nhi, b);
         

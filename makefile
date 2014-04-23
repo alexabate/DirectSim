@@ -57,7 +57,8 @@ all : progs tests test
 progs : analyzeBPZ baseSimulation calculateKcorrections colorDistributions \
 convertSEDS fitLSSTspectra lineOfSightLymanAlpha lineOfSightMagnitude \
 pcaTemplates photoZdist priorFitter projectTemplates rdlss sdssElColors simdensity \
-simulateAbsorberLinesOfSight simulateLSSTobsFromTruth simulateLSSTobs
+simulateAbsorberLinesOfSight simulateLSSTobsFromTruth simulateLSSTobs 
+
 
 tests : test2Dinterp testbasesim testErrors testEMalgorithm testgoodsmagsim    \
 testKcorrColors testKcorrMethod testLF testMadau testMeiksin \
@@ -172,6 +173,9 @@ testTemplateFitting : $(EXE)/testTemplateFitting
 	@echo 'makefile : testTemplateFitting made'
 
 ## programs below here have not been CHECKED or maybe even finished...
+
+simulateLSSTColorswithIGM : $(EXE)/simulateLSSTColorswithIGM
+	@echo 'makefile : simulateLSSTColorswithIGM made'
 
 testpsdenscube : $(EXE)/testpsdenscube
 	@echo 'makefile :  testpsdenscube made'
@@ -379,6 +383,20 @@ $(OBJ)/simulateLSSTobsFromTruth.o : $(PROGS)/simulateLSSTobsFromTruth.cc $(LIBH)
 	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/simulateLSSTobsFromTruth.o \
 	$(PROGS)/simulateLSSTobsFromTruth.cc 
 	
+###################### INCOMPLETE PROGRAMS ####################################
+
+
+$(EXE)/simulateLSSTColorswithIGM : $(OBJ)/simulateLSSTColorswithIGM.o $(LIBO)
+	mkdir -p $(EXE)
+	mkdir -p $(ROOTOUT)
+	mkdir -p $(TESTS)
+	$(CXXLINK) -o $(EXE)/simulateLSSTColorswithIGM $(OBJ)/simulateLSSTColorswithIGM.o \
+	$(SOPHYAEXTSLBLIST) $(MYLIB) $(ROOTLIB) $(LIBO)
+
+$(OBJ)/simulateLSSTColorswithIGM.o : $(PROGS)/simulateLSSTColorswithIGM.cc $(LIBH)
+	mkdir -p $(OBJ)
+	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/simulateLSSTColorswithIGM.o $(PROGS)/simulateLSSTColorswithIGM.cc 
+
 
 	
 ###################### TESTING PROGRAMS ########################################
