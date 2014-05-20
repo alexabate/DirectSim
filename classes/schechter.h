@@ -64,7 +64,7 @@ public:
 	
 	/** Constructor: calculates parameter interpolation: does not have to
 	    read in from file */
-	LFParameters(double zmax,double dz,string type="dahlen");
+	LFParameters(double zmax, double dz, string type="dahlen");
 	
 	/** Copy constructor (if id=0 copy Dahlen-style, if id=1 copy file-read-style) 
 	    @warning Not currently functional */

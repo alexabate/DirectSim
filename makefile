@@ -34,7 +34,7 @@ $(MYCL)/schechter.h $(MYCL)/sinterp.h $(MYCL)/simdata.h $(MYCL)/reddening.h \
 $(MYCL)/sedfilter.h $(MYCL)/genefluct3d.h  $(MYCL)/pkspectrum.h \
 $(MYCL)/mass2gal.h $(MYCL)/powerspec.h $(MYCL)/matrix.h $(MYCL)/igm.h \
 $(MYCL)/hpoly.h $(MYCL)/shapelets.h $(MYCL)/em.h $(MYCL)/cat2grid.h \
-$(MYCL)/fitkbaoscale.h $(MYCL)/chisqstats.h
+$(MYCL)/fitkbaoscale.h $(MYCL)/chisqstats.h $(MYCL)/massfunc.h
 #$(MYCL)/constcosmo.h
 #$(MYCL)/root_plots.h
 
@@ -42,7 +42,8 @@ LIBO := $(OBJ)/cosmocalcs.o $(OBJ)/geneutils.o $(OBJ)/gftdist.o \
 $(OBJ)/schechter.o $(OBJ)/sinterp.o $(OBJ)/simdata.o $(OBJ)/reddening.o \
 $(OBJ)/sedfilter.o $(OBJ)/genefluct3d.o  $(OBJ)/pkspectrum.o $(OBJ)/mass2gal.o \
 $(OBJ)/powerspec.o $(OBJ)/matrix.o $(OBJ)/igm.o $(OBJ)/hpoly.o $(OBJ)/shapelets.o\
-$(OBJ)/em.o $(OBJ)/cat2grid.o $(OBJ)/fitkbaoscale.o $(OBJ)/chisqstats.o
+$(OBJ)/em.o $(OBJ)/cat2grid.o $(OBJ)/fitkbaoscale.o $(OBJ)/chisqstats.o \
+$(OBJ)/massfunc.o
 #$(OBJ)/root_plots.o
 
 # root libraries
@@ -61,7 +62,8 @@ progs : addIGMToSED analyzeBPZ baseSimulation calculateKcorrections cfhtColors \
 colorDistributions convertSEDS fitLSSTspectra lineOfSightLymanAlpha lineOfSightMagnitude \
 lsstPicklesLibrary lymanAlphaToDensity pcaTemplates photoZdist priorFitter \
 projectTemplates rdlss sdssElColors sdssPicklesLibrary simdensity  \
-simulateAbsorberLinesOfSight simulateLSSTobs simulateLSSTobsFromTruth 
+simulateAbsorberLinesOfSight simulateLSSTobs simulateLSSTobsFromTruth \
+cluster_mass_function sim_with_clusters
 
 tests : test2Dinterp testbasesim testEMalgorithm testErrors testgoodsmagsim \
 testKcorrColors testKcorrMethod testLF testLymanAlphaAbs testMadau testMeiksin \
@@ -91,11 +93,17 @@ calculateKcorrections : $(EXE)/calculateKcorrections
 cfhtColors : $(EXE)/cfhtColors
 	@echo 'makefile : cfhtColors made'
 	
+cluster_mass_function : $(EXE)/cluster_mass_function
+	@echo 'makefile : cluster_mass_function made' 
+	
 colorDistributions	: $(EXE)/colorDistributions
 	@echo 'makefile : colorDistributions made'
 
 convertSEDS	: $(EXE)/convertSEDS
 	@echo 'makefile : convertSEDS made'
+	
+findCWWinLSSTspectra : $(EXE)/findCWWinLSSTspectra
+	@echo 'makefile : findCWWinLSSTspectra made'
 
 fitLSSTspectra : $(EXE)/fitLSSTspectra
 	@echo 'makefile : fitLSSTspectra made'
@@ -132,6 +140,9 @@ sdssElColors : $(EXE)/sdssElColors
 
 sdssPicklesLibrary : $(EXE)/sdssPicklesLibrary
 	@echo 'makefile : sdssPicklesLibrary made'
+
+sim_with_clusters : $(EXE)/sim_with_clusters
+	@echo 'makefile : sim_with_clusters made'
 	
 simdensity : $(EXE)/simdensity
 	@echo 'makefile : simdensity made'
@@ -287,6 +298,18 @@ $(OBJ)/cfhtColors.o : $(PROGS)/cfhtColors.cc $(LIBH)
 	mkdir -p $(OBJ)
 	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/cfhtColors.o $(PROGS)/cfhtColors.cc
 	
+# CLUSTER MASS FUNCTION
+$(EXE)/cluster_mass_function : $(OBJ)/cluster_mass_function.o $(LIBO) 
+	mkdir -p $(EXE)
+	mkdir -p $(KCORR)
+	$(CXXLINK) -o $(EXE)/cluster_mass_function $(OBJ)/cluster_mass_function.o $(LIBO) \
+	$(SOPHYAEXTSLBLIST) $(MYLIB) $(ROOTLIB)
+
+$(OBJ)/cluster_mass_function.o : $(PROGS)/cluster_mass_function.cc $(LIBH)  
+	mkdir -p $(OBJ)
+	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/cluster_mass_function.o \
+	$(PROGS)/cluster_mass_function.cc
+	
 # COLOR DISTRIBUTIONS
 $(EXE)/colorDistributions : $(OBJ)/colorDistributions.o $(LIBO) 
 	mkdir -p $(EXE)
@@ -306,6 +329,17 @@ $(EXE)/convertSEDS : $(OBJ)/convertSEDS.o
 $(OBJ)/convertSEDS.o : $(PROGS)/convertSEDS.cc
 	mkdir -p $(OBJ)
 	$(CXXCOMPILE) -o $(OBJ)/convertSEDS.o $(PROGS)/convertSEDS.cc 
+
+# FIND CWWK SPECTRA IN LSST SPECTRA 
+$(EXE)/findCWWinLSSTspectra : $(OBJ)/findCWWinLSSTspectra.o $(LIBO) 
+	mkdir -p $(EXE)
+	mkdir -p $(ROOTOUT)
+	$(CXXLINK) -o $(EXE)/findCWWinLSSTspectra $(OBJ)/findCWWinLSSTspectra.o $(LIBO) \
+	$(SOPHYAEXTSLBLIST) $(MYLIB) $(ROOTLIB)
+
+$(OBJ)/findCWWinLSSTspectra.o : $(PROGS)/findCWWinLSSTspectra.cc $(LIBH)  
+	mkdir -p $(OBJ)
+	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/findCWWinLSSTspectra.o $(PROGS)/findCWWinLSSTspectra.cc
 	
 # FIT LSST SPECTRA TO CWWK
 $(EXE)/fitLSSTspectra : $(OBJ)/fitLSSTspectra.o $(LIBO) 
@@ -438,6 +472,17 @@ $(EXE)/sdssPicklesLibrary : $(OBJ)/sdssPicklesLibrary.o $(LIBO)
 $(OBJ)/sdssPicklesLibrary.o : $(PROGS)/sdssPicklesLibrary.cc $(LIBH)
 	mkdir -p $(OBJ)
 	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/sdssPicklesLibrary.o $(PROGS)/sdssPicklesLibrary.cc
+
+# SIMULATE GALAXY DISTRIBUTION WITH CLUSTERS
+$(EXE)/sim_with_clusters : $(OBJ)/sim_with_clusters.o $(LIBO) 
+	mkdir -p $(EXE)
+	mkdir -p $(ROOTOUT)
+	$(CXXLINK) -o $(EXE)/sim_with_clusters $(OBJ)/sim_with_clusters.o $(LIBO) \
+	$(SOPHYAEXTSLBLIST) $(MYLIB) $(ROOTLIB)
+
+$(OBJ)/sim_with_clusters.o : $(PROGS)/sim_with_clusters.cc $(LIBH)  
+	mkdir -p $(OBJ)
+	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/sim_with_clusters.o $(PROGS)/sim_with_clusters.cc
 	
 # SIMULATE OVERDENSITY GRID
 $(EXE)/simdensity : $(OBJ)/simdensity.o $(LIBO) 

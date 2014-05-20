@@ -1,0 +1,46 @@
+This readme describes the contents of the SEDs/ subdirectory 
+of DirectSim.
+
+
+SED libraries -------------------------------------------
+
+SED "libraries" are defined in files ending in .list
+They are simply a list of filenames of text files within
+the SEDs subdirectory.
+
+
+"Libraries" as of 8th May 2014 are:
+
+* CWWK.list
+
+This is the _traditional_ photo-z template set, four templates
+from Coleman, Wu and Weedman 1980: Ell (elliptical), 
+Sbc (spiral), Scd (spiral), Im (irregular) and two templates
+from Kinney et al 1996: SB3 (starburst) and SB2 (starburst)
+
+
+* CWWKSB.list
+
+As CWWK.list but with two bluer templates added, synthetic spectra
+generated from a stellar populations code. See Coe et al 2006.
+This is the standard template library BPZ comes with 
+
+
+* LSST.list
+
+All 791 templates that were used in the LSST simulations for
+Data Challenge 3b, performance test 1.2. These are generated
+from Bruzual et Charlot model
+
+
+* LSSTshort.list
+
+The closest LSST.list templates to the templates in CWWKSB.list.
+
+
+SED files -------------------------------------------------
+
+Simple text files with two columns: (1) wavelength in meters
+(2) flux in wavelength units, f_\nu, arbritrarily normalized
+
+
