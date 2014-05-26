@@ -92,6 +92,9 @@ public:
         setDistanceRedshiftRelation();
         fg_nodrho = true;
     };
+    
+    void returnDensMeanSigma(double& mean, double& sig) {
+	    MeanSigma((mass_-=1.), mean, sig); };
 
 protected:
 
@@ -197,6 +200,9 @@ public:
 
     /** Return "cleaned" mass array                                           */
     void MassArray(TArray<r_8>& mass_array) { mass_array = mass_; }
+    
+    /** Return "cleaned" over-density array                                   */
+    void ODensArray(TArray<r_8>& odens_array) { odens_array = (mass_-= 1.); }
     
     /** Return total number of galaxies in simulation                         */
     int ReturnTotNgals() { return ng_; };
@@ -411,8 +417,9 @@ public:
 
     /** Set the mean density of the random grid 
         @param mean_dens    mean density in the grid cells of the random grid */
-    //void SetRandomGrid(int mean_dens);
-    
+    void SetRandomGrid(int mean_dens) {
+        mean_dens_ = mean_dens;
+        };
     
     //----- Added methods May 2011 (AA)
 

@@ -85,13 +85,13 @@ void usage(void) {
 	// debug
 	
  	cout << "  The catalog is output to the file specified with option  "<<endl;
-    cout << "  -O. There are 4 possible types of outputs:               "<<endl;
+    cout << "  -O. There are two possible types of outputs:             "<<endl;
 	cout << "   type 0: Output full galaxy catalog, either with galaxy  "<<endl; 
 	cout << "           clustering or not [DEFAULT]                     "<<endl;
 	cout << "   type 1: Output simple catalog: ra,dec,z only [OPTION -S]"<<endl;
-	cout << "   type 2: Output catalog of just (true) redshifts         "<<endl;
-	cout << "           [OPTION -Z]                                     "<<endl;
-	cout << "   type 3: Output a histogram of redshifts [OPTION -H]     "<<endl;
+	cout << endl;
+	cout << "   A catalog of true z only and a n(z) histogram in a ppf  "<<endl;
+	cout << "   are always produced                                     "<<endl;
 	cout << endl;
 	
 	
@@ -110,20 +110,16 @@ void usage(void) {
 	cout << "    $ rdlss -C odens.fits -O out.fits -a 0.7854 -i 1 -R -M "<<endl;
 	cout << endl;
 	
-	cout << "    EXAMPLE 2: Similar to example 1, but now write only    "<<endl;
-	cout << "    the true redshifts to the galaxy catalog and DON'T     "<<endl;
-	cout << "    set the absolute magnitude cut:                        "<<endl;
+	cout << "    EXAMPLE 2: Similar to example 1, but now simulate only "<<endl;
+	cout << "    galaxy positions.                                      "<<endl;
 	cout <<endl;
 	
-	cout << "    $ rdlss -C odens.fits -O ztrue.fits -i 1 -R -Z         "<<endl;
+	cout << "    $ rdlss -C odens.fits -O outsimple.fits -i 1 -R -Z -S  "<<endl;
 	cout << endl;
 
 	cout << " -O : out_file: filename that the output is written to      "<<endl;
 	cout << " -C : over_dens_file: FITS file containing over-density grid"<<endl;
 	cout << " -S : Only output a simple catalog of ra,dec,z              "<<endl;
-	cout << " -Z : Only output a catalog containing the TRUE redshifts   "<<endl;
-	cout << "      (and galaxy IDs)                                      "<<endl;
-	cout << " -H : Only produce a histogram of the TRUE catalog n(z)     "<<endl;
 	cout << " -i : id: Simulation identifier, integer >=1 [default=1]    "<<endl;
 	cout << " -M : Don't add galaxies with M>AbsMagCut(z) [default=YES]  "<<endl; 
 	cout << " -R : Randomise galaxy positions within cell [default=NO]   "<<endl;
@@ -154,10 +150,10 @@ int main(int narg, char* arg[]) {
 	string infile;            // name of over-density grid to read in
 	string outfile;           // name of file to output to
 	string debug_out;         // write output to here if debugging 
-	double maxRadius = 6.3;   // max radius in radians gal can be from sim center
+	double maxRadius = 2.*PI; // max radius in radians gal can be from sim center
 	bool doSkyAreaCut=false;  // throw out gals with phi>maxRadius
 	bool doVeryFaintCut=false;// cut on min absolute magnitude(z) 
-	int out_type = 0;         // output type (0=normal,1=simple,2=z only,3=n(z) histo) 
+	bool doSimple = false;    // only simulate galaxy positions (no properties)
 	bool doDebug=false;       // write out ngals, mass cubes
 	bool doRandPos=false;     // randomize galaxy positions in cells
 	//bool HistoOnly=false; // only histogram of z
@@ -170,7 +166,7 @@ int main(int narg, char* arg[]) {
 	// xplanes should be the difference between NX and drho.SizeX()
 	float ngal_per_cell = 1;  // density of galaxies when no clustering
 	float conv;
-
+    bool extinct=false;       // don't apply extinction
   
 	//--- decoding command line arguments 
 	char c;
@@ -186,13 +182,7 @@ int main(int narg, char* arg[]) {
                 outfile	= optarg;
                 break;
             case 'S' :
-                out_type = 1;
-                break;
-            case 'Z' :
-                out_type = 2;
-                break;
-            case 'H' :
-                out_type = 3;
+                doSimple = true;
                 break;
             case 'M' :
                 doVeryFaintCut = true;
@@ -229,28 +219,13 @@ int main(int narg, char* arg[]) {
 	cout << "     Removing "<< xplanes <<" planes from this grid"<<endl;
 
 	cout << "     Output file will be "<< outfile <<":"<<endl;
-	switch (out_type) {
-        case 0:
-		    cout << "     Creating full galaxy catalog "<<endl;
-		    break;
-	    case 1:
-	        cout << "     Creating simple, positions only galaxy catalog "<<endl;
-	        break;
-	    case 2:
-		    cout << "     Creating galaxy catalog of redshifts only"<<endl;
-		    break;
-	    case 3:
-            cout << "     Creating galaxy catalog redshift histogram only"<<endl;
-            break;
-        default:
-            throw ParmError("ERROR! out_type not understood");
-            break;
-		}
+	if (doSimple)
+	    cout <<"     Only simulating galaxy positions"<<endl;
 		
 	cout << "     Simulation ID number is "<< idsim <<"00,000,000,000"<<endl; 
-	if (doVeryFaintCut && out_type==0)
+	if (doVeryFaintCut && !doSimple)
 	    cout << "     Removing galaxies with very faint absolute magnitudes"<<endl;
-	if (isZRadial && out_type==0)
+	if (isZRadial && !doSimple)
 		cout << "     z-dimension is 'radial dimension'"<<endl;
 	if (noClustering) {
 		cout << "     Catalog will be simulated with a constant number"<<endl;
@@ -274,18 +249,7 @@ int main(int narg, char* arg[]) {
 	cout << " Maximum allowed data segment size (KB):"<< res.getMaxDataSize() <<endl;
 	cout << " Resource usage info : \n" << res << endl;
 	
-  
-    // Read over-density grid
-	cout << "     Reading input file= " << infile << endl;  
-	FitsInOutFile fin(infile,FitsInOutFile::Fits_RO);
-	TArray<r_8> drho;
-	fin >> drho;
-	cout << drho.Info();
-	cout << "     Print original drho array size: "<< drho.SizeX() <<"x";
-	cout << drho.SizeY() <<"x"<< drho.SizeZ() <<endl;
-	cout << endl;
-   
-   
+
     // Initialize cosmological parameters 
 	cout << "     Initialise cosmology: (same as SimLSS)"<<endl;
 	double h = 0.71, OmegaM = 0.267804, OmegaL = 0.73;
@@ -297,56 +261,27 @@ int main(int narg, char* arg[]) {
 	cout << endl;
 	
 	
-	// Initialize Mass2Gal and remove N extra planes 
-	cout << "     Initialise Mass2Gal: remove planes" << endl;
+	// Read over-density grid and initialize Mass2Gal
+	cout << "     Initialise Mass2Gal" << endl;
+	cout << "     Reading input file = " << infile << endl;  
+	FitsInOutFile fin(infile, FitsInOutFile::Fits_RO);
 	RandomGenerator rg;
-	Mass2Gal m2g(drho, su, rg, xplanes);
+	Mass2Gal m2g(fin, su, rg);
 	double mean, sig;
 	TArray<r_8> mass;
 	m2g.MassArray(mass);
 	MeanSigma(mass, mean, sig);
-	cout << endl<<"     RAW DENS CUBE STATS: Mean=" << mean << " Sigma=";
-	cout << sig <<endl<<endl;
+	cout << endl <<"     Cleaned density cube stats: Mean=" << mean << " Sigma=";
+	cout << sig << endl <<endl;
 	res.Update();
 	cout << " Memory size (KB):" << res.getMemorySize() << endl;                                          
 	cout << " Resource usage info : \n" << res << endl;
 	
 	
-	// Read in cube and pixel properties from fits header
-	cout << "     Read in cube properties from fits header" << endl;
-	m2g.ReadHeader(fin);
-	// xplanes should be the difference between NX and drho.SizeX()
-	int NZ=m2g.ReturnNZ();
-	int diff = drho.SizeX()-NZ;
-	if( xplanes!=abs(diff) )
-		throw ParmError("ERROR: removed wrong number of planes from SimLSS cube");
-	m2g.SetRandPos(doRandPos);
-
-
-	// Deal with negative mass cells AND drho/rho -> rho/rho^bar 
-	cout << "     Clean Negative Mass Cells" << endl;
-	sa_size_t nbadc = m2g.CleanNegativeMassCells(); // adds 1 to drho and sets anything <0=0
-	m2g.MassArray(mass);
-	cout << "     NBadCells=" << nbadc 
-	     << " BadPercentage=" << (double)nbadc*100./(double)mass.Size() << "%"<<endl;
-	MeanSigma(mass, mean, sig);
-	cout << endl<<"     CLEANED DENS CUBE STATS: Mean=" << mean << " Sigma=";
-	cout << sig << endl;
-	// double check there are no bad cells 
-	sa_size_t nbadc2 = m2g.CheckNegativeMassCells();
-	cout <<"     double check there are no bad cells ...."<< nbadc2 <<endl;
-	cout <<"     check minimum value in mass array is 0"<<endl;
-	double min, max;
-	mass.MinMax(min,max);
-	cout <<"     min of mass = "<< min <<", max of mass = "<< max <<endl;
-	cout << endl<<endl;
-	res.Update();
-	cout << " Memory size (KB):" << res.getMemorySize() << endl;
-	cout << " Resource usage info : \n" << res << endl;
-	
-	
 	cout << "     Convert rho/rho^bar To Mean NGal"<<endl;  
 
+    // -----------------------------------------------------------------------
+    // ---- replace the below with LFParameters class
 	// Read in LFs: replace the below with LFParameters class
 	cout << "     Set up Schechter functions for each galaxy type"<<endl;
 	cout << " ... GOODS B band: Early types, Late types, Starbursts"<<endl;
@@ -421,7 +356,8 @@ int main(int narg, char* arg[]) {
 	cout << phistarLz3 <<"          Late"<<endl;
 	cout << "                "<< MstarSz3 <<"     "<< alpSz3 <<"        ";
 	cout << phistarSz3 <<"        Starburst"<<endl<<endl;
-
+    // -----------------------------------------------------------------------
+	
 	
 	// Find conversion from mass density to galaxy density
 	cout<<"     Mass to Galaxy number conversion"<<endl;
@@ -451,28 +387,20 @@ int main(int narg, char* arg[]) {
 		conv = ngal_per_cell;
 	
 	
-	// Convert mass in each cell to a (mean) number of galaxies
-	m2g.ConvertToMeanNGal(conv, noClustering); // just multiplies mass_ by conv
-	res.Update();
-	cout << " Memory size (KB):" << res.getMemorySize() << endl;
-	cout << " Resource usage info : \n" << res << endl;
-	
-	
+	// set simulation properties
+	m2g.setSimProperties(maxRadius, doVeryFaintCut, noClustering,
+              doRandPos, isZRadial, extinct);
+
+
 	// Write out ngals and mass cubes for debugging
 	if (doDebug) {
 		
-		cout <<"    **** Writing out cleaned mass distribution AND ngal distribution ****"<<endl;
-		TArray<int_8> ngals;
-		m2g.NGalArray(ngals);
+		cout <<"    **** Writing out cleaned mass distribution ****"<<endl;
 		TArray<r_8>   mass2;
 		m2g.MassArray(mass2);
 		cout <<"    check minimum value in mass array is 0"<<endl;
 		mass2.MinMax(min,max);
-		cout <<"    min of mass = "<<min<<", max of mass = "<<max<<endl;
-		string outngal = debug_out +"_ngals.fits";
-		FitsInOutFile fos(outngal, FitsInOutFile ::Fits_Create);
-		fos << ngals;
-		cout <<"    Written ngals array"<<endl;
+		cout <<"    min of mass = "<< min <<", max of mass = "<< max <<endl;
 		
 		// have to do below stuff or there is a problem with 
 		// writing FT'd array to a FITS file
@@ -497,8 +425,9 @@ int main(int narg, char* arg[]) {
 		cout << endl;
 		}
 		
+		
 	//------------------------------------------------------------------------//
-    // -- update to new classes: CumulDistM and DrawM
+    // -- update below to new classes: CumulDistM and DrawM
     
 	// Create galaxy distributions
 	cout <<"     Set up Mb-Type 2D distribution"<<endl;
@@ -535,32 +464,13 @@ int main(int narg, char* arg[]) {
 	gfdz3.AddGalType(schDistSz3, schmin, schmax, fSz3, magbin, schnpt);
 	//------------------------------------------------------------------------//
 	
-	// Apply magnitude cut if required
-	if (doVeryFaintCut)
-		m2g.MaxAbsMag();// this does calculation of what max abs mag is as a function z
 	
 	
 	// Simulate galaxies
 	cout <<"     Simulate galaxies"<<endl;
-	bool extinct=false;
-	
-	switch (out_type) {
-        case 0:
-		    m2g.CreateGalCatalog(idsim,outfile,gfdz3,extinct,doVeryFaintCut,maxRadius,isZRadial);
-		    break;
-	    case 1:
-	        m2g.CreateSimpleCatalog(idsim, outfile, maxRadius);
-	        break;
-	    case 2:
-		    m2g.CreateTrueZFile(idsim, outfile, maxRadius);
-		    break;
-	    case 3:
-            m2g.CreateNzHisto(outfile, gfdz3, extinct, maxRadius);
-            break;
-        default:
-            throw ParmError("ERROR! out_type not understood");
-            break;
-		}
+	m2g.CreateGalCatalog(idsim, outfile, conv, gfdz3, doSimple);
+
+
 		
   }  // End of try bloc 
   

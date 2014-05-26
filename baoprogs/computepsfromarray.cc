@@ -216,10 +216,14 @@ int main(int narg, char* arg[]) {
 	string textfile=".txt";
 	string fitsfile="fits";
 
-	if ( strcmp(textfile.c_str(),endf.c_str())!=0 ) // if strings are not the same
+	if ( strcmp(textfile.c_str(),endf.c_str()) == 0 ) { // if strings ARE the same
+	    cout <<" computeOvDensityPS = false"<<endl;
 		computeOvDensityPS = false; // will be reading it from a file
-	else if ( strcmp(fitsfile.c_str(),endf.c_str())!=0 )
+		}
+	else if ( strcmp(fitsfile.c_str(),endf.c_str()) ==0 ) {// if strings ARE the same
+	    cout <<" computeOvDensityPS = true"<<endl;
 		computeOvDensityPS = true;
+		}
 	else 
 		throw ParmError("SimLSS file is of unknown file type: not fits or .txt");
 
@@ -280,7 +284,7 @@ int main(int narg, char* arg[]) {
 	double grid_res = atof(fin.KeyValue("R").c_str()); 
 	if(!isMeanDensitySpec)
 		meandens=atof(fin.KeyValue("MeanOverDensity").c_str());
-	cout << "    Size of sub-array Nx,Ny,Nz = "<< nx <<","<< ny <<","<< nz;
+	cout << "     Size of sub-array Nx,Ny,Nz = "<< nx <<","<< ny <<","<< nz;
 	cout <<", resolution = "<< grid_res;
 	cout <<" Mpc, mean density of distorted overdensity grid = "<< meandens <<endl;
 
@@ -291,7 +295,7 @@ int main(int narg, char* arg[]) {
 	SimpleUniverse su(h, OmegaM, OmegaL);
 	su.SetFlatUniverse_OmegaMatter();
 	double OmegaB = su.OmegaBaryon();
-	cout <<"    OmegaK="<< su.OmegaCurv() <<", OmegaM="<< su.OmegaMatter();
+	cout <<"     OmegaK="<< su.OmegaCurv() <<", OmegaM="<< su.OmegaMatter();
 	cout <<", OmegaL="<< OmegaL <<", OmegaB="<< OmegaB <<", H0="<< su.H0() <<endl;
 	cout << endl;
 	RandomGenerator rg; // need this for cat2grid
@@ -346,52 +350,17 @@ int main(int narg, char* arg[]) {
 	
 	    cout << "     Reading over-density file " << overdensityfile << endl<<endl;  
 	    FitsInOutFile fsin(overdensityfile, FitsInOutFile::Fits_RO);
-	    TArray<r_8> drho; 
-	    fsin >> drho; // delta distribution
-	
-	
-	    int xplanes=1;
-	    Mass2Gal m2g(drho, su, rg, xplanes);
-	    cout << endl;
-	    m2g.ReadHeader(fsin);
-	    double zc = m2g.ReturnZref();
-	    cout << endl;
-	    TArray<r_8> dens, densf;
-	
-	    if(isSameSub) {
-		
-		    cout <<"     Select same sub-array as galaxy catalog, ";
-		    cout <<" reading pixel values from sub-array info file "<< subinfo <<endl;
-		    ifstream ifs(subinfo.c_str());
-		    Array B;
-		    sa_size_t nr, nc;
-		    B.ReadASCII(ifs,nr,nc);
-		    sa_size_t x1 = B(0,1), x2 = B(2,1);
-		    sa_size_t y1 = B(0,2), y2 = B(2,2);
-		    sa_size_t z1 = B(0,3), z2 = B(2,3);
-		    cout <<"     Read out density distribution ... "<<endl;
-		    cout << endl;
-		    dens = m2g.ExtractSubArray(x1,x2,y1,y2,z1,z2);//m2g.ExtractSubArray(z_center,nx,ny,nz);
-		    }
-	    else {
-	        cout <<"     Read out density distribution ... "<<endl;
-		    m2g.MassArray(dens);
-		    }
-	    cout << endl;
-
-	    cout <<"     Zero size of original over-density array read in"<<endl;
-	    drho.ZeroSize();
-	    cout << endl;
-
-
-	    cout <<"     Get new array with grid cells of delta<-1 were set to delta=-1"<<endl;
-	    cout <<"     Mean and Sigma of density fluctuations BEFORE ..."<<endl;
+	    
+	    // This is the unfudged over density distribution
+	    TArray<r_8> denstmp; 
+	    fsin >> denstmp; // delta distribution
+	    cout <<"     Mean and Sigma of density fluctuations BEFORE grid cells ";
+	    cout <<" of delta<-1 were set to delta=-1 ..."<<endl;
 	    double meanm, sigm;
-	    MeanSigma(dens, meanm, sigm);
+	    MeanSigma(denstmp, meanm, sigm);
 	    cout <<"     Mean="<< meanm <<", Sigma="<< sigm <<", Variance="<< sigm*sigm <<endl;
- 	    m2g.CleanNegativeMassCells();
-
-	
+	    
+	    TArray<r_8> dens;
 	    if(isSameSub) {
 	    
 		    cout <<"     Select same sub-array as galaxy catalog, ";
@@ -405,18 +374,50 @@ int main(int narg, char* arg[]) {
 		    sa_size_t z1 = B(0,3), z2 = B(2,3);
 		    cout <<"     Read out distorted density distribution ... "<<endl;
 		    cout << endl;
-		    densf = m2g.ExtractSubArray(x1,x2,y1,y2,z1,z2);//m2g.ExtractSubArray(z_center,nx,ny,nz);
+		    dens = denstmp(Range(z1,z2),Range(y1,y2),Range(x1,x2)).PackElements();
 		    volsim = volcat;
 		    }
 	    else { 
-	        cout <<"     Read out distorted density distribution ... "<<endl;m2g.MassArray(densf);    
-	        volsim = m2g.ReturnCubeVol();
+	        cout <<"     Read out distorted density distribution ... "<<endl;
+	        dens = denstmp;
 	        }
+	    denstmp.ZeroSize();
+	
+	
+        // This is fudged over-density distribution
+	    Mass2Gal m2g(fsin, su, rg);
+	    cout << endl;
+	    double zc = m2g.ReturnZref();
+	    cout << endl;
+	    
+	    TArray<r_8> densf;
+	    double volsim;
+	    if(isSameSub) {
+		
+		    cout <<"     Select same sub-array as galaxy catalog, ";
+		    cout <<" reading pixel values from sub-array info file "<< subinfo <<endl;
+		    ifstream ifs(subinfo.c_str());
+		    Array B;
+		    sa_size_t nr, nc;
+		    B.ReadASCII(ifs,nr,nc);
+		    sa_size_t x1 = B(0,1), x2 = B(2,1);
+		    sa_size_t y1 = B(0,2), y2 = B(2,2);
+		    sa_size_t z1 = B(0,3), z2 = B(2,3);
+		    cout <<"     Read out density distribution ... "<<endl;
+		    cout << endl;
+		    densf = m2g.ExtractSubArray(x1,x2,y1,y2,z1,z2);
+		    }
+	    else {
+	        cout <<"     Read out whole array of density distribution ... "<<endl;
+		    m2g.ODensArray(densf);
+		    volsim = m2g.ReturnCubeVol();
+		    }
 	    cout << endl;
 	
-	    cout <<"     Mean and Sigma of density fluctuations AFTER ..."<<endl;
+	    cout <<"     Mean and Sigma of density fluctuations AFTER grid cells ";
+	    cout <<" of delta<-1 were set to delta=-1 ..."<<endl;
 	    double meanmf, sigmf;
-	    MeanSigma(densf, meanmf, sigmf);
+	    m2g.returnDensMeanSigma(meanmf, sigmf);
 	    cout <<"     Mean="<< meanmf <<", Sigma="<< sigmf <<", Variance="<< sigmf*sigmf <<endl;
 	    
 	    
@@ -439,8 +440,8 @@ int main(int narg, char* arg[]) {
 	    cout << " Resource usage info : \n" << res << endl;
 	
 	
-	    cout <<"     Zero size of arrays"<<endl;
-	    m2g.ZeroSizeMassArrays();
+	    cout <<"     Zero size array"<<endl;
+	    m2g.ZeroSizeMassArray();
 	 
 	 
 	    cout <<"     Computing overdensity power spectra"<<endl<<endl;

@@ -36,7 +36,7 @@
 
 // ROOT libraries
 // removed these root libraries that are not needed
-#include "TMinuit.h"
+//#include "TMinuit.h"
 #include "TGraph.h"
 #include "TFile.h"
 #include "TDecompSVD.h"
