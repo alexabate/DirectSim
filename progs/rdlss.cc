@@ -5,7 +5,6 @@
   * @todo implement LF galaxy simulation properly within Mass2Gal and this program
   *       And use CumulDistM, DrawM classes instead of GalFlxTypDist
   * @todo Use LFParameters class to read in LF parameters
-  * @todo remove xplanes bit: don't need it if read NX from header?
   * @todo read over-density grid cosmology from header?
   * @todo why are GalFlxTypDist and extinct arguments to CreateNzHisto?
   *
@@ -127,8 +126,6 @@ void usage(void) {
 	cout << "       circular) [default=2PI]                              "<<endl;
 	cout << " -s : ngal: No galaxy clustering in simulation, instead     "<<endl;
 	cout << "            constant galaxy density equal to ngal/pixel     "<<endl;
-	cout << " -x : xplanes: Number of junk over-density grid planes to   "<<endl;
-	cout << "      remove [default=1]                                    "<<endl;
 	cout << " -z : z dimension is 'radial' direction [default=NO]        "<<endl;
 	cout << " -N : debug_out: Output mass cube, ngals cube to files      "<<endl;
 	cout <<"       [debug_out]_ngals.fits and [debug_out]_mass.fits      "<<endl;
@@ -148,7 +145,7 @@ int main(int narg, char* arg[]) {
 
 
 	string infile;            // name of over-density grid to read in
-	string outfile;           // name of file to output to
+	string outfileroot;           // name of file to output to
 	string debug_out;         // write output to here if debugging 
 	double maxRadius = 2.*PI; // max radius in radians gal can be from sim center
 	bool doSkyAreaCut=false;  // throw out gals with phi>maxRadius
@@ -162,15 +159,13 @@ int main(int narg, char* arg[]) {
 	bool noClustering=false;  // no clustering
 	bool isZRadial=false;     // z dimension IS 'radial' direction
 	int idsim = 1;
-	int xplanes = 1; // SimLSS simulates cube with 1 or 2 extra planes: one dimension is too long
-	// xplanes should be the difference between NX and drho.SizeX()
 	float ngal_per_cell = 1;  // density of galaxies when no clustering
 	float conv;
     bool extinct=false;       // don't apply extinction
   
 	//--- decoding command line arguments 
 	char c;
-	while((c = getopt(narg,arg,"hSZHMzRC:i:O:a:s:x:N:")) != -1) {
+	while((c = getopt(narg,arg,"hSZHMzRC:i:O:a:s:N:")) != -1) {
 	    switch (c) {
             case 'C' :
                 infile = optarg;
@@ -179,7 +174,7 @@ int main(int narg, char* arg[]) {
                 sscanf(optarg,"%d",&idsim);
                 break;
             case 'O' :
-                outfile	= optarg;
+                outfileroot	= optarg;
                 break;
             case 'S' :
                 doSimple = true;
@@ -198,9 +193,6 @@ int main(int narg, char* arg[]) {
                 sscanf(optarg,"%f",&ngal_per_cell);
                 noClustering=true;
                 break;
-            case 'x' :
-                sscanf(optarg,"%d",&xplanes);
-                break;
             case 'z' :
                 isZRadial=true;
                 break;
@@ -216,9 +208,8 @@ int main(int narg, char* arg[]) {
 
 		
 	cout << "     Over-density grid will be read from "<< infile <<endl;
-	cout << "     Removing "<< xplanes <<" planes from this grid"<<endl;
 
-	cout << "     Output file will be "<< outfile <<":"<<endl;
+	cout << "     Output file will be "<< outfileroot <<":"<<endl;
 	if (doSimple)
 	    cout <<"     Only simulating galaxy positions"<<endl;
 		
@@ -268,9 +259,10 @@ int main(int narg, char* arg[]) {
 	RandomGenerator rg;
 	Mass2Gal m2g(fin, su, rg);
 	double mean, sig;
-	TArray<r_8> mass;
-	m2g.MassArray(mass);
-	MeanSigma(mass, mean, sig);
+	m2g.calcDensMeanSigma(mean,sig);
+	//TArray<r_8> mass;
+	//m2g.MassArray(mass);
+	//MeanSigma(mass, mean, sig);
 	cout << endl <<"     Cleaned density cube stats: Mean=" << mean << " Sigma=";
 	cout << sig << endl <<endl;
 	res.Update();
@@ -280,7 +272,23 @@ int main(int narg, char* arg[]) {
 	
 	cout << "     Convert rho/rho^bar To Mean NGal"<<endl;  
 
-    // -----------------------------------------------------------------------
+    // -------------------------------------------------------------------------
+    // ---- replace the below with LFParameters class
+    // ALL
+    double phistarA=20.2e-4, MstarA=-21.79, alphaA=-1.37;
+    Schechter schA(phistarA, MstarA, alphaA);
+    // EARLY
+    double phistarE=16.7e-4, MstarE=-21.01, alphaE=-0.39; 
+    Schechter schE(phistarE, MstarE, alphaE);
+	// LATE
+	double phistarL=23.4e-4, MstarL=-21.29, alphaL=-1.14;
+	Schechter schL(phistarL, MstarL, alphaL);
+	// ALL
+	double  phistarS=27.8e-4, MstarS=-19.51, alphaS=-1.04;
+	Schechter schS(phistarS, MstarS, alphaS);
+
+    
+    /*// -----------------------------------------------------------------------
     // ---- replace the below with LFParameters class
 	// Read in LFs: replace the below with LFParameters class
 	cout << "     Set up Schechter functions for each galaxy type"<<endl;
@@ -356,30 +364,22 @@ int main(int narg, char* arg[]) {
 	cout << phistarLz3 <<"          Late"<<endl;
 	cout << "                "<< MstarSz3 <<"     "<< alpSz3 <<"        ";
 	cout << phistarSz3 <<"        Starburst"<<endl<<endl;
-    // -----------------------------------------------------------------------
+    // -----------------------------------------------------------------------*/
 	
-	
-	// Find conversion from mass density to galaxy density
-	cout<<"     Mass to Galaxy number conversion"<<endl;
-	Schechter schAz3(phistarAz3,MstarAz3,alpAz3);
-	//schechter functions for each type
-	Schechter schEz3(phistarEz3,MstarEz3,alpEz3);
-	Schechter schLz3(phistarLz3,MstarLz3,alpLz3);
-	Schechter schSz3(phistarSz3,MstarSz3,alpSz3);
 	
 	double schmin=-24, schmax=-13;// units of "M-5log10h70"
 	int schnpt=10000;
-	cout << "    ... integrating from Mbright="<< schmin <<" "<< MstarUnits;
-	cout << " to Mfaint="<< schmax <<" "<< MstarUnits <<", with step=";
-	cout << schnpt <<endl;
-	schAz3.SetInteg(schmin,schmax,schnpt);
-	double nz3=schAz3.Integrate();
-	cout <<"    ... number density of galaxies: "<< nz3 <<" Mpc^-3"<<endl;
+	cout << "    ... integrating from Mbright="<< schmin <<" to Mfaint = ";
+	cout << schmax <<", with step = "<< schnpt <<endl;
+	schA.SetInteg(schmin,schmax,schnpt);
+	double nz = schA.Integrate();
+	cout <<"    ... number density of galaxies: "<< nz <<" Mpc^-3"<<endl;
 	double pixVol = m2g.ReturnPixVol();
-	cout <<"    pixel volume="<< pixVol <<" Mpc^3"<<endl;
-	conv = pixVol*nz3;
-	cout <<"    actual gals per pixel vol="<< pixVol*nz3 << endl;
-	cout <<"    gals per pixel vol="<< conv << endl;
+	cout <<"     pixel volume="<< pixVol <<" Mpc^3"<<endl;
+	conv = pixVol*nz;
+	cout <<"     actual gals per pixel vol="<< pixVol*nz << endl;
+	cout <<"     gals per pixel vol="<< conv << endl;
+	cout << endl;
 	
 	
 	// turn off clustering if noClustering set
@@ -399,6 +399,7 @@ int main(int narg, char* arg[]) {
 		TArray<r_8>   mass2;
 		m2g.MassArray(mass2);
 		cout <<"    check minimum value in mass array is 0"<<endl;
+		double min,max;
 		mass2.MinMax(min,max);
 		cout <<"    min of mass = "<< min <<", max of mass = "<< max <<endl;
 		
@@ -435,41 +436,42 @@ int main(int narg, char* arg[]) {
 	int magbin=10000;
 	int PrtLevel = 2;
 	string IntLFUnits="(Mpc/h70)^-3";
-	cout <<"    Renormalise type-specific LFs ..."<<endl;
+	cout <<"     Renormalise type-specific LFs ..."<<endl;
 	//get prob distribution
 	// - set schechter distributions
 	int type;
 	type=1;
-	SchechterDist schDistEz3(schAz3,schEz3,schLz3,schSz3,type);
+	SchechterDist schDistE(schA,schE,schL,schS,type);
 	type=2;
-	SchechterDist schDistLz3(schAz3,schEz3,schLz3,schSz3,type);
+	SchechterDist schDistL(schA,schE,schL,schS,type);
 	type=3;
-	SchechterDist schDistSz3(schAz3,schEz3,schLz3,schSz3,type);
+	SchechterDist schDistS(schA,schE,schL,schS,type);
 	
 	
 	cout <<"     Find fraction of each type ..."<<endl;
 	// integrate work out type fractions
-	double nfE3=schDistEz3.Integrate(schmin,schmax,schnpt);
-	double nfL3=schDistLz3.Integrate(schmin,schmax,schnpt);
-	double nfS3=schDistSz3.Integrate(schmin,schmax,schnpt);
+	double nfE3=schDistE.Integrate(schmin,schmax,schnpt);
+	double nfL3=schDistL.Integrate(schmin,schmax,schnpt);
+	double nfS3=schDistS.Integrate(schmin,schmax,schnpt);
 	double totalnr=nfE3+nfL3+nfS3;
-	double fEz3=nfE3/totalnr;
-	double fLz3=nfL3/totalnr;
-	double fSz3=nfS3/totalnr;
-	cout <<"     Type fractions from renormalised LFs are: fE="<< fEz3;
-	cout <<", fL="<< fLz3 <<", fS="<< fSz3 <<endl;
-	GalFlxTypDist gfdz3(rg, PrtLevel); 
-	gfdz3.AddGalType(schDistEz3, schmin, schmax, fEz3, magbin, schnpt); 
-	gfdz3.AddGalType(schDistLz3, schmin, schmax, fLz3, magbin, schnpt); 
-	gfdz3.AddGalType(schDistSz3, schmin, schmax, fSz3, magbin, schnpt);
+	double fE=nfE3/totalnr;
+	double fL=nfL3/totalnr;
+	double fS=nfS3/totalnr;
+	cout <<"     Type fractions from renormalised LFs are: fE="<< fE;
+	cout <<", fL="<< fL <<", fS="<< fS <<endl;
+	GalFlxTypDist gfd(rg, PrtLevel); 
+	gfd.AddGalType(schDistE, schmin, schmax, fE, magbin, schnpt); 
+	gfd.AddGalType(schDistL, schmin, schmax, fL, magbin, schnpt); 
+	gfd.AddGalType(schDistS, schmin, schmax, fS, magbin, schnpt);
+	cout << endl;
 	//------------------------------------------------------------------------//
 	
 	
 	
 	// Simulate galaxies
 	cout <<"     Simulate galaxies"<<endl;
-	m2g.CreateGalCatalog(idsim, outfile, conv, gfdz3, doSimple);
-
+	m2g.CreateGalCatalog(idsim, outfileroot, conv, gfd, doSimple);
+    cout <<"     Complete! "<< endl;
 
 		
   }  // End of try bloc 

@@ -54,28 +54,29 @@ void usage(void) {
 		cout << "  to is specifed with -O option                        "<<endl;
 		cout << endl;
 		
-		cout << "  The grid is specified by giving the number of pixels "<<endl;
-		cout << "  in each dimension, the pixel size and the redshift of"<<endl;
-		cout << "  the center pixel via the -P option                   "<<endl;
+		cout << "  The grid properties are set by giving the number     "<<endl;
+		cout << "  of pixels in each dimension, the pixel size, and the "<<endl;
+		cout << "  redshift of the center pixel via the -P option       "<<endl;
 		cout << endl;
 		
 		cout << "  The sky area the catalog covers is set with option -a"<<endl;
-		cout << "  this refers to the opening angle in radians that is  "<<endl;
-		cout << "  covered by the observation cone. This variable is    "<<endl;
+		cout << "  this refers to half the opening angle in radians that"<<endl;
+		cout << "  is covered by the observation cone. This variable is "<<endl;
 		cout << "  used in determining how many pixels of the gridded   "<<endl;
 		cout << "  data should in fact contain data.                    "<<endl;
 		cout << endl;
 		
 		cout << "  If the galaxy catalog was simulated such that the z  "<<endl;
-		cout << "  dimension is the radial direction then this is       "<<endl;
-		cout << "  indicated with option -r                             "<<endl;
+		cout << "  dimension is the radial direction then this needs to "<<endl;
+		cout << "  be indicated via option -r (with no arg)             "<<endl;
 		cout << endl;
 		
 		cout << "  The names of the redshift columns to read in can be  "<<endl;
-		cout << "  supplied with the -z, first argument is the observed "<<endl;
-		cout << "  redshift column name and the second (optional)       "<<endl;
-		cout << "  argument is the spectroscopic redshift column name.  "<<endl;
-		cout << "  both arguments must be separated by a comma.         "<<endl;
+		cout << "  set with option -z, first argument refers to the     "<<endl;
+		cout << "  column name containing observed redshifts and the    "<<endl;
+		cout << "  second (and optional) argument refers to the column  "<<endl;
+		cout << "  name containing the true (spec) redshifts. both      "<<endl;
+		cout << "  arguments must be separated by a comma.              "<<endl;
 		cout << endl;
 		
 		cout << "  If the catalog is subject to selection effects (not   "<<endl;
@@ -129,13 +130,14 @@ void usage(void) {
 		
 	cout << " -C : input_catalog : FITS filename containing galaxy catalog"<<endl;
 	cout << " -O : out_grids_name : Write gridded data to this FITS file"<<endl;
-	cout << " -a : SkyArea : Specify sky area (radians)                 "<<endl;
+	cout << " -a : SkyArea : Specify sky area (radians) [DEFAULT=999]   "<<endl;
 	cout << " -r : isZRadial: z-dimension of catalog IS radial direction"<<endl;
 	cout << " -P : Nx,Ny,Nz,zref,Res : Number of pixels, redshift of    "<<endl;
 	cout << "      central pixel, pixel size - to specify how to grid   "<<endl;
 	cout << " -z : ZOCol,ZSCol: read OBSERVED redshifts from column named"<<endl;
 	cout << "      ZOCol, SPECTRO redshifts from column named ZSCol      "<<endl;
-	cout << " -m : nc : Mean density of random grid                      "<<endl;
+	cout << "      [DEFAULT=z,z]                                         "<<endl;
+	cout << " -m : nc : Mean density of random grid [DEFAULT=1]          "<<endl;
 	cout << " -s : sf_file_root,all_z_file: Do selection function        "<<endl;
 	cout << "      correction. If both args are given sf is calculated   "<<endl;
 	cout << " -d : debug_out : root stem of output filename objects are  "<<endl;
@@ -236,14 +238,6 @@ int main(int narg, char* arg[]) {
 		    }
 		if (results.size()>2)
 		    isForceZspec = true;
-		/*vector<string>::iterator i;
-		i = results.begin();
-		sf_file_root=*i;
-		i++;
-		all_z_file=*i;
-		i++;
-		if (i!=results.end())// if any string given for FORCESZ, sets isForceZspec to true
-			{ isForceZspec=true; }*/
 		}
 		
   	// get up to two z column names
@@ -254,12 +248,6 @@ int main(int narg, char* arg[]) {
 		ZOCol = results[0];
 		if (results.size()>1)
 		    ZSCol = results[1];
-		/*vector<string>::iterator i;
-		i = results.begin();
-		ZOCol=*i;
-		i++;
-		if (i!=results.end())
-			ZSCol=*i;*/
 		}
 	
 	// Command line arguments
@@ -465,9 +453,9 @@ int main(int narg, char* arg[]) {
 	cat.WriteHeader(input_catalog);
 	
 	
-	}// end of if not debugging
+	} // end of if not debugging
 	
-  }  // End of try bloc 
+  } // End of try bloc 
   
   
 catch (PThrowable & exc) {

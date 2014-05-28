@@ -72,6 +72,9 @@ public:
 	    mass_ = drho(Range(0, drho.SizeX()-nbadplanes-1), Range::all(), Range::all()).PackElements();
   	    mass_.Show();
         cout << endl;
+        
+        // calculate mean and std of original over-density distribution
+        MeanSigma(mass_, mean_preclean_, std_preclean_);
 
         // clean -ve mass cells and convert from drho/rho_bar to rho/rho_bar
         sa_size_t nbad = CleanNegativeMassCells();
@@ -93,8 +96,19 @@ public:
         fg_nodrho = true;
     };
     
-    void returnDensMeanSigma(double& mean, double& sig) {
+    /** Return the mean and standard deviation of the over-density fluctuations
+        (after cleaning)                                                      */
+    void calcDensMeanSigma(double& mean, double& sig) {
 	    MeanSigma((mass_-=1.), mean, sig); };
+	    
+	/** Return the mean and standard deviation of the over-density fluctuations
+        (pre cleaning)                                                        */
+    void returnOrigDensMeanSigma(double& mean, double& sig) {
+	    mean = mean_preclean_; sig = std_preclean_; };
+	    
+	/** Convert comoving distance to redshift      
+        @param dcom     comoving distance                                     */
+    inline double dist2Redshift(double dcom) { return dist2z_(dcom); };
 
 protected:
 
@@ -131,9 +145,7 @@ protected:
         };
 
 
-    /** Convert comoving distance to redshift      
-        @param dcom     comoving distance                                     */
-    inline double dist2Redshift(double dcom) { return dist2z_(dcom); };
+    
 
     /** Convert between Cartesian and spherical coordinates 
         NOTE : the names theta, phi are reversed compared to the usual convention 
@@ -264,6 +276,8 @@ protected:
     SInterp1D dist2z_;          /**< Distance to redshift converter              */
     bool fg_nodrho; /**< A flag to identify if we have drho or random generation */
     int_8 ng_;				    /**< Number of galaxies                          */
+    double mean_preclean_;      /**< Mean of over-density distribution BEFORE cells were cleaned*/
+    double std_preclean_;       /**< Std of over-density distribution BEFORE cells were cleaned */
 };
 
 /** @class Mass2Gal class 

@@ -1,3 +1,13 @@
+/**
+  * @file  baseSimulation.cc
+  * @brief Program that simulates type, absolute magnitude values from an input
+  *        luminosity function       
+  *
+  * @author Alex Abate
+  * @date January 2012 
+  * Contact: abate@email.arizona.edu
+  *
+  */
 #include "machdefs.h"
 #include "sopnamsp.h"
 #include <iostream>
@@ -25,15 +35,6 @@
 #include "gftdist.h"
 #include "sinterp.h"
 
-#define PI 3.141592
-
-/*******************************************************************************
-  Program that simulates type, absolute magnitude values 
-  from an input luminosity function     
-             
-  A Abate January 2012             
-                
-*******************************************************************************/
 
 void usage(void);
 void usage(void)

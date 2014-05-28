@@ -281,9 +281,12 @@ int main(int narg, char* arg[]) {
 	sa_size_t ny = wngals.SizeY(); 
 	sa_size_t nz = wngals.SizeZ(); 
 	double z_center = atof(fin.KeyValue("ZCEN").c_str()); 
-	double grid_res = atof(fin.KeyValue("R").c_str()); 
-	if(!isMeanDensitySpec)
-		meandens=atof(fin.KeyValue("MeanOverDensity").c_str());
+	double grid_res = atof(fin.KeyValue("DX").c_str()); // should check DX=DY=DZ
+	if(!isMeanDensitySpec) {
+		meandens = atof(fin.KeyValue("MeanOD").c_str());
+		cout << "     Setting mean over-density of random grid to be = ";
+		cout << meandens << endl;
+		}
 	cout << "     Size of sub-array Nx,Ny,Nz = "<< nx <<","<< ny <<","<< nz;
 	cout <<", resolution = "<< grid_res;
 	cout <<" Mpc, mean density of distorted overdensity grid = "<< meandens <<endl;
@@ -417,7 +420,7 @@ int main(int narg, char* arg[]) {
 	    cout <<"     Mean and Sigma of density fluctuations AFTER grid cells ";
 	    cout <<" of delta<-1 were set to delta=-1 ..."<<endl;
 	    double meanmf, sigmf;
-	    m2g.returnDensMeanSigma(meanmf, sigmf);
+	    m2g.calcDensMeanSigma(meanmf, sigmf);
 	    cout <<"     Mean="<< meanmf <<", Sigma="<< sigmf <<", Variance="<< sigmf*sigmf <<endl;
 	    
 	    

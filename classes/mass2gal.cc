@@ -279,9 +279,9 @@ sa_size_t Mass2Gal::CreateGalCatalog(int idsim, string outroot, double conv,
 	
 	// Create swap space FITS file structure
 	outfile = outroot + "_galaxycatalog.fits";
-	FitsInOutFile swf(outroot, FitsInOutFile::Fits_Create);	
+	FitsInOutFile swf(outfile, FitsInOutFile::Fits_Create);	
 	SwFitsDataTable gals(swf, 2048);
-	
+	//swf.MoveAbsToHDU(2);
 	
 	// columns required: to method later
 	gals.AddLongColumn("GalID");
@@ -315,7 +315,18 @@ sa_size_t Mass2Gal::CreateGalCatalog(int idsim, string outroot, double conv,
 	SwFitsDataTable zdata(swfz, 2048);
 	zdata.AddLongColumn("GalID");
 	zdata.AddFloatColumn("zs");
-	DataTableRow rowz = zdata.EmptyRow();
+	DataTableRow tmp = zdata.EmptyRow();
+	size_t s = tmp.Size();
+	//cout << "s = "<< s << endl;
+	vector<string> colnames;
+	colnames.push_back("GalID");
+	colnames.push_back("zs");
+	vector<size_t> sizes;
+	sizes.push_back(s/2);
+	sizes.push_back(s/2);
+	DataTableRow rowz(colnames,sizes); 
+	rowz[0] = 1; rowz[1] = 0.; // have to do this else problem closing if file not used
+	zdata.AddRow(rowz);
 	
 	
 	// for ppf file containing n(z) histogram
@@ -330,11 +341,11 @@ sa_size_t Mass2Gal::CreateGalCatalog(int idsim, string outroot, double conv,
 	
 	// to create object id
 	uint_8 gid0=idsim*100000000000LL; // LL seems to be needed by some compilers
-	cout <<"    Simulation ID = "<< gid0 <<endl;
+	cout <<"     Simulation ID = "<< gid0 <<endl;
 	uint_8 gid;
 	uint_8 seq=0, seq2=0; // total number of gals that go in files
 
-	cout <<  " Mass2Gal::CreateGalCatalog start looping over cube cells NCells = ";
+	cout <<"     Mass2Gal::CreateGalCatalog start looping over cube cells NCells = ";
 	cout << mass_.Size() << endl;
 	
 	ng_ = 0; // total number of galaxies in the simulation
@@ -402,6 +413,7 @@ sa_size_t Mass2Gal::CreateGalCatalog(int idsim, string outroot, double conv,
                     
                 //   - faintest absolute mag allowed at this z
                 double mAM =  maxAM(zs);
+                //cout << mag <<"  " << mAM << endl;
                 
                 
                 // magnitude cut and sky area selection
@@ -451,9 +463,15 @@ sa_size_t Mass2Gal::CreateGalCatalog(int idsim, string outroot, double conv,
 				    seq2++; // adding up TOTAL number of gals put into z file
 				    gid = gid0 + seq2;
 
+                    if (seq2<1) {
+                        // clear and start again
+                        zdata.Clear();
+                        zdata.AddLongColumn("GalID");
+	                    zdata.AddFloatColumn("zs");
+                        }
+
 				    rowz[0] = gid;
 				    rowz[1] = zs; 
-
 				    zdata.AddRow(rowz);
 
 			        }
@@ -461,36 +479,42 @@ sa_size_t Mass2Gal::CreateGalCatalog(int idsim, string outroot, double conv,
                 }  // end of loop over galaxies in the cell 
                 
         } // end of loop over ix (cells) 
-	cout <<" Mass2Gal::CreateGalaxyCatalog() finished loop"<<endl;
+	cout <<"     Mass2Gal::CreateGalaxyCatalog() finished loop"<<endl;
 	
 
     // write n(z) to file
 	outfile = outroot + "_nofz.ppf";
 	POutPersist pos(outfile);
 	pos << nz;
-
-	// @todo want to delete zdata file if no magnitude cut, not sure how to do this
+	
+	if (!doAbsMagCut_ )
+	    seq2 = seq;
+	
 	
 	// write info to headers
-	gals.Info()["NAllObject"] = seq2; // ALL in sim
-	gals.Info()["NBrightObject"] = seq; // ALL in file 1
-	gals.Info()["MeanOverDensity"] = mean_overdensity_; // important
+	gals.Info()["NAll"] = seq2; // ALL in sim
+	gals.Info()["NBri"] = seq; // ALL in file 1
+	gals.Info()["MeanOD"] = mean_overdensity_; // important
+	//cout << "check "<< gals.Info()["NAll"] << "  "<< gals.Info()["NBri"];
+	//cout <<"  "<< gals.Info()["MeanOD"] << endl;
+
 
 	if( doAbsMagCut_ ){
-		zdata.Info()["NAllObject"] = seq2; // ALL in sim
-		zdata.Info()["NBrightObject"] = seq; // ALL in file 1
-		zdata.Info()["MeanOverDensity"]=mean_overdensity_; // important
+		zdata.Info()["NAll"] = seq2; // ALL in sim
+		zdata.Info()["NBri"] = seq; // ALL in file 1
+		zdata.Info()["MeanOD"] = mean_overdensity_; // important
 		}
-	else	 {
+	else {
+	    cout <<"     Deleting true z file because it's not needed"<<endl;
 	    outfile = outroot + "_alltruez.fits";
 		if( remove(outfile.c_str()) != 0 )
 		    cout << "Error deleting ZTRUE file" << endl;
 		}
 
-	cout <<" Mass2Gal::CreateGalaxyCatalog() done - ng_ = " << ng_;
-    cout <<" Total number of galaxies in catalog = "<< seq <<" "<< endl;
+	cout <<"     Mass2Gal::CreateGalaxyCatalog() done - ng_ = " << ng_ << endl;
+    cout <<"     Total number of galaxies in catalog = "<< seq << endl;
     if( doAbsMagCut_ )
-        cout <<" Total number of galaxiesin z-only file "<< seq2 << endl;
+        cout <<"     Total number of galaxies in z-only file "<< seq2 << endl;
 	return seq;
 };
 
