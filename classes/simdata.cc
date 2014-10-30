@@ -34,8 +34,8 @@ double PhotometryCalcs::Kcorr(double z, ClassFunc1D& sed, Filter& filterX,
 		
 	kxy=-2.5*log10(pow((1+z),-1)*(trpzx.Value()/trpzfx.Value())*
 	                                    (trpzfy.Value()/trpzy.Value()));
-	if (z<0.0001)
-	    cout << z <<"  "<< kxy <<endl;
+	//if (z<0.0001)
+	//    cout << z <<"  "<< kxy <<endl;
 	return kxy;
 };
 
@@ -467,6 +467,7 @@ vector<double> SimData::addLSSTuError(double mag, int nVisits)
                                                             ukm_,airMass_);
 
     vector<double> obsmag = getObservedLSSTMagnitude(mag, m5, uGamma_, nVisits, iFilter);
+    
 	return obsmag;
 };
 
@@ -742,6 +743,12 @@ vector<double> SimData::getObservedLSSTMagnitude(double mag, double m5, double g
 	// add the error
     vector<double> observation;
     observation = addFluxError(mag, fluxError, iFilter);
+    
+    // if very faint count as non-detection (mag=99, error on mag=5-sigma detection limit)
+    if (observation[0]>45.) {
+        observation[0]=99.;
+        observation[1]=m5;
+        }
     
 	return observation;
 };
