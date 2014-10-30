@@ -53,22 +53,26 @@ int main(int narg, char* arg[]) {
 
 	//--- decoding command line arguments 
     string outfileroot = "testfiles/testMadau";
+    // source redshifts
+    double zSource1 = 2.4;
+	double zSource2 = 3.5;
+	double zSource3 = 4.5;
   
 	//--- decoding command line arguments 
-	cout << " ==== decoding command line arguments ===="<<endl;
 	char c;
-	while((c = getopt(narg,arg,"ho:")) != -1) 
-	{
-	switch (c) 
-		{
-	  case 'o' :
-	    outfileroot = optarg;
-	    break;
-	  case 'h' :
-		default :
-		usage(); return -1;
-		}
-	}
+	while((c = getopt(narg,arg,"ho:z:")) != -1) {
+	    switch (c) {
+	        case 'o' :
+	            outfileroot = optarg;
+	            break;
+	        case 'z' :
+	            sscanf(optarg,"%lf,%lf,%lf",&zSource1,&zSource2,&zSource3);
+	            break;
+	        case 'h' :
+		        default :
+		        usage(); return -1;
+		    }
+	    }
 
   //-- end command line arguments
   cout << endl;
@@ -88,10 +92,7 @@ int main(int narg, char* arg[]) {
     // Class that calculates Madau absorption
     Madau madau;  
     
-    // source redshifts
-    double zSource1 = 2.5;
-	double zSource2 = 3.5;
-	double zSource3 = 4.5;
+    
 	
 	// Write transmission as a function of observed wavelength to file
 	outfile = outfileroot + "_madauTrans.txt";

@@ -40,6 +40,8 @@
 #include "simdata.h"
 #include "selectfunc.h"
 #include "constcosmo.h"
+#include "pkspectrum.h"
+#include "massfunc.h"
 
 /** @class SimFromOverDensity
   *
@@ -73,6 +75,14 @@ public:
   	    mass_.Show();
         cout << endl;
         
+        /*int cnt=0;
+        for (int i=0; i<mass_.SizeX(); i++)
+            for (int j=0; j<mass_.SizeY(); j++)
+                for (int k=0; k<mass_.SizeZ(); k++)
+                    if (mass_(i,j,k)>1.6)
+                        cnt++;
+        cout << cnt <<" elements >1.6"<<endl;*/
+        
         // calculate mean and std of original over-density distribution
         MeanSigma(mass_, mean_preclean_, std_preclean_);
 
@@ -80,6 +90,21 @@ public:
         sa_size_t nbad = CleanNegativeMassCells();
         cout << "     Number of negative mass cells = "<< nbad << endl;
         cout << endl;
+        
+        /*cnt=0;
+        for (int i=0; i<mass_.SizeX(); i++)
+            for (int j=0; j<mass_.SizeY(); j++)
+                for (int k=0; k<mass_.SizeZ(); k++)
+                    if ( (mass_(i,j,k)-1)>1.6)
+                        cnt++;
+        cout << cnt <<" elements >1.6"<<endl;*/
+        
+        // calculate mean and std after cleaning
+        double tmp;
+        TArray<r_8> masstmp = ODensArray();
+        // masstmp = mass_ is not a deep copy!
+        // TArray<r_8> masstmp(mass_); is not a deep copy!
+        MeanSigma(masstmp, mean_overdensity_, tmp);
 
         // set the distance redshift relation
         setDistanceRedshiftRelation();
@@ -99,7 +124,8 @@ public:
     /** Return the mean and standard deviation of the over-density fluctuations
         (after cleaning)                                                      */
     void calcDensMeanSigma(double& mean, double& sig) {
-	    MeanSigma((mass_-=1.), mean, sig); };
+        TArray<r_8> masstmp = ODensArray();
+	    MeanSigma(masstmp, mean, sig); };
 	    
 	/** Return the mean and standard deviation of the over-density fluctuations
         (pre cleaning)                                                        */
@@ -211,10 +237,30 @@ public:
     // Basically just 'getter' methods below
 
     /** Return "cleaned" mass array                                           */
-    void MassArray(TArray<r_8>& mass_array) { mass_array = mass_; }
+    void MassArray(TArray<r_8>& mass_array) {
+        int ndim = 3;
+        sa_size_t mydim[ndim];
+        mydim[0] = mass_.SizeX(); mydim[1] = mass_.SizeY(); mydim[2] = mass_.SizeZ();
+        mass_array.SetSize(ndim,mydim);
+        for (int i=0; i<mass_array.SizeX(); i++)
+            for (int j=0; j<mass_array.SizeY(); j++)
+                for (int k=0; k<mass_array.SizeZ(); k++)
+                    mass_array(i,j,k) = mass_(i,j,k);
+        };
     
     /** Return "cleaned" over-density array                                   */
-    void ODensArray(TArray<r_8>& odens_array) { odens_array = (mass_-= 1.); }
+    TArray<r_8> ODensArray() {
+        TArray<r_8> odens;
+        int ndim = 3;
+        sa_size_t mydim[ndim];
+        mydim[0] = mass_.SizeX(); mydim[1] = mass_.SizeY(); mydim[2] = mass_.SizeZ();
+        odens.SetSize(ndim,mydim);
+        for (int i=0; i<odens.SizeX(); i++)
+            for (int j=0; j<odens.SizeY(); j++)
+                for (int k=0; k<odens.SizeZ(); k++)
+                    odens(i,j,k) = mass_(i,j,k) - 1.;
+        return odens;
+        };
     
     /** Return total number of galaxies in simulation                         */
     int ReturnTotNgals() { return ng_; };
@@ -539,9 +585,58 @@ public:
     : SimFromOverDensity(fin, su, rg)
     { };
 
-    void simulateGalaxies(double conv, string outfile);
+    
+    /** Return the value of delta that matches the expected number of clusters
+        in the simulation volume 
+        @param spectral_index    power spectrum spectral index                
+        @param sigma8            power spectrum normalisation
+        @param m1                lower mass limit of clusters
+        @param m2                upper mass limit of clusters                 
+        @param nstep             number of steps for delta table              
+        @param z                 redshift of clusters                         */
+    double findClusterDelta(double spectral_index, double sigma8, double m1, double m2, 
+        int nstep, double z=-1.) {
+        
+        if (z<0.) {
+           cout <<"     Setting redshift to cube center redshift"<<endl;
+           z = zref_; // use the cube center redshift
+           }
+        
+        SInterp1D npix = npixelsVsDelta(nstep);
+        double nclusters = expectedNCluster(spectral_index, sigma8, m1, m2, z);
+        delta_cluster_ = npix(nclusters);
+        
+        return delta_cluster_;
+        };
+    
+    
+    /** Simulate field and clusters galaxies from over-density grid
+        @param conv     conversion between rho/rho^bar and n-galaxies
+        @param bias     relative galaxy bias of cluster galaxies to field galaxies
+        @param outfile  root filename to write simulated galaxies and clusters to  */
+    void simulateGalaxies(double conv, double bias, string outfile);
 
 protected:
+
+    bool checkPixel(int i, int j, int k, double dv, int& cnt);
+
+    /** Find the numer of density grid pixels with value > delta. If a pixel is 
+        adjacent to other pixels with values > delta only ONE pixel in the group 
+        is counted    
+        @param nstep             number of steps for delta table              */
+    SInterp1D npixelsVsDelta(int nstep);
+    
+    /** Calculate the expected number of clusters within simulation volume
+        @param spectral_index    power spectrum spectral index                
+        @param sigma8            power spectrum normalisation
+        @param m1                lower mass limit of clusters
+        @param m2                upper mass limit of clusters                 
+        @param z                 redshift of clusters                         */
+    double expectedNCluster(double spectral_index, double sigma8, double m1, double m2, double z);
+
+// Class variables
+    double delta_cluster_; /**< pixel with delta>delta_cluster_ is a cluster pixel */ 
+
 
 };
 

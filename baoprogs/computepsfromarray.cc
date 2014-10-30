@@ -217,11 +217,9 @@ int main(int narg, char* arg[]) {
 	string fitsfile="fits";
 
 	if ( strcmp(textfile.c_str(),endf.c_str()) == 0 ) { // if strings ARE the same
-	    cout <<" computeOvDensityPS = false"<<endl;
 		computeOvDensityPS = false; // will be reading it from a file
 		}
 	else if ( strcmp(fitsfile.c_str(),endf.c_str()) ==0 ) {// if strings ARE the same
-	    cout <<" computeOvDensityPS = true"<<endl;
 		computeOvDensityPS = true;
 		}
 	else 
@@ -284,13 +282,15 @@ int main(int narg, char* arg[]) {
 	double grid_res = atof(fin.KeyValue("DX").c_str()); // should check DX=DY=DZ
 	if(!isMeanDensitySpec) {
 		meandens = atof(fin.KeyValue("MeanOD").c_str());
+		cout << "     Reading mean over-density from header"<< endl;
 		cout << "     Setting mean over-density of random grid to be = ";
 		cout << meandens << endl;
 		}
 	cout << "     Size of sub-array Nx,Ny,Nz = "<< nx <<","<< ny <<","<< nz;
 	cout <<", resolution = "<< grid_res;
 	cout <<" Mpc, mean density of distorted overdensity grid = "<< meandens <<endl;
-
+    cout << endl;
+    
 	
 	// Set cosmology (should be reading this from the header)
 	cout << "     Initialise cosmology:"<<endl;
@@ -320,8 +320,8 @@ int main(int narg, char* arg[]) {
 	// Mean and sigma of gridded galaxy data (mean should be ~0)
 	double meang, sigg, meangw, siggw, meangr, siggr;
 	MeanSigma(ngals, meang, sigg);
-	cout << "     Mean and Sigma of (raw) galaxy fluctuation field ..."<<endl;
-	cout << "     Mean="<< meang <<", Sigma="<< sigg <<endl<<endl;
+	cout << "     Mean and Sigma of (raw) galaxy fluctuation field:";
+	cout << " Mean="<< meang <<", Sigma="<< sigg <<endl;
 	MeanSigma(wrgals, meangr, siggr);
 	cout << "    ... of random galaxy grid: Mean="<< meangr <<", Sigma="<< siggr <<endl;
 	MeanSigma(wngals, meangw, siggw);

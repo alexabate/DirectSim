@@ -490,7 +490,8 @@ sa_size_t Mass2Gal::CreateGalCatalog(int idsim, string outroot, double conv,
 	if (!doAbsMagCut_ )
 	    seq2 = seq;
 	
-	
+	cout << "     Mean over-density of original (cleaned) over-density grid = ";
+	cout << mean_overdensity_ << endl;
 	// write info to headers
 	gals.Info()["NAll"] = seq2; // ALL in sim
 	gals.Info()["NBri"] = seq; // ALL in file 1
@@ -1290,7 +1291,131 @@ cout <<" END Mass2Gal::ApplySF()"<<endl<<endl;
 //******* FieldClusterGals Methods  ******************************************//
 
 
-void FieldClusterGals::simulateGalaxies(double conv, string outfileroot)
+double FieldClusterGals::expectedNCluster(double ns, double sigma8, double m1, double m2, double z) {
+
+    
+
+    // retrieve cosmological parameters
+    double h = su_.h();
+    double oc = su_.OmegaCDM();
+    double ob = su_.OmegaBaryon();
+    double om = su_.OmegaMatter();
+    double ol = su_.OmegaLambda();
+    double w0 = su_.DEw();
+
+    // power spectrum calculations
+	InitialPowerLaw ipl(ns);
+	TransferEH tf(h, oc, ob, T_CMB_K);
+	GrowthFN gro(om, ol, w0);
+	PkSpecCalc pkz(ipl, tf, gro, z);
+	
+	
+	// mass function calculations
+	bool typeLog = false;
+	MassFunc massFunc(su_, pkz, z, sigma8, typeLog);
+	double nc = ReturnCubeVol()*massFunc.Integrate(m1, m2, 1000);
+	cout <<"     Number of clusters in volume "<< ReturnCubeVol() <<" at z = "<< z;
+	cout <<" between "<< m1 <<" and "<< m2 <<" solar masses is "<< nc << endl;
+
+    return nc;
+};
+
+
+SInterp1D FieldClusterGals::npixelsVsDelta(int nstep) {
+
+    // recall mass_ is delta+1.
+
+    // set delta grid
+    double tmp, maxd;
+    mass_.MinMax(tmp, maxd);
+    maxd-=1.; 
+    double mind=0.6*maxd; // don't want to start at min delta since clusters are
+                          // regions of very large delta
+    double dstep = (maxd-mind)/(nstep-1.);
+    cout << "     Delta grid: "<< mind <<" to "<< maxd <<" in steps of "<< dstep;
+    cout << endl;
+    
+    // vector of delta, vector of npixel groups with value > delta
+    vector<double> deltas, npixels;
+
+    // loop over delta values, find n_pixels with value > delta
+    // if a pixel is adjacent to other pixels with values > delta only ONE
+    // pixel in the group is counted    
+    for (int id=0; id<nstep; id++) {
+       
+        double dv = mind + id*dstep;
+        //cout << "     On dv = "<< dv << endl;
+        deltas.push_back(dv);
+        
+        int cnt = 0;
+        // loop over density grid values
+        for (int i=0; i<mass_.SizeX(); i++)
+            for (int j=0; j<mass_.SizeY(); j++)
+                for (int k=0; k<mass_.SizeZ(); k++) {
+                
+                
+                    checkPixel(i, j, k, dv, cnt);
+                   
+                    /*double delta = mass_(i,j,k)-1.;
+                   
+                    if (delta>dv) {
+                        
+                        //cout <<"     delta = "<< delta << endl;
+                        // write conditions such that element is counted
+                        // ALL must be true for element to be counted
+                        bool cond1 = (i<1 || mass_(i-1,j,k)<=dv+1.);
+                        bool cond2 = ( (i<1 || j<1) || mass_(i-1,j-1,k)<=dv+1. );
+                        bool cond3 = (j<1 || mass_(i,j-1,k)<=dv+1.);
+                        bool cond4 = (k<1 || mass_(i,j,k-1)<=dv+1.);
+                        bool cond5 = ( (i<1 || k<1) || mass_(i-1,j,k-1)<=dv+1. );
+                        bool cond6 = ( (j<1 || k<1) || mass_(i,j-1,k-1)<=dv+1. );
+                        bool cond7 = ( (i<1 || j<1 || k<1) || mass_(i-1,j-1,k-1)<=dv+1. );
+                        if (cond1 && cond2 && cond3 && cond4 && cond5 && cond6 && cond7)
+                            cnt += 1;
+                        }*/
+                    }
+                    
+        npixels.push_back(double(cnt));
+        }
+        
+    // reverse order
+    vector<double> deltas2, npixels2;
+    for (int i=0; i<nstep; i++) {
+        deltas2.push_back(deltas[nstep-1-i]);
+        npixels2.push_back(npixels[nstep-1-i]);
+        //cout << deltas2[i] <<"  "<< npixels2[i] << endl;
+        }
+        
+    // put into interplation function
+    SInterp1D npix(npixels2, deltas2, npixels2[0], npixels2[nstep-1], 1000);
+    return npix;
+
+};
+
+
+bool FieldClusterGals::checkPixel(int i, int j, int k, double dv, int& cnt) {
+
+    bool isCluster = false;
+    double delta = mass_(i,j,k)-1.;
+    if (delta>dv) {
+        isCluster = true;
+                        
+        // write conditions such that element is counted
+        // ALL must be true for element to be counted
+        bool cond1 = (i<1 || mass_(i-1,j,k)<=dv+1.);
+        bool cond2 = ( (i<1 || j<1) || mass_(i-1,j-1,k)<=dv+1. );
+        bool cond3 = (j<1 || mass_(i,j-1,k)<=dv+1.);
+        bool cond4 = (k<1 || mass_(i,j,k-1)<=dv+1.);
+        bool cond5 = ( (i<1 || k<1) || mass_(i-1,j,k-1)<=dv+1. );
+        bool cond6 = ( (j<1 || k<1) || mass_(i,j-1,k-1)<=dv+1. );
+        bool cond7 = ( (i<1 || j<1 || k<1) || mass_(i-1,j-1,k-1)<=dv+1. );
+        if (cond1 && cond2 && cond3 && cond4 && cond5 && cond6 && cond7)
+            cnt += 1;
+        }
+    return isCluster;
+};
+
+void FieldClusterGals::simulateGalaxies(double conv, double bias, string outfileroot)
 {
     // open up files to write to
     string outfile;
@@ -1310,66 +1435,94 @@ void FieldClusterGals::simulateGalaxies(double conv, string outfileroot)
         for(sa_size_t iy=0; iy<mass_.SizeY(); iy++)
             for(sa_size_t ix=0; ix<mass_.SizeZ(); ix++) {
 
-			// each cell:
-            // - get total number of galaxies by poisson fluctuating (rho/rho_bar*conv)
-            uint_8 ngals = rg_.PoissonAhrens(conv*mass_(iz,iy,ix));
-            
-            if ( (mass_(iz,iy,ix)-1)>maxval )
-                maxval = (mass_(iz,iy,ix)-1);
+
+                // pixel delta value
+                double dv = (mass_(iz,iy,ix)-1);
                 
-            // - get comoving x,y,z position of center of cell
-            double xc,yc,zc;
-            GetCellCoord(ix,iy,iz,xc,yc,zc);
-
-            // - determine if this cell is field or cluster ( [rho/rho_bar - 1]>1.6 is cluster)
-            bool isCluster = false;
-            if ( (mass_(iz,iy,ix)-1) > 1.6) {
-                isCluster = true;
-                cnt++;
                 
-                // get cluster properties
-                double dcl, phicl, thcl;
-                Conv2SphCoord(xc,yc,zc,dcl,phicl,thcl); 
+                // record what maximum delta is
+                if ( dv>maxval )
+                    maxval = dv;
 
-                //   - convert distance to a redshift
-                double zcl = dist2Redshift(dcl);
+
+                // - determine if this pixel is a field or cluster pixel
+                // - cnt is only incremented if the cluster has not been counted yet
+                int pre_cnt = cnt;
+                bool isCluster = checkPixel(iz, iy, ix, delta_cluster_, cnt);
                 
-                out_cls << phicl <<"  "<< thcl <<"  "<< zcl <<"  "<< dcl <<"  ";
                 
-                }
-
-            
-            if (zc>maxzcoord)
-                maxzcoord = zc;
-
-            int cnt_cgals = 0;
-            for (int ig=0; ig<ngals; ig++) {
-            
-                // - for each gal in cell
-                //   - get random x,y,z position in cell -> comoving distance
-                double rx = xc + rg_.Flatpm1()*(Dx_/2.);
-				double ry = yc + rg_.Flatpm1()*(Dy_/2.);
-				double rz = zc + rg_.Flatpm1()*(Dz_/2.);
-
-		        //   - convert x,y,z to a angular position
-		        double dcom, phi, theta;
-			    Conv2SphCoord(rx,ry,rz,dcom,phi,theta); 
-
-                //   - convert distance to a redshift
-                double zs = dist2Redshift(dcom);
-                                
-                //   - write to file: angular position, redshift, if gal is in field or cluster
-                out_gals << phi <<"  "<< theta <<"  "<< zs <<"  "<< dcom <<"  ";
-                if (isCluster) {
-                    out_gals << 1 << endl;
-                    cnt_cgals++;
-                    }
+                // check if cluster was already counted
+                bool newCluster = true;
+                if (pre_cnt==cnt)
+                    newCluster= false;
+                
+                
+                // - get total number of galaxies by poisson fluctuating (rho/rho_bar*conv)
+                uint_8 ngals;
+                if (isCluster)
+                    ngals = rg_.PoissonAhrens(bias*conv*mass_(iz,iy,ix));
                 else
-                    out_gals << 0 << endl;
+                    ngals = rg_.PoissonAhrens(conv*mass_(iz,iy,ix));
+            
 
-			    }
-			if (isCluster)
-			    out_cls << cnt_cgals << endl;
+                // - get comoving x,y,z position of center of cell
+                double xc,yc,zc;
+                GetCellCoord(ix,iy,iz,xc,yc,zc);
+                        
+                
+                // only take properties of first cluster pixel in group
+                // this is a bit bad!   
+                if (newCluster) {
+                    
+
+                    // get cluster properties
+                    double dcl, phicl, thcl;
+                    Conv2SphCoord(xc,yc,zc,dcl,phicl,thcl); 
+
+                    //   - convert distance to a redshift
+                    double zcl = dist2Redshift(dcl);
+                    //cout << "here"<<endl;
+                    out_cls << phicl <<"  "<< thcl <<"  "<< zcl <<"  "<< dcl <<"  ";
+                    out_cls << xc  <<"  "<< yc <<"  "<< zc <<"  "<< endl;
+                    }
+
+            
+                // keep track of maximum z coordinate
+                if (zc>maxzcoord)
+                    maxzcoord = zc;
+
+
+                // loop of galaxies in pixel
+                int cnt_cgals = 0;
+                for (int ig=0; ig<ngals; ig++) {
+            
+                    // - for each gal in cell
+                    //   - get random x,y,z position in cell -> comoving distance
+                    double rx = xc + rg_.Flatpm1()*(Dx_/2.);
+				    double ry = yc + rg_.Flatpm1()*(Dy_/2.);
+				    double rz = zc + rg_.Flatpm1()*(Dz_/2.);
+
+		            //   - convert x,y,z to a angular position
+		            double dcom, phi, theta;
+			        Conv2SphCoord(rx,ry,rz,dcom,phi,theta); 
+
+                    //   - convert distance to a redshift
+                    double zs = dist2Redshift(dcom);
+                                
+                    //   - write to file: angular position, redshift, if gal is in field or cluster
+                    out_gals << phi <<"  "<< theta <<"  "<< zs <<"  "<< dcom <<"  ";
+                    out_gals << rx  <<"  "<< ry <<"  "<< rz <<"  ";
+                    if (isCluster) {
+                        out_gals << 1 << endl;
+                        cnt_cgals++;
+                        }
+                    else
+                        out_gals << 0 << endl;
+
+			        }
+			        
+			    //if (isCluster)
+			    //    out_cls << cnt_cgals << endl;
             }
     	}
     

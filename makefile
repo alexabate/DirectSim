@@ -63,7 +63,7 @@ colorDistributions convertSEDS fitLSSTspectra lineOfSightLymanAlpha lineOfSightM
 lsstPicklesLibrary lymanAlphaToDensity pcaTemplates photoZdist priorFitter \
 projectTemplates rdlss sdssElColors sdssPicklesLibrary simdensity  \
 simulateAbsorberLinesOfSight simulateLSSTobs simulateLSSTobsFromTruth \
-cluster_mass_function sim_with_clusters
+cluster_mass_function sim_with_clusters quickSimMags
 
 tests : test2Dinterp testbasesim testEMalgorithm testErrors testgoodsmagsim \
 testKcorrColors testKcorrMethod testLF testLymanAlphaAbs testMadau testMeiksin \
@@ -131,6 +131,9 @@ priorFitter : $(EXE)/priorFitter
 	
 projectTemplates : $(EXE)/projectTemplates
 	@echo 'makefile : projectTemplates made'
+	
+quickSimMags : $(EXE)/quickSimMags
+	@echo 'makefile : quickSimMags made'
 
 rdlss : $(EXE)/rdlss
 	@echo 'makefile : rdlss made'
@@ -439,6 +442,17 @@ $(EXE)/projectTemplates : $(OBJ)/projectTemplates.o $(LIBO)
 $(OBJ)/projectTemplates.o : $(PROGS)/projectTemplates.cc $(LIBH)  
 	mkdir -p $(OBJ)
 	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/projectTemplates.o $(PROGS)/projectTemplates.cc 
+	
+# QUICK SIM MAGS
+$(EXE)/quickSimMags : $(OBJ)/quickSimMags.o $(LIBO) 
+	mkdir -p $(EXE)
+	mkdir -p $(ROOTOUT)
+	$(CXXLINK) -o $(EXE)/quickSimMags $(OBJ)/quickSimMags.o $(LIBO) \
+	$(SOPHYAEXTSLBLIST) $(MYLIB) $(ROOTLIB)
+
+$(OBJ)/quickSimMags.o : $(PROGS)/quickSimMags.cc $(LIBH)  
+	mkdir -p $(OBJ)
+	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/quickSimMags.o $(PROGS)/quickSimMags.cc 
 
 # SIMULATE CATALOG OF BASIC GALAXY PROPERTIES FROM OVER-DENSITY GRID
 $(EXE)/rdlss : $(OBJ)/rdlss.o $(LIBO)

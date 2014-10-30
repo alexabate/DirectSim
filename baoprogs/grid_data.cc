@@ -157,6 +157,7 @@ int main(int narg, char* arg[]) {
 	FitsIOServerInit();
 	InitTim();
 	
+	
     // defaults
 	// FILES TO READ IN/OUT
 	string input_catalog, out_grids_name;
@@ -250,16 +251,17 @@ int main(int narg, char* arg[]) {
 		    ZSCol = results[1];
 		}
 	
-	// Command line arguments
+	//------------ Command line argument printing ----------------------------//
 	
 	// IN FILE TYPE
 	cout << "     *CATALOG DETAILS*"<<endl;
-	cout << "     Galaxy catalog read from file "<< input_catalog;
+	cout << "     Galaxy catalog read from file "<< input_catalog <<endl;
 	cout << "     Reading redshifts from columns named "<< ZOCol <<" and ";
 	cout << ZSCol << endl;
 	if (isZRadial)
 		cout << "     Z dimension IS the radial direction"<<endl;
 	cout << endl;
+	
 		
 	// SF CORRECTION
 	cout << "     *SELECTION FUNCTION DETAILS*"<<endl;
@@ -275,9 +277,10 @@ int main(int narg, char* arg[]) {
 		cout << "     (unless "<< sf_file_root << endoffilename <<" already exists)"<<endl;
 		}
 	else 
-		cout << "     Not correcting for selection function ";
+		cout << "     Not correcting for selection function "<<endl;
 	cout <<endl;
-		
+	
+	
 	// GRID STUFF
 	cout << "     *GRID DETAILS*"<<endl;
 	cout << "     Full grid defined by ...."<<endl;
@@ -286,6 +289,7 @@ int main(int narg, char* arg[]) {
 	cout << "     Mean density of random grid = "<< nc <<endl;
 	cout << endl;
 	
+	
 	// OUTPUT FILES
 	cout << "     *OUTPUT DETAILS*"<<endl;
 	//if(SaveArr)
@@ -293,7 +297,9 @@ int main(int narg, char* arg[]) {
 	if (DoDebug)
 		cout << "     Output root filename for debugging is "<< debug_out <<endl;
 	cout << endl;
-	//-- end command line arguments
+	
+	//------------ END Command line argument printing ------------------------//
+  
   
 	int rc = 1;  
 	try {  // exception handling try bloc at top level
@@ -304,6 +310,7 @@ int main(int narg, char* arg[]) {
 	cout << " Max memory size (KB):" << res.getMaxMemorySize() << endl;
 	cout << " Maximum allowed data segment size (KB):"<< res.getMaxDataSize() <<endl;
 	cout << " Resource usage info : \n" << res << endl;
+	cout << endl;
 	
 	
     // Read in galaxy catalog
@@ -343,6 +350,7 @@ int main(int narg, char* arg[]) {
 	
 	// Compute min and max coordinates and min max redshift
 	// only actually really need to do this if correcting for selection function
+	// @todo: move this into if (doSFCorr) 
 	cout <<"1/ Find minimum and maximum galaxy cartesian coordinates"<<endl;
 	double maxdL; // luminosity distance of largest z in catalog: spec-z or phot-z according to TypePZ
 	maxdL = cat.FindMinMaxCoords();

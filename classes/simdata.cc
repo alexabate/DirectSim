@@ -33,7 +33,9 @@ double PhotometryCalcs::Kcorr(double z, ClassFunc1D& sed, Filter& filterX,
 	FilterIntegrator trpzfx(fprodx, lmin_, lmax_);	
 		
 	kxy=-2.5*log10(pow((1+z),-1)*(trpzx.Value()/trpzfx.Value())*
-	                                    (trpzfy.Value()/trpzy.Value())); 
+	                                    (trpzfy.Value()/trpzy.Value()));
+	if (z<0.0001)
+	    cout << z <<"  "<< kxy <<endl;
 	return kxy;
 };
 
@@ -292,9 +294,15 @@ double SimData::GetMag(double zs, double sedtype, double amag, double ext,
         throw ParmError("ERROR! Not set up to read k-correction from a file");
 
 	// calculate distance modulus
-	su_.SetEmissionRedShift(zs);
-	double mu=5*log10(su_.LuminosityDistanceMpc())+25;
-	
+	// @warning galaxy magnitudes for redshifts z<<0.01 don't have much meaning
+	double mu;
+	if (zs<1e-5) 
+	    mu = 25.;
+	else {
+	    su_.SetEmissionRedShift(zs);
+	    mu=5.*log10(su_.LuminosityDistanceMpc())+25;
+	    }
+	    
 	// retrieve SED id of galaxy
 	int sedID = returnSedId(sedtype);// Check this is doing the correct job
 
@@ -341,9 +349,11 @@ double SimData::GetMag(double zs, double sedtype, double amag, double ext,
                     // magnitude to 99 (undetected)	
                     
     int isMagInf = my_isinf(mag);
-    if (isMagInf != 0)
-        cout <<"     Warning magnitude is infinite"<<endl;
-
+    if (isMagInf != 0) {
+        cout <<"     Warning magnitude is infinite, z = "<< zs <<", k = "<< kcorr <<", amag = "<< amag;
+        cout <<", mu = "<< mu <<endl;
+        }
+        
 	return mag;
 };
 
@@ -455,6 +465,7 @@ vector<double> SimData::addLSSTuError(double mag, int nVisits)
     int iFilter = 0;
     double m5 = returnPointSource5sigmaDepth(uCm_,uMsky_,uTheta_,tVis_,
                                                             ukm_,airMass_);
+
     vector<double> obsmag = getObservedLSSTMagnitude(mag, m5, uGamma_, nVisits, iFilter);
 	return obsmag;
 };
@@ -698,7 +709,10 @@ vector<double> SimData::addFluxError(double mag, double fluxError, int iFilter)
 	double flux = convertABMagToFluxMaggies(mag, filter); // flux in FREQ units
 	double fluxobs = flux+fluxError*rg_.Gaussian();       // flux in FREQ units
 	
+	
 	double obsmag = convertFluxMaggiesToABMag(fluxobs, filter);
+	if (my_isnan(obsmag))
+	    cout <<"obs mag is nan, fluxobs = "<< fluxobs << endl;
 	double fE = fluxError/flux;
 	double magError = convertFluxErrorToMagError(fE);// should be fluxError/flux?????
 	
@@ -726,7 +740,6 @@ vector<double> SimData::getObservedLSSTMagnitude(double mag, double m5, double g
 	double fluxError = convertMagErrorToFluxError(sigmaM, flux); 
 	
 	// add the error
-    
     vector<double> observation;
     observation = addFluxError(mag, fluxError, iFilter);
     

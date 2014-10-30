@@ -75,10 +75,10 @@ public:
         @param m    mass in solar masses?                                     */
 	virtual double operator() (double m) const {  
 				if (TypeLog_)
-					return (rhobar0()/m);//(rhobar0()/m)*fST(m)*fabs(dlnsigdlnm(m,lmstep_))*log(10);
+					return (rhobar0()/m)*fST(m)*fabs(dlnsigdlnm(m,lmstep_))*log(10);
 				else
-					return (rhobar0()/(m*m));//(rhobar0()/(m*m))*fST(m)*fabs(dlnsigdlnm(m,lmstep_))*log(10);    };
-					};
+					return (rhobar0()/(m*m))*fST(m)*fabs(dlnsigdlnm(m,lmstep_))*log(10);
+				};
 
 	/** Return variance in sphere of radius @param R
 	    @param R    radius of sphere in Mpc?                                  */		
