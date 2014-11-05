@@ -245,10 +245,9 @@ void ReadSedList::countSeds(string sedFileFullPath)
 void ReadSedList::readSeds(double lmin, double lmax)
 {
     
-    
     // open up file of list of SEDs
+    ifstream ifs;
 	ifs.open(sedFileFullPath_.c_str(),ifstream::in);
-	ifstream ifs;
 	
 	// read in SED file names
 	string fileNames[nsed_];
@@ -322,7 +321,7 @@ void ReadSedList::interpSeds(int nInterp)
 };
 
 //void ReadSedList::reddenSeds(int nStepRed, double redMax)
-void ReadSedList::reddenSeds(int nPerSED, int method, int maxidEl, int redMaxEl, int redMaxOther)
+vector<double> ReadSedList::reddenSeds(int nPerSED, int method, int maxidEl, double redMaxEl, double redMaxOther)
 {
 // This is not properly implemented, the value of redMax and law will change
 // depending on the SED involved
@@ -354,61 +353,85 @@ void ReadSedList::reddenSeds(int nPerSED, int method, int maxidEl, int redMaxEl,
 	    cout << sedArray_.size() <<endl;
 	    }
 	    
-	// apply reddening
+	// get reddening values, same for all SEDs except elliptical
 	RandomGenerator rg;
+	vector<double> EBV_El;
+	vector<double> EBV_Other;
 	
 	// if uniform distribution of reddening
 	if (method==0) {
 	
-	    double redStep=redMax/nPerSED;
-	    int law=0;
-	    
-	    // loop over each original SED
-	    for (int i=0; i<ntot_; i++) {
-	    
-		    cout <<"     On SED "<< i+1 <<" of "<< ntot_ <<endl;
-		    
-		    // loop over number of times reddening to be done
-		    for (int j=0; j<nPerSED; j++) {
-		    
-		        int law = 0; // default Cardelli
-		        double maxRed = redMaxEl; // default max for ellipticals
-		    
-		        // check if not elliptical template
-		        if (i>maxidEl) {
-		            law = 1;
-		            maxRed = redMaxOther;
-		            }
-		        
-		        // draw uniform E(B-V) value between 0 and maxRed
-		        double EBmV = maxRed*rg.Flat01()
-		        cout <<"     On redden "<< j+1 <<" of "<< nPerSED <<", EB-V="<< EBmV <<endl;
-		    
-		        // push new SED to end of array
-		        sedArray_.push_back(new SED(*(sedArray_[i])));
-		        int lastIndex=sedArray_.size()-1;
-		        sedArray_[lastIndex]->doRedden(EBmV, law);
-		        }
-		    }
+	    double EBmV;
+	    for (int j=0; j<nPerSED; j++) {
+            
+            double r = rg.Flat01();
+	        
+	        EBmV = redMaxEl*rg.Flat01();
+	        EBV_El.push_back(EBmV);
+	        
+	        EBmV = redMaxOther*rg.Flat01();
+	        EBV_Other.push_back(EBmV);
+	        
+	        }
 	    }
 	// if exponential distribution of reddening
 	else if (method==1) {
 	
 	    // not yet implemented
 	    throw ParmError("ERROR! exponential reddening not yet implemented");
+	    
+	    }
+	    
+
+	// sort into ascending order of redness
+	sort(EBV_El.begin(), EBV_El.end());
+	sort(EBV_Other.begin(), EBV_Other.end());
+	
+	// store in a vector El then others.
+	vector<double> redvals;
+	for (int j=0; j<nPerSED; j++)
+	    redvals.push_back(EBV_El[j]);
+	for (int j=0; j<nPerSED; j++)
+	    redvals.push_back(EBV_Other[j]);
+	   
+
+    // loop over each original SED
+	for (int i=0; i<ntot_; i++) {
+	    
+	    cout <<"     On SED "<< i+1 <<" of "<< ntot_ <<endl;
+		    
+		// loop over number of times reddening to be done
+		for (int j=0; j<nPerSED; j++) {
+		    
+		    int law = 0; // default Cardelli
+		    double EBmV = EBV_El[j]; // default Elliptical reddening value
+
+		    // check if not elliptical template
+		    if (i>maxidEl) {
+		        law = 1;
+		        EBmV = EBV_Other[j];
+		        }
+		        
+		    cout <<"     On redden "<< j+1 <<" of "<< nPerSED <<", E(B-V)="<< EBmV << endl;
+		    
+		    // push new SED to end of array
+		    sedArray_.push_back(new SED(*(sedArray_[i])));
+		    int lastIndex = sedArray_.size()-1;
+		    sedArray_[lastIndex]->doRedden(EBmV, law);
+		    }
+		    
 	    }
 	
-	
-		
     ntot_=(ntot_)*nPerSED+ntot_; // reddening all seds nStepRead times
 
     if (prt_>0){
-	    cout <<"     Size of SED array is now "<<sedArray_.size()<<endl;
-	    cout <<"     Total number of SEDs is "<<ntot_<<endl; 
+	    cout <<"     Size of SED array is now "<< sedArray_.size() <<endl;
+	    cout <<"     Total number of SEDs is "<< ntot_ <<endl; 
         }
         
     isRedden_ = true;
 
+    return redvals;
 };
 
 void ReadSedList::reorderSEDs()
@@ -448,43 +471,50 @@ void ReadSedList::reorderSEDs()
     sedArray_=tmpsedArray;
 };
 
-void ReadSedList::writeSpectra(string outFile,double lmin,double lmax,int nl)
-{
+
+void ReadSedList::writeSpectra(string outFile, double lmin, double lmax, int nl) {
+    
     ifstream ifs;
 	ofstream outp;
 	
-	cout <<"     Spectra number = "<<sedArray_.size()<<endl;
+	cout <<"     Number of spectra to write = "<< sedArray_.size() <<endl;
 	
-    double dl=(lmax-lmin)/(nl-1);
+	// wavelength spacing
+    double dl = (lmax-lmin)/(nl-1);
+    
 	ifs.open(outFile.c_str(),ifstream::in);
 	ifs.close();
-	if(ifs.fail())
-		{
+	if(ifs.fail()) {
+	
 		ifs.clear(ios::failbit);
 		outp.open(outFile.c_str(),ofstream::out);
-		for (int j=0; j<nl; j++)
-			{
-			double lam=lmin+j*dl;
-			//cout <<"     Writing wavelength "<<j+1<<endl;
-			outp <<lam<<"  ";
-			for (int i=0; i<ntot_; i++)
-				{
-				//cout <<"     Writing spectrum "<<i+1<<endl;
-				double val=sedArray_[i]->returnFlux(lam);
+		
+		for (int j=0; j<nl; j++) {
+		
+			double lam = lmin + j*dl;
+			outp << lam <<"  ";
+			
+			for (int i=0; i<ntot_; i++) {
+			
+				double val = sedArray_[i]->returnFlux(lam);
 				outp << val <<"  ";
+				
 				}
-			outp <<endl;
+			outp << endl;
+			
+			// also print to screen for first 100 lambdas
 			if ( prt_ & (j<100) ) {
-				cout <<lam<<"  ";
+				cout << lam <<"  ";
 				for (int k=0; k<ntot_; k++)
-					cout<<sedArray_[k]->returnFlux(lam)<<" ";
-				cout <<endl;
+					cout<< sedArray_[k]->returnFlux(lam) <<" ";
+				cout << endl;
 				}
+				
 			}
 		outp.close();
 		}
 	else
-		cout <<"     ERROR! file "<<outFile<<" exists"<<endl;
+		cout <<"     ERROR! file "<< outFile <<" exists"<<endl;
 	cout << endl;
 
 };

@@ -435,21 +435,21 @@ public:
         @param redMax   maximum limit to redden to (even steps between 0 and redMax */
     //void reddenSeds(int nStepRed, double redMax);
     /** If reddening all the SEDs call this method straight after #readSeds(), 
-        and after #interpSeds() if interpolating.
+        and after #interpSeds() if interpolating. Returns a vector of reddening values applied to the SEDs
         @param nPerSED        number of reddened SEDs to make per original SED
         @param method         method for distributing reddening values: 0=uniform, 1=exponential
         @param maxidEl        maximum index of an Elliptical galaxy in the sedArray_
         @param redMaxEl       maximum E(B-V) value an Elliptical galaxy is allowed 
         @param redMaxOther    maximum E(B-V) value other galaxies are allowed                               */
-    void reddenSeds(int nPerSED, int method=0, int maxidEl=0, int redMaxEl=0.1, int redMaxOther=0.3);
+    vector<double> reddenSeds(int nPerSED, int method=0, int maxidEl=0, double redMaxEl=0.1, 
+                                                                                      double redMaxOther=0.3);
     
     /** Write contents of sedArray to a file */
     void writeSpectra(string outFile, double lmin=5e-8, double lmax=2.5e-6,
                                                                  int nl=1500);
                                                                  
     /** Return sedArray */
-    vector<SED*> getSedArray()
-                { return sedArray_; };
+    vector<SED*> getSedArray() { return sedArray_; };
     
     /** Return total number of SEDs (could be >= to nsed depending if interpolation
         was done or reddening was applied) */

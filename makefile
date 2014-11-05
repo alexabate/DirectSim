@@ -63,7 +63,7 @@ colorDistributions convertSEDS fitLSSTspectra lineOfSightLymanAlpha lineOfSightM
 lsstPicklesLibrary lymanAlphaToDensity pcaTemplates photoZdist priorFitter \
 projectTemplates rdlss sdssElColors sdssPicklesLibrary simdensity  \
 simulateAbsorberLinesOfSight simulateLSSTobs simulateLSSTobsFromTruth \
-cluster_mass_function sim_with_clusters quickSimMags restFrameColors
+cluster_mass_function sim_with_clusters quickSimMags restFrameColors generateTemplSet
 
 tests : test2Dinterp testbasesim testEMalgorithm testErrors testgoodsmagsim \
 testKcorrColors testKcorrMethod testLF testLymanAlphaAbs testMadau testMeiksin \
@@ -107,6 +107,9 @@ findCWWinLSSTspectra : $(EXE)/findCWWinLSSTspectra
 
 fitLSSTspectra : $(EXE)/fitLSSTspectra
 	@echo 'makefile : fitLSSTspectra made'
+	
+generateTemplSet : $(EXE)/generateTemplSet
+	@echo 'makefile : generateTemplSet made'
 	
 lineOfSightLymanAlpha : $(EXE)/lineOfSightLymanAlpha
 	@echo 'makefile : lineOfSightLymanAlpha made'
@@ -357,6 +360,17 @@ $(EXE)/fitLSSTspectra : $(OBJ)/fitLSSTspectra.o $(LIBO)
 $(OBJ)/fitLSSTspectra.o : $(PROGS)/fitLSSTspectra.cc $(LIBH)  
 	mkdir -p $(OBJ)
 	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/fitLSSTspectra.o $(PROGS)/fitLSSTspectra.cc
+	
+# GENERATE A NEW TEMPLATE SET
+$(EXE)/generateTemplSet : $(OBJ)/generateTemplSet.o $(LIBO) 
+	mkdir -p $(EXE)
+	mkdir -p $(ROOTOUT)
+	$(CXXLINK) -o $(EXE)/generateTemplSet $(OBJ)/generateTemplSet.o $(LIBO) \
+	$(SOPHYAEXTSLBLIST) $(MYLIB) $(ROOTLIB)
+
+$(OBJ)/generateTemplSet.o : $(PROGS)/generateTemplSet.cc $(LIBH)  
+	mkdir -p $(OBJ)
+	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/generateTemplSet.o $(PROGS)/generateTemplSet.cc
 	
 # SIMULATE LINE OF SIGHT LYMAN ALPHA TRANSMISSION
 $(EXE)/lineOfSightLymanAlpha : $(OBJ)/lineOfSightLymanAlpha.o $(LIBO) 
