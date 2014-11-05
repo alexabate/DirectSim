@@ -170,29 +170,32 @@ double SED::interpSED(double lambda) const
 
 //******* ReadSedList ********************************************************//
 
-ReadSedList::ReadSedList(string sedFile,int prt)
-: prt_(prt)
-{
+
+ReadSedList::ReadSedList(string sedFile, int prt)
+: prt_(prt) {
 
     // Initialize these to zero to start
-    ntot_=nsed_=0;
+    ntot_ = nsed_ = 0;
 
 	// first get location of SED files
-	sedDir_=getSedDirEnviromentVar();
-	sedFileFullPath_=sedDir_+sedFile;
+	sedDir_ = getSedDirEnviromentVar();
+	sedFileFullPath_ = sedDir_ + sedFile;
 		
 	// open file, read all lines and count number of SEDs within
 	countSeds(sedFileFullPath_);
-    cout <<"     There are "<<nsed_<<" SEDs to read in"<<endl;
-    cout <<endl;
+    cout <<"     There are "<< nsed_ <<" SEDs to read in"<<endl;
+    cout << endl;
     
-    ntot_=nsed_; // sets both total number of SEDs and number of sed's read in
+    // Initialize total number of SEDs to number of SEDs read in
+    ntot_ = nsed_; 
     
+    // Initialize if SEDs added by interpolation or reddening to false
     isInterp_ = isRedden_ = false;
 
 };
 
 //******* ReadSedList methods ************************************************//
+
 
 string ReadSedList::getSedDirEnviromentVar()
 {
@@ -206,63 +209,69 @@ string ReadSedList::getSedDirEnviromentVar()
 		}
 	else {
 		tPlace=pt;
-		cout <<"     Location of SED template files is "<<tPlace<<endl;
+		cout <<"     Location of SED template files is "<< tPlace <<endl;
 		}
 	cout << endl;
 	return tPlace;
 
 };
 
+
 void ReadSedList::countSeds(string sedFileFullPath)
 {
+    // open up file of list of SEDs
     ifstream ifs;
     ifs.open(sedFileFullPath.c_str(),ifstream::in);
-	if (ifs.fail())
-		{
+	
+	// if it fails throw an error
+	if (ifs.fail()) {
 		string emsg="error: Unable to open file ";
-		emsg+=sedFileFullPath;
+		emsg += sedFileFullPath;
 		throw ParmError(emsg);
 		}
+		
+    // otherise count number of lines in file
     string line;
-    nsed_=0;
-   	while ( ifs.good() )
-    	{
+    nsed_ = 0;
+   	while ( ifs.good() ) {
    		getline(ifs,line);
 	    nsed_++;
    		}
-   	nsed_-=1;
+   	nsed_ -= 1; // not sure why this is here?
    	ifs.close();
 };
 
-void ReadSedList::readSeds(double lmin,double lmax)
+
+void ReadSedList::readSeds(double lmin, double lmax)
 {
-    ifstream ifs;
     
-    // read in all the SED filenames
+    
+    // open up file of list of SEDs
 	ifs.open(sedFileFullPath_.c_str(),ifstream::in);
+	ifstream ifs;
+	
+	// read in SED file names
 	string fileNames[nsed_];
 	string line;
 	if (prt_ > 0)
 	    cout <<"     File contains the following SEDs:"<<endl;
-	for (int i=0; i<nsed_; i++)
-		{
+	for (int i=0; i<nsed_; i++)	{
 		getline(ifs,line);
 		sedFiles_.push_back(line);
-		fileNames[i]=sedDir_+line;
+		fileNames[i] = sedDir_ + line;
 		if (prt_ > 0)
-		    cout <<"     "<<fileNames[i]<<endl;
+		    cout <<"     "<< fileNames[i] <<endl;
 		}
 		
-	// read in all sed files
+	// read in all SEDs
 	if (prt_ > 0)
 	    cout <<"     Reading in all the SED files ... "<<endl;
 
-	for (int i=0; i<nsed_; i++)
-		{
-		sedArray_.push_back(new SED());// assigned memory for SED pointer
-		sedArray_[i]->readSED(fileNames[i],lmin,lmax); 
+	for (int i=0; i<nsed_; i++) {
+	
+		sedArray_.push_back(new SED()); // assigned memory for SED pointer
+		sedArray_[i]->readSED(fileNames[i], lmin, lmax); 
 		}
-
 };
 
 void ReadSedList::interpSeds(int nInterp)
@@ -280,13 +289,13 @@ void ReadSedList::interpSeds(int nInterp)
 	    }
 	    
 	int iSED=ntot_; // starting index of next SED
-    for (int i=0; i<(nsed_-1); i++)
-		{
+    for (int i=0; i<(nsed_-1); i++) {
+    
 		double a=0;
 
 		// loop over number of interps to do
-		for (int j=0; j<nInterp; j++)
-		    {
+		for (int j=0; j<nInterp; j++) {
+		
 		    // need to find values of a and b depending on what nInterp is
 		    a+=1./(nInterp+1);
 		    double b=1-a;
@@ -312,7 +321,8 @@ void ReadSedList::interpSeds(int nInterp)
      isInterp_ = true; 
 };
 
-void ReadSedList::reddenSeds(int nStepRed,double redMax)
+//void ReadSedList::reddenSeds(int nStepRed, double redMax)
+void ReadSedList::reddenSeds(int nPerSED, int method, int maxidEl, int redMaxEl, int redMaxOther)
 {
 // This is not properly implemented, the value of redMax and law will change
 // depending on the SED involved
@@ -323,32 +333,74 @@ void ReadSedList::reddenSeds(int nStepRed,double redMax)
 //       1 == late type: no limit on redMax, law=0 (Cardelli)
 //       1 == starburst type: no limit on redMax, law=1 (Calzetti)
     
-
+    // Check method type makes sense
+    if (method<0 || method>1) {
+        stringstream ss;
+        ss << method;
+        string emsg = "ERROR! Reddening method = " + ss.str() + " not understood";
+        throw ParmError(emsg);
+        }
+          
+    // Check maximum index of an El makes sense
+    if (maxidEl<0 || maxidEl>(sedArray_.size()-1)) {
+        stringstream ss;
+        ss << maxidEl;
+        string emsg = "ERROR! Max index of an elliptical galaxy, " + ss.str() + ", outside array range of SEDs";
+        throw ParmError(emsg);
+        }
+        
     if (prt_>0) {
 	    cout <<"     Before reddening, size of SED array is ";
-	    cout << sedArray_.size()<<endl;
+	    cout << sedArray_.size() <<endl;
 	    }
 	    
-	double redStep=redMax/nStepRed;
-	int law=0;
-	for (int i=0; i<ntot_; i++)
-		{
-		cout <<"     On SED "<<i+1<<" of "<<ntot_<<endl;
-		// loop over number of reddening steps to do
-		for (int j=0; j<nStepRed; j++)
-		    {
+	// apply reddening
+	RandomGenerator rg;
+	
+	// if uniform distribution of reddening
+	if (method==0) {
+	
+	    double redStep=redMax/nPerSED;
+	    int law=0;
+	    
+	    // loop over each original SED
+	    for (int i=0; i<ntot_; i++) {
+	    
+		    cout <<"     On SED "<< i+1 <<" of "<< ntot_ <<endl;
 		    
-		    double EBmV=(j+1)*redStep;
-		    cout <<"     On redden "<<j+1<<" of "<<nStepRed;
-		    cout <<", EB-V="<<EBmV<<endl;
-		    // push new SED to end of array
-		    sedArray_.push_back(new SED(*(sedArray_[i])));
-		    int lastIndex=sedArray_.size()-1;
-		    sedArray_[lastIndex]->doRedden(EBmV,law);// Not properly implemented!
+		    // loop over number of times reddening to be done
+		    for (int j=0; j<nPerSED; j++) {
+		    
+		        int law = 0; // default Cardelli
+		        double maxRed = redMaxEl; // default max for ellipticals
+		    
+		        // check if not elliptical template
+		        if (i>maxidEl) {
+		            law = 1;
+		            maxRed = redMaxOther;
+		            }
+		        
+		        // draw uniform E(B-V) value between 0 and maxRed
+		        double EBmV = maxRed*rg.Flat01()
+		        cout <<"     On redden "<< j+1 <<" of "<< nPerSED <<", EB-V="<< EBmV <<endl;
+		    
+		        // push new SED to end of array
+		        sedArray_.push_back(new SED(*(sedArray_[i])));
+		        int lastIndex=sedArray_.size()-1;
+		        sedArray_[lastIndex]->doRedden(EBmV, law);
+		        }
 		    }
-		}
+	    }
+	// if exponential distribution of reddening
+	else if (method==1) {
+	
+	    // not yet implemented
+	    throw ParmError("ERROR! exponential reddening not yet implemented");
+	    }
+	
+	
 		
-    ntot_=(ntot_)*nStepRed+ntot_; // reddening all seds nStepRead times
+    ntot_=(ntot_)*nPerSED+ntot_; // reddening all seds nStepRead times
 
     if (prt_>0){
 	    cout <<"     Size of SED array is now "<<sedArray_.size()<<endl;

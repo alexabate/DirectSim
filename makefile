@@ -63,7 +63,7 @@ colorDistributions convertSEDS fitLSSTspectra lineOfSightLymanAlpha lineOfSightM
 lsstPicklesLibrary lymanAlphaToDensity pcaTemplates photoZdist priorFitter \
 projectTemplates rdlss sdssElColors sdssPicklesLibrary simdensity  \
 simulateAbsorberLinesOfSight simulateLSSTobs simulateLSSTobsFromTruth \
-cluster_mass_function sim_with_clusters quickSimMags
+cluster_mass_function sim_with_clusters quickSimMags restFrameColors
 
 tests : test2Dinterp testbasesim testEMalgorithm testErrors testgoodsmagsim \
 testKcorrColors testKcorrMethod testLF testLymanAlphaAbs testMadau testMeiksin \
@@ -134,6 +134,9 @@ projectTemplates : $(EXE)/projectTemplates
 	
 quickSimMags : $(EXE)/quickSimMags
 	@echo 'makefile : quickSimMags made'
+	
+restFrameColors : $(EXE)/restFrameColors
+	@echo 'makefile : restFrameColors made'
 
 rdlss : $(EXE)/rdlss
 	@echo 'makefile : rdlss made'
@@ -453,6 +456,17 @@ $(EXE)/quickSimMags : $(OBJ)/quickSimMags.o $(LIBO)
 $(OBJ)/quickSimMags.o : $(PROGS)/quickSimMags.cc $(LIBH)  
 	mkdir -p $(OBJ)
 	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/quickSimMags.o $(PROGS)/quickSimMags.cc 
+	
+# RESTFRAME COLORS
+$(EXE)/restFrameColors : $(OBJ)/restFrameColors.o $(LIBO) 
+	mkdir -p $(EXE)
+	mkdir -p $(ROOTOUT)
+	$(CXXLINK) -o $(EXE)/restFrameColors $(OBJ)/restFrameColors.o $(LIBO) \
+	$(SOPHYAEXTSLBLIST) $(MYLIB) $(ROOTLIB)
+
+$(OBJ)/restFrameColors.o : $(PROGS)/restFrameColors.cc $(LIBH)  
+	mkdir -p $(OBJ)
+	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/restFrameColors.o $(PROGS)/restFrameColors.cc 
 
 # SIMULATE CATALOG OF BASIC GALAXY PROPERTIES FROM OVER-DENSITY GRID
 $(EXE)/rdlss : $(OBJ)/rdlss.o $(LIBO)

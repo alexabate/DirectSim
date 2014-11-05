@@ -33,6 +33,7 @@
 #include "igm.h"
 // check the below is needed
 #include "matrix.h"
+#include "mydefrg.h"
 
 // ROOT libraries
 // removed these root libraries that are not needed
@@ -88,7 +89,10 @@ public:
     /** Set up interpolation of the SED */
     void doInterp(SED* sed2,double a=1.,double b=0.);
       
-    /** Set up reddening of the SED */
+    /** Set up reddening of the SED 
+        @param EBmV    amount of reddening, color excess E(B-V) parameter
+        @param law     Cardelli (law=0) or Calzetti (law=1) reddening law
+        @param RvCard  parameter relevant to Cardelli law */
     void doRedden(double EBmV=0., int law=0, double RvCard=3.5);
     
     /** To return the relevant flux value
@@ -429,7 +433,15 @@ public:
         elliptical galaxies 
         @param nStepRed number of times to redden 
         @param redMax   maximum limit to redden to (even steps between 0 and redMax */
-    void reddenSeds(int nStepRed, double redMax);
+    //void reddenSeds(int nStepRed, double redMax);
+    /** If reddening all the SEDs call this method straight after #readSeds(), 
+        and after #interpSeds() if interpolating.
+        @param nPerSED        number of reddened SEDs to make per original SED
+        @param method         method for distributing reddening values: 0=uniform, 1=exponential
+        @param maxidEl        maximum index of an Elliptical galaxy in the sedArray_
+        @param redMaxEl       maximum E(B-V) value an Elliptical galaxy is allowed 
+        @param redMaxOther    maximum E(B-V) value other galaxies are allowed                               */
+    void reddenSeds(int nPerSED, int method=0, int maxidEl=0, int redMaxEl=0.1, int redMaxOther=0.3);
     
     /** Write contents of sedArray to a file */
     void writeSpectra(string outFile, double lmin=5e-8, double lmax=2.5e-6,
@@ -441,12 +453,10 @@ public:
     
     /** Return total number of SEDs (could be >= to nsed depending if interpolation
         was done or reddening was applied) */
-    int getNTot()
-                { return ntot_; };
+    int getNTot() { return ntot_; };
                 
     /** Return number of SEDs read in from the initial file */
-    int getNSed()
-                { return nsed_; };
+    int getNSed() { return nsed_; };
                 
     /** Reorder SEDs so that interpolated SEDs lie between the template they
         were interpolated from */
@@ -461,11 +471,11 @@ private:
     string sedFileFullPath_;    /**<  full path and filename to SED list      */
     int nsed_;                  /**<  number of SEDs in the file sedFile      */
     int ntot_;                  /**<  total number of SEDs after interpolation /
-                                      and reddening                           */
+                                      and/or reddening                        */
     vector<SED*> sedArray_;     /**<  pointer to ntot_ SED objects            */
-    vector<string> sedFiles_;   /**<  vector of SED file names                */
-    bool isInterp_;             /**<  if SEDs are interpolated                */
-    bool isRedden_;             /**<  if SEDs are reddened                    */
+    vector<string> sedFiles_;   /**<  vector of each SED file name            */
+    bool isInterp_;             /**<  if SEDs are added to by interpolation   */
+    bool isRedden_;             /**<  if SEDs are added to by reddening       */
 };
 
 
