@@ -464,6 +464,9 @@ public:
     
     /** Return a vector of the SED filenames */
     vector<string> returnSedFilenames(){ return sedFiles_; };
+    
+    /** Return SED reddening values */
+    vector<double> returnReddening() { return reds_; };
                    
 private:
     int prt_;                   /**<  print level                             */
@@ -476,6 +479,7 @@ private:
     vector<string> sedFiles_;   /**<  vector of each SED file name            */
     bool isInterp_;             /**<  if SEDs are added to by interpolation   */
     bool isRedden_;             /**<  if SEDs are added to by reddening       */
+    vector<double> reds_;       /**<  E(B-V) reddening value for each SED     */
 };
 
 

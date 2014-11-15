@@ -63,7 +63,7 @@ colorDistributions convertSEDS fitLSSTspectra lineOfSightLymanAlpha lineOfSightM
 lsstPicklesLibrary lymanAlphaToDensity pcaTemplates photoZdist priorFitter \
 projectTemplates rdlss sdssElColors sdssPicklesLibrary simdensity  \
 simulateAbsorberLinesOfSight simulateLSSTobs simulateLSSTobsFromTruth \
-cluster_mass_function sim_with_clusters quickSimMags restFrameColors generateTemplSet
+cluster_mass_function sim_with_clusters quickSimMags restFrameColors generateTemplSet fitSEDsToColors
 
 tests : test2Dinterp testbasesim testEMalgorithm testErrors testgoodsmagsim \
 testKcorrColors testKcorrMethod testLF testLymanAlphaAbs testMadau testMeiksin \
@@ -107,6 +107,9 @@ findCWWinLSSTspectra : $(EXE)/findCWWinLSSTspectra
 
 fitLSSTspectra : $(EXE)/fitLSSTspectra
 	@echo 'makefile : fitLSSTspectra made'
+	
+fitSEDsToColors : $(EXE)/fitSEDsToColors
+	@echo 'makefile : fitSEDsToColors made'
 	
 generateTemplSet : $(EXE)/generateTemplSet
 	@echo 'makefile : generateTemplSet made'
@@ -361,6 +364,17 @@ $(OBJ)/fitLSSTspectra.o : $(PROGS)/fitLSSTspectra.cc $(LIBH)
 	mkdir -p $(OBJ)
 	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/fitLSSTspectra.o $(PROGS)/fitLSSTspectra.cc
 	
+# FIT SEDS TO COLORS
+$(EXE)/fitSEDsToColors : $(OBJ)/fitSEDsToColors.o $(LIBO) 
+	mkdir -p $(EXE)
+	mkdir -p $(ROOTOUT)
+	$(CXXLINK) -o $(EXE)/fitSEDsToColors $(OBJ)/fitSEDsToColors.o $(LIBO) \
+	$(SOPHYAEXTSLBLIST) $(MYLIB) $(ROOTLIB)
+
+$(OBJ)/fitSEDsToColors.o : $(PROGS)/fitSEDsToColors.cc $(LIBH)  
+	mkdir -p $(OBJ)
+	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/fitSEDsToColors.o $(PROGS)/fitSEDsToColors.cc
+
 # GENERATE A NEW TEMPLATE SET
 $(EXE)/generateTemplSet : $(OBJ)/generateTemplSet.o $(LIBO) 
 	mkdir -p $(EXE)

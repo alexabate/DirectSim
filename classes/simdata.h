@@ -83,7 +83,7 @@ public:
         @param filterX          filter object observed in (same as rest-frame filter) \f$X(\lambda)\f$*/
 	double Kcorr1Filter(double z, ClassFunc1D& sed, Filter& filterX);
 
-	/** Calculate galaxy color: 
+	/** Calculate galaxy color X-Y: 
 	    \f$ C_{xy} = -2.5\log10\left(
         \frac{\int f_\lambda(\lambda_o/(1+z))\lambda_oX(\lambda_o)d\lambda_o
               \int \frac{Y(\lambda_o)}{\lambda_o}d\lambda_o  }
@@ -91,7 +91,7 @@ public:
               \int f_\lambda(\lambda_o/(1+z))\lambda_oY(\lambda_o)d\lambda_o}\right) \f$
 	    @param z                redshift of object \f$z\f$
         @param sed              rest-frame SED of object \f$f_\lambda(\lambda)\f$
-        @param filterX          filter object observed in \f$X(\lambda)\f$
+        @param filterX          filter object observed in \f$X(\lambda)\f$ (should be bluer filter than Y)
         @param filterY          other filter object observed in \f$Y(\lambda)\f$  */
 	double CompColor(double z, ClassFunc1D& sed, Filter& filterX, Filter& filterY);
 	
@@ -493,6 +493,114 @@ protected:
 	
 	
 	
+};
+
+
+/** @class SEDLibColors
+  *
+  * Calculate colors of all SEDs in a library for a given filter set
+  *
+  */
+class SEDLibColors : public PhotometryCalcs {
+public:
+    /** Constructor. The filter set must be ordered by monotonic increase in filter wavelength from blue to red
+        @param sedarray   array of pointers to each SED in library
+        @param filtarray  array of pointers to each filter in filter set*/
+    SEDLibColors(vector<SED*> sedarray,  vector<Filter*> filtarray):
+        sedarray_(sedarray), filtarray_(filtarray) , nsed_(sedarray.size()) , nfilt_(filtarray.size()) {
+        
+        cout <<"     SED library contains "<< nsed_ <<" SEDs"<<endl;
+        cout <<"     Filter set has "<< nfilt_ <<" filters "<<endl;
+        cout << endl;
+        
+        // initialize color array
+        int ndim = 2;
+        sa_size_t mydim[ndim];
+        mydim[0] = nsed_;
+        mydim[1] = nfilt_-1;
+        colors_.SetSize(ndim, mydim);
+        
+        // call some method that calculates the colors
+        for (int i=0; i<nsed_; i++) {
+            for (int j=0; j<nfilt_-1; j++) {
+                colors_(i,j) = calcColors(i,j);
+                //cout << colors_(i,j) <<"  ";
+                }
+            //cout << endl;
+            }
+        
+        };
+    
+    /** Return color for sed indexed by sedid and filters indexed by filtid and filtid+1. Filter index filtid
+        must point to the bluer filter and filtid+1 to the redder filter
+        @param sedid   index of SED to calculate color for
+        @param filtid  index of redder filter */
+    double calcColors(int sedid, int filtid) {
+        double z=0.;
+        double col = CompColor(z, (*sedarray_[sedid]), (*filtarray_[filtid]), (*filtarray_[filtid+1]));
+        return col;
+        };
+    
+    
+    /** Return index of SED with closest colors to those input */
+    int bestSED(vector<double> colors) {
+        
+        // first check size of input colors
+        if (colors.size() != nfilt_-1)
+            throw ParmError("ERROR! number of colors supplied does not match filter set");
+        
+        // initialize minimum test and current minimum logged
+        double min_color_diff = 1e10;
+        int closest_sed = -1; // non sensical
+        
+        // loop over each SED
+        for (int i=0; i<nsed_; i++) {
+        
+            // calculate the sum of differences squared between input colors and SED colors 
+            double sumsq_color_diffs=0;
+            for (int j=0; j<nfilt_-1; j++)
+                sumsq_color_diffs += ((colors[j] - colors_(i,j))*(colors[j] - colors_(i,j)));
+                
+            // test to see if this is the minimum value seen, if so re log
+            if (sumsq_color_diffs < min_color_diff) {
+                min_color_diff = sumsq_color_diffs; // set new minimum
+                closest_sed = i; // set new closest SED
+                }
+            }
+        
+        if (closest_sed<0 || closest_sed>nsed_+1)
+            throw ParmError("ERROR! failed to find SED with closest colors");
+        
+        return closest_sed;
+            
+    };
+    
+    /** For checking */
+    TArray<double> returnColorArray() { return colors_; };
+    
+        
+    /** For checking */
+    void writeColorArray(string fname) {
+    
+        ofstream outp(fname.c_str(), ofstream::out);
+        for (int i=0; i<nsed_; i++) {
+            for (int j=0; j<nfilt_-1; j++) {
+                outp << colors_(i,j) <<"  ";
+                }
+            outp << endl;
+            }
+        outp.close();
+        
+        };
+
+
+protected:
+    vector<SED*> sedarray_;      /**< list of SED templates                                    */
+    vector<Filter*> filtarray_;  /**< list of filters                                          */
+    int nsed_;                   /**< number of SED templates                                  */
+    int nfilt_;                  /**< number of filters                                        */
+    TArray<double> colors_;      /**< color of SED for each filter pair, size nsed_*(nfilt_-1) */
+
 };
 
 

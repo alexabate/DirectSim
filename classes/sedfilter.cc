@@ -186,7 +186,7 @@ ReadSedList::ReadSedList(string sedFile, int prt)
     cout <<"     There are "<< nsed_ <<" SEDs to read in"<<endl;
     cout << endl;
     
-    // Initialize total number of SEDs to number of SEDs read in
+    // Initialize total number of SEDs to number of SEDs to be read in
     ntot_ = nsed_; 
     
     // Initialize if SEDs added by interpolation or reddening to false
@@ -269,7 +269,8 @@ void ReadSedList::readSeds(double lmin, double lmax)
 	for (int i=0; i<nsed_; i++) {
 	
 		sedArray_.push_back(new SED()); // assigned memory for SED pointer
-		sedArray_[i]->readSED(fileNames[i], lmin, lmax); 
+		sedArray_[i]->readSED(fileNames[i], lmin, lmax);
+		reds_.push_back(0.);
 		}
 };
 
@@ -302,6 +303,8 @@ void ReadSedList::interpSeds(int nInterp)
 		    // push new SED to end of array
 		    sedArray_.push_back(new SED(*(sedArray_[i])));// copies SED in i
 		    sedArray_[iSED]->doInterp(sedArray_[i+1],a,b);
+		    reds_.push_back(0.); // hmm this could be bad if interpolated two reddened SEDs, BUT! interp
+		                         // must be done first!
 		                        
             iSED++;
 		    }
@@ -416,6 +419,8 @@ vector<double> ReadSedList::reddenSeds(int nPerSED, int method, int maxidEl, dou
 		    
 		    // push new SED to end of array
 		    sedArray_.push_back(new SED(*(sedArray_[i])));
+		    reds_.push_back(EBmV);
+		    
 		    int lastIndex = sedArray_.size()-1;
 		    sedArray_[lastIndex]->doRedden(EBmV, law);
 		    }
