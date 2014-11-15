@@ -305,21 +305,33 @@ public:
 	// SIMULATION FUNCTIONS //
 
 	/** Function to simulate a true magnitude given: z, sed-type, abs-mag, ext, 
-	    rest-frame-filter, observed-filter. Assumes Madau law IGM if 
+	    rest-frame-filter, observed-filter. Assumes **Madau law IGM** if 
 	    @param isAddMadau_ is set to true, assumes no IGM absorption if it's not
 	    @param zs               redshift
 	    @param sedtype          SED type of galaxy, in form of 1.XXX, 2.XXX, 3.XXX
 	    @param amag             absolute magnitude in filter ifRF 
 	    @param ext              extinction amount in E(B-V) magnitudes 
-	    @param ifO              observation filter
+	    @param ifO              observation filter id
 	    @param RestFrameFilter  rest-frame filter amag is defined in */
 	double GetMag(double zs, double sedtype, double amag, double ext, int ifO, 
 	                                                    Filter& restFrameFilter);
+	                                                    
+    /** Function to simulate a true magnitude given: z, abs-mag, SED, 
+	    rest-frame-filter, observed-filter. Assumes **Madau law IGM** if 
+	    @param isAddMadau_ is set to true, assumes no IGM absorption if it's not
+	    **This is different to above because takes SED id instead of a type to convert to an id AND no
+	    extinction can be added.**
+	    @param zs               redshift
+	    @param sedID            SED id
+	    @param amag             absolute magnitude in filter RestFrameFilter 
+	    @param ifO              observation filter id
+	    @param RestFrameFilter  rest-frame filter amag is defined in                  */
+	double GetMag(double zs, int sedID, double amag, int ifO, Filter& restFrameFilter);
 	                            
 	/** Function to simulate a true magnitude given: z, sed-type, abs-mag, ext, 
 	    rest-frame-filter, observed-filter. Assumes Madau law IGM if 
 	    @param isAddMadau_ is set to true, assumes no IGM absorption if it's not.
-	    Uses k-correction calculated from files.
+	    **Uses k-correction calculated from files.**
 	    @param zs               redshift
 	    @param sedtype          SED type of galaxy, in form of 1.XXX, 2.XXX, 3.XXX
 	    @param amag             absolute magnitude in filter ifRF 
@@ -329,8 +341,8 @@ public:
 	double GetMag(double zs, double sedtype, double amag, double ext, int ifO);
 	                            
 	/** Function to simulate a true magnitude given: z, sed-type, abs-mag, ext, 
-	    rest-frame-filter, observed-filter. Uses the line of sight transmission
-	    of the IGM given by igmTransmission
+	    rest-frame-filter, observed-filter. Uses the **line of sight IGM transmission**
+	    given by igmTransmission
 	    @param zs               redshift
 	    @param sedtype          SED type of galaxy, in form of 1.XXX, 2.XXX, 3.XXX
 	    @param amag             absolute magnitude in filter ifRF 

@@ -24,21 +24,30 @@
 // root
 //#include "root_plots.h"
 //#include "TDecompSVD.h"
-#include "TMatrixDEigen.h"
-#include "TPrincipal.h"
-#include <cmath>
+//#include "TMatrixDEigen.h"
+//#include "TPrincipal.h"
+//#include <cmath>
 //#include "iomanip.h"
-#include "TRandom.h"
-#define PI 3.141592
-/*
+//#include "TRandom.h"
 
-
-
-*/
 void usage(void);
 void usage(void) {
-	cout << endl<<" Usage: testMadau [...options...]" << endl<<endl;
-		
+	cout << endl<<" Usage: testMadau [...options...]" << endl << endl;
+	
+	cout <<" Test calculation of Madau IGM absorption "<< endl;
+	cout << endl;
+	
+	cout <<" The following is output to files for each source galaxy redshift: "<< endl;
+	cout <<" 1) the Madau transmission function (OUTFILE_madauTrans.txt) as a  "<< endl;
+	cout <<"    function of observed wavelength                                "<< endl;
+	cout <<" 2) effect of Madau transmission on SB3 galaxy at a bunch of       "<< endl;
+	cout <<"    redshifts (OUTFILE_SB3.txt)                                    "<< endl;
+	cout <<" 3) difference between u and g LSST mags of a SB galaxy with and   "<< endl;
+	cout <<"    without IGM (OUTFILE_IGMdiff.txt)                              "<< endl;
+	cout << endl;
+	
+	cout << "-o OUTFILE   output goes here                                        "<<endl;
+	cout << "-z Z1,Z2,Z3  redshift of source galaxies to apply Madau absorption to"<<endl;
 	cout << endl;
     }
     
@@ -49,10 +58,10 @@ int main(int narg, char* arg[]) {
 	// make sure SOPHYA modules are initialized 
 	SophyaInit();  
 	FitsIOServerInit();
-	cout<<endl<<endl;
+	cout << endl << endl;
 
-	//--- decoding command line arguments 
-    string outfileroot = "testfiles/testMadau";
+
+    string outfileroot;
     // source redshifts
     double zSource1 = 2.4;
 	double zSource2 = 3.5;
@@ -75,6 +84,8 @@ int main(int narg, char* arg[]) {
 	    }
 
   //-- end command line arguments
+  cout <<"     Writing to "<< outfileroot << endl;
+  cout <<"     Redshifts of source galaxies: "<< zSource1 <<", "<< zSource2 <<", "<< zSource3 << endl;
   cout << endl;
   
   int rc = 1;  
@@ -84,14 +95,15 @@ int main(int narg, char* arg[]) {
 	ofstream outp;
 	string outfile;
 	
+	
 	// Observed wavelength ranges
 	double lmin = 2500e-10, lmax = 8500e-10;
 	int nl = 1000;
     double dl = (lmax - lmin)/(nl-1);
     
+    
     // Class that calculates Madau absorption
     Madau madau;  
-    
     
 	
 	// Write transmission as a function of observed wavelength to file

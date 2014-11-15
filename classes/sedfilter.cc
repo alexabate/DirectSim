@@ -522,6 +522,41 @@ void ReadSedList::writeSpectra(string outFile, double lmin, double lmax, int nl)
 		cout <<"     ERROR! file "<< outFile <<" exists"<<endl;
 	cout << endl;
 
+
+    // now write accompanying reddening value file
+    string redfile;
+    
+    // make filename
+    string s = outFile;
+    
+    // remove extension
+    string delimiter = ".";
+    size_t pos = s.find(delimiter);
+    string token = s.substr(0, pos);
+    
+    // add new extension
+    redfile = token + "_redvals.txt";
+
+    
+    ifs.open(redfile.c_str(),ifstream::in);
+	ifs.close();
+	if(ifs.fail()) {
+	
+		ifs.clear(ios::failbit);
+		outp.open(redfile.c_str(),ofstream::out);
+		
+		// WRITE
+		outp <<"# SEDs in file "<< outFile << endl;
+		outp <<"# column 1: column number of SED in above file"<<endl;
+		outp <<"# column 2: E(B-V) value that was applied to that SED"<<endl;
+		for (int i=0; i<ntot_; i++) 
+		    outp << i+1 <<"  "<< reds_[i] << endl;
+
+        outp.close();
+		}
+	else
+		cout <<"     ERROR! file "<< redfile <<" exists"<<endl;
+	cout << endl;
 };
 
 

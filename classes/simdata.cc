@@ -319,6 +319,73 @@ double SimData::GetMag(double zs, double sedtype, double amag, double ext,
     Filter filter((*filterArray_[iFilterObs]));
     
     double kcorr = calcKcorr(sed, filter, restFrameFilter, zs, ext, law);
+    // @warning WHY IS THE BELOW COMMENTED OUT!!!
+    /*if (isAddMadau_) {
+        // add Madau absorption
+        SEDMadau sedMadau(sed, zs);
+    
+        // redden SED
+        SEDGOODSRedfix sedReddened(sedMadau,zs,ext,law);
+		
+        // k correction from REST FRAME filter to OBS FRAME filter
+	    kcorr = Kcorr(zs,sedReddened,filter,restFrameFilter);    
+	    }
+	else{ 
+	    // redden SED
+        SEDGOODSRedfix sedReddened(sed,zs,ext,law);
+		
+        // k correction from REST FRAME filter to OBS FRAME filter
+	    kcorr = Kcorr(zs,sedReddened,filter,restFrameFilter); 
+        }*/
+    tm.Split();
+    //cout <<"Time to do k-corr part = "<< tm.PartialElapsedTimems() <<" ms"<<endl;
+    
+    tm.Split();
+	// magnitude
+	double mag =  amag + mu + kcorr;
+	
+	int isInf = my_isinf(kcorr);
+    if (isInf != 0) // if kcorrection is infinite because filter has
+        mag = 99;   // shifted out of where galaxy has flux values set 
+                    // magnitude to 99 (undetected)	
+                    
+    int isMagInf = my_isinf(mag);
+    if (isMagInf != 0) {
+        cout <<"     Warning magnitude is infinite, z = "<< zs <<", k = "<< kcorr <<", amag = "<< amag;
+        cout <<", mu = "<< mu <<endl;
+        }
+        
+	return mag;
+};
+
+// Simulate a "true" magnitude with or without Madau IGM absorption
+// USING SED ID INSTEAD OF SED TYPE VALUE
+double SimData::GetMag(double zs, int sedID, double amag, int ifO, Filter& restFrameFilter) {
+
+    Timer tm("timer",false);
+
+    if (isReadKcorr_)
+        throw ParmError("ERROR! Not set up to read k-correction from a file");
+
+	// calculate distance modulus
+	// @warning galaxy magnitudes for redshifts z<<0.01 don't have much meaning
+	double mu;
+	if (zs<1e-5) 
+	    mu = 25.;
+	else {
+	    su_.SetEmissionRedShift(zs);
+	    mu=5.*log10(su_.LuminosityDistanceMpc())+25;
+	    }
+	    
+    
+    tm.Split();
+    // copy contents of sedArray_[sedID] into new SED object
+    SED sed(*(sedArray_[sedID]));
+    
+    // copy contents of filterArray_[iFilter] into a new Filter object
+    Filter filter((*filterArray_[iFilterObs]));
+    
+    double kcorr = calcKcorr(sed, filter, restFrameFilter, zs, ext, law);
     /*if (isAddMadau_) {
         // add Madau absorption
         SEDMadau sedMadau(sed, zs);
