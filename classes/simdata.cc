@@ -319,7 +319,7 @@ double SimData::GetMag(double zs, double sedtype, double amag, double ext,
     Filter filter((*filterArray_[iFilterObs]));
     
     double kcorr = calcKcorr(sed, filter, restFrameFilter, zs, ext, law);
-    // @warning WHY IS THE BELOW COMMENTED OUT!!!
+    // @warning WHY IS THE BELOW COMMENTED OUT!!! Because it was moved to calcKcorr method
     /*if (isAddMadau_) {
         // add Madau absorption
         SEDMadau sedMadau(sed, zs);
@@ -360,7 +360,7 @@ double SimData::GetMag(double zs, double sedtype, double amag, double ext,
 
 // Simulate a "true" magnitude with or without Madau IGM absorption
 // USING SED ID INSTEAD OF SED TYPE VALUE
-double SimData::GetMag(double zs, int sedID, double amag, int ifO, Filter& restFrameFilter) {
+double SimData::GetMag(double zs, int sedID, double amag, int iFilterObs, Filter& restFrameFilter) {
 
     Timer tm("timer",false);
 
@@ -385,6 +385,8 @@ double SimData::GetMag(double zs, int sedID, double amag, int ifO, Filter& restF
     // copy contents of filterArray_[iFilter] into a new Filter object
     Filter filter((*filterArray_[iFilterObs]));
     
+    double ext=0.;
+    int law = 0;
     double kcorr = calcKcorr(sed, filter, restFrameFilter, zs, ext, law);
     /*if (isAddMadau_) {
         // add Madau absorption
@@ -515,7 +517,7 @@ double SimData::GetMag(double zs, double sedtype, double amag, double ext,
 };
 
 
-// add percentage magnitude error
+/*// add percentage magnitude error
 vector<double> SimData::addError(double mag, double percentError, int iFilter)
 {
     Filter filter((*filterArray_[iFilter]));
@@ -523,9 +525,9 @@ vector<double> SimData::addError(double mag, double percentError, int iFilter)
     vector<double> observation; // observed magnitude and magnitude error
     observation = addFluxError(mag, fluxError, iFilter);
 	return observation;
-};
+};*/
 
-
+/*
 // add LSST u band error
 vector<double> SimData::addLSSTuError(double mag, int nVisits)
 {   
@@ -591,7 +593,7 @@ vector<double> SimData::addLSSTyError(double mag, int nVisits)
                                                             ykm_,airMass_);
     vector<double> obsmag = getObservedLSSTMagnitude(mag, m5, yGamma_, nVisits, iFilter);
 	return obsmag;
-};
+};*/
 
 
 // simulate an SED
@@ -798,7 +800,7 @@ vector<double> SimData::getObservedLSSTMagnitude(double mag, double m5, double g
 
     // get random component of photometric error
     double x = returnX(mag, m5);
-    double sigSq = returnLSSTRandomErrorSq(x,gamma,nVis);
+    double sigSq = returnLSSTRandomErrorSq(x, gamma, nVis);
     
     // total photometric error (in magnitudes)
     double sigmaM = sqrt(sigSq + sigmaSys_*sigmaSys_);
@@ -811,57 +813,87 @@ vector<double> SimData::getObservedLSSTMagnitude(double mag, double m5, double g
     vector<double> observation;
     observation = addFluxError(mag, fluxError, iFilter);
     
-    // if very faint count as non-detection (mag=99, error on mag=5-sigma detection limit)
+    /*// if very faint count as non-detection (mag=99, error on mag=5-sigma detection limit)
     if (observation[0]>45.) {
         observation[0]=99.;
         observation[1]=m5;
-        }
+        }*/
     
 	return observation;
 };
 
 
-double SimData::returnLSSTRandomErrorSq(double x, double gamma, double nVis)
+/*double SimData::returnLSSTRandomErrorSq(double x, double gamma, double nVis)
 {
 
     double sigmaRandsq = (0.04 - gamma)*x + gamma*x*x;
     // in magnitudes^2
     return sigmaRandsq/nVis;
 
-};
+};*/
 
 
-double SimData::returnPointSource5sigmaDepth(double Cm, double msky,
+/*double SimData::returnPointSource5sigmaDepth(double Cm, double msky,
                                 double theta, double tvis, double km, double X)
 {
 
     double m5 = Cm + 0.50*(msky - 21) + 2.5*log10(0.7/theta) +
                                         1.25*log10(tvis/30) - km*(X - 1);
     return m5;                              
-};
+};*/
 
 
 void SimData::setLSSTPars()
 {
     // expected median sky zenith brightness at Cerro Pachon, assuming mean solar cycle
     // and three-day old Moon (mag/arcsec^2)
-    uMsky_ = 21.8; gMsky_ = 22.0; rMsky_ = 21.3; iMsky_ = 20.0; zMsky_ = 19.1; 
-    yMsky_ = 17.5;
+    Msky_.push_back(21.8); 
+    Msky_.push_back(22.0); 
+    Msky_.push_back(21.3); 
+    Msky_.push_back(20.0); 
+    Msky_.push_back(19.1); 
+    Msky_.push_back(17.5);
+    //uMsky_ = 21.8; gMsky_ = 22.0; rMsky_ = 21.3; iMsky_ = 20.0; zMsky_ = 19.1; 
+    //yMsky_ = 17.5;
     
     // expected delivered median zenith seeing (arcsec). For larger airmass X seeing
     // is proportional to X^0.6
-	uTheta_ = 0.77; gTheta_ = 0.73; rTheta_ = 0.70; iTheta_ = 0.67; zTheta_ = 0.65; 
-	yTheta_ = 0.63;
+    Theta_.push_back(0.77); 
+    Theta_.push_back(0.73); 
+    Theta_.push_back(0.70); 
+    Theta_.push_back(0.67); 
+    Theta_.push_back(0.65); 
+	Theta_.push_back(0.63);
+	//uTheta_ = 0.77; gTheta_ = 0.73; rTheta_ = 0.70; iTheta_ = 0.67; zTheta_ = 0.65; 
+	//yTheta_ = 0.63;
 	
 	// band dependent parameter
-	uGamma_ = 0.037; gGamma_ = 0.038; rGamma_ = 0.039; iGamma_ = 0.039; zGamma_ = 0.040;
-	yGamma_ = 0.040;
+	Gamma_.push_back(0.037); 
+	Gamma_.push_back(0.038); 
+	Gamma_.push_back(0.039); 
+	Gamma_.push_back(0.039); 
+	Gamma_.push_back(0.040);
+	Gamma_.push_back(0.040);
+	//uGamma_ = 0.037; gGamma_ = 0.038; rGamma_ = 0.039; iGamma_ = 0.039; zGamma_ = 0.040;
+	//yGamma_ = 0.040;
 	
 	// band dependent parameter
-	uCm_ = 23.60; gCm_ = 24.57; rCm_ = 24.57; iCm_ = 24.47; zCm_ = 24.19; yCm_ = 23.74;
+	Cm_.push_back(23.60); 
+	Cm_.push_back(24.57); 
+	Cm_.push_back(24.57); 
+	Cm_.push_back(24.47); 
+	Cm_.push_back(24.19); 
+	Cm_.push_back(23.74);
+	//uCm_ = 23.60; gCm_ = 24.57; rCm_ = 24.57; iCm_ = 24.47; zCm_ = 24.19; yCm_ = 23.74;
 	
 	// adopted atmospheric extinction
-	ukm_ = 0.48; gkm_ = 0.21; rkm_ = 0.1; ikm_ = 0.07; zkm_ = 0.06; ykm_ = 0.06;
+	km_.push_back(0.48); 
+	km_.push_back(0.21); 
+	km_.push_back(0.1); 
+	km_.push_back(0.07); 
+	km_.push_back(0.06); 
+	km_.push_back(0.06);
+	//ukm_ = 0.48; gkm_ = 0.21; rkm_ = 0.1; ikm_ = 0.07; zkm_ = 0.06; ykm_ = 0.06;
 	
 	// exposure time, 2 back-to-back 15s exposures
 	tVis_ = 2*15;
@@ -870,7 +902,7 @@ void SimData::setLSSTPars()
 	airMass_ = 1.2;
 
     // systematic error
-    sigmaSys_ = 0.005;
+    sigmaSys_ = 0.0025;
 };
 
 /******* ReadKCorrections methods ********************************************/

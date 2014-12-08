@@ -48,6 +48,7 @@ void usage(void) {
 	
 	cout << "-o OUTFILE   output goes here                                        "<<endl;
 	cout << "-z Z1,Z2,Z3  redshift of source galaxies to apply Madau absorption to"<<endl;
+	cout << "             [DEFAULT:2.4,3.5,4.5]                                   "<<endl; 
 	cout << endl;
     }
     

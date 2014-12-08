@@ -355,31 +355,56 @@ public:
 	
 	/** Add generic flux percentage error to magnitude. Return the observed 
 	    magnitude and magnitude error in a vector
-	    @param  mag             (true) magnitude 
-	    @param  percentError    error on flux in percent of flux (eg 10% is
-	                            percentError=0.1) */
-	vector<double> addError(double mag, double percentError, int iFilter);
+	    @param mag             (true) magnitude 
+	    @param percentError    error on flux in percent of flux (eg 10% is percentError=0.1) 
+	    @param iFilter         index of filter (0=u, 1=g .... 5=y)            */
+	vector<double> addError(double mag, double percentError, int iFilter) {
+        
+        Filter filter((*filterArray_[iFilter]));
+        double fluxError = percentError*convertABMagToFluxMaggies(mag, filter);
+        vector<double> observation; // observed magnitude and magnitude error
+        observation = addFluxError(mag, fluxError, iFilter);
+	    return observation;
+        
+        };
+	
+	
+	/** Add LSST photometric error. Returns the observed magnitude and magnitude 
+	    error in a vector
+	    @param mag      (true) magnitude
+	    @param nVisits  number of visits of the telescope in this band        
+	    @param iF       index of filter (0=u, 1=g .... 5=y)                   */
+	vector<double> addLSSTError(double mag, int nVisits, int iF) {
+	
+	     if (iF<0 || iF>5)
+	         throw ParmError("ERROR! filter index not in LSST range");
+         double m5 = returnPointSource5sigmaDepth(Cm_[iF], Msky_[iF], Theta_[iF] ,tVis_, km_[iF], airMass_);
+         vector<double> obsmag = getObservedLSSTMagnitude(mag, m5, Gamma_[iF], nVisits, iF);
+	     return obsmag;
+	     
+	     };
+		
 	
 	/** Add LSST u band error. Returns the observed magnitude and magnitude 
 	    error in a vector
 	    @param mag      (true) magnitude
 	    @param nVisits  number of visits of the telescope in this band        */
-	vector<double> addLSSTuError(double mag, int nVisits);
+	//vector<double> addLSSTuError(double mag, int nVisits);
 		
 	/** Add LSST g band error */
-	vector<double> addLSSTgError(double mag, int nVisits);
+	//vector<double> addLSSTgError(double mag, int nVisits);
 	
 	/** Add LSST r band error */
-	vector<double> addLSSTrError(double mag, int nVisits);
+	//vector<double> addLSSTrError(double mag, int nVisits);
 	
 	/** Add LSST i band error */
-	vector<double> addLSSTiError(double mag, int nVisits);
+	//vector<double> addLSSTiError(double mag, int nVisits);
 	
 	/** Add LSST z band error */
-	vector<double> addLSSTzError(double mag, int nVisits);
+	//vector<double> addLSSTzError(double mag, int nVisits);
 	
 	/** Add LSST y band error */
-	vector<double> addLSSTyError(double mag, int nVisits);	
+	//vector<double> addLSSTyError(double mag, int nVisits);	
 	
 	/** Simulate galaxy type, returns a number that corresponds to an SED in
 	    #sedArray_
@@ -447,16 +472,25 @@ public:
 	    @param x        \f$x=10^{0.4(m-m5)}\f$  
 	    @param gamma    band-dependent parameter
 	    @param nVis     number of visits */
-	double returnLSSTRandomErrorSq(double x, double gamma, double nVis);
+	double returnLSSTRandomErrorSq(double x, double gamma, double nVis) {
+	
+	    double sigmaRandsq = (0.04 - gamma)*x + gamma*x*x;
+        // in magnitudes^2
+        return sigmaRandsq/nVis;
+        };
 		       
     /** Return \f$10^{0.4(m-m5)}\f$ */
 	double returnX(double mag, double m5) {
 	    double x = pow(10.,0.4*(mag-m5));
-        return x; };
+        return x; 
+        };
 	
 	/** Return the 5-sigma depth for point sources */
-	double returnPointSource5sigmaDepth(double Cm, double msky, double theta,
-	    double tvis, double km, double X);
+	double returnPointSource5sigmaDepth(double Cm, double msky, double theta, double tvis, double km, 
+	                                                                                               double X) {
+	    double m5 = Cm + 0.50*(msky - 21) + 2.5*log10(0.7/theta) + 1.25*log10(tvis/30) - km*(X - 1);
+        return m5;
+        };    
 	   
     /** Set the LSST photometric error parameters */
 	void setLSSTPars();
@@ -494,14 +528,19 @@ protected:
 	// To initialize when the references are not used
 	SimpleUniverse su_default_;     /**< to initialize #su_ when it's not used*/
 	DR48RandGen rg_default_;        /**< to initialize #rg_ when it's not used*/
-	double uMsky_,gMsky_,rMsky_,iMsky_,zMsky_,yMsky_;
-	double uTheta_,gTheta_,rTheta_,iTheta_,zTheta_,yTheta_;
-	double uGamma_,gGamma_,rGamma_,iGamma_,zGamma_,yGamma_;
-	double uCm_,gCm_,rCm_,iCm_,zCm_,yCm_;
-	double ukm_,gkm_,rkm_,ikm_,zkm_,ykm_;
-	double tVis_;
-	double airMass_;
-	double sigmaSys_;
+	//double uMsky_,gMsky_,rMsky_,iMsky_,zMsky_,yMsky_;
+	//double uTheta_,gTheta_,rTheta_,iTheta_,zTheta_,yTheta_;
+	//double uGamma_,gGamma_,rGamma_,iGamma_,zGamma_,yGamma_;
+	//double uCm_,gCm_,rCm_,iCm_,zCm_,yCm_;
+	//double ukm_,gkm_,rkm_,ikm_,zkm_,ykm_;
+	double tVis_;          /**< exposure time, 2 back-to-back 15s exposures                   */
+	double airMass_;       /**< median airmass                                                */
+	double sigmaSys_;      /**< systematic photometric error from LSST system                 */
+	vector<double> Msky_;  /**< expected median sky zenith brightness in each band            */
+	vector<double> Theta_; /**< expected delivered median zenith seeing (arcsec) in each band */
+	vector<double> Gamma_; /**< band dependent parameter                                      */
+	vector<double> Cm_;    /**< band dependent parameter                                      */
+	vector<double> km_;    /**< adopted atmospheric extinction in each band                   */
 	
 	
 	

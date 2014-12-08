@@ -63,7 +63,8 @@ colorDistributions convertSEDS fitLSSTspectra lineOfSightLymanAlpha lineOfSightM
 lsstPicklesLibrary lymanAlphaToDensity pcaTemplates photoZdist priorFitter \
 projectTemplates rdlss sdssElColors sdssPicklesLibrary simdensity  \
 simulateAbsorberLinesOfSight simulateLSSTobs simulateLSSTobsFromTruth \
-cluster_mass_function sim_with_clusters quickSimMags restFrameColors generateTemplSet fitSEDsToColors
+cluster_mass_function sim_with_clusters quickSimMags restFrameColors generateTemplSet fitSEDsToColors \
+getSEDcolors
 
 tests : test2Dinterp testbasesim testEMalgorithm testErrors testgoodsmagsim \
 testKcorrColors testKcorrMethod testLF testLymanAlphaAbs testMadau testMeiksin \
@@ -113,6 +114,9 @@ fitSEDsToColors : $(EXE)/fitSEDsToColors
 	
 generateTemplSet : $(EXE)/generateTemplSet
 	@echo 'makefile : generateTemplSet made'
+	
+getSEDcolors : $(EXE)/getSEDcolors
+	@echo 'makefile : getSEDcolors made'
 	
 lineOfSightLymanAlpha : $(EXE)/lineOfSightLymanAlpha
 	@echo 'makefile : lineOfSightLymanAlpha made'
@@ -385,6 +389,17 @@ $(EXE)/generateTemplSet : $(OBJ)/generateTemplSet.o $(LIBO)
 $(OBJ)/generateTemplSet.o : $(PROGS)/generateTemplSet.cc $(LIBH)  
 	mkdir -p $(OBJ)
 	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/generateTemplSet.o $(PROGS)/generateTemplSet.cc
+	
+# GET SED COLORS
+$(EXE)/getSEDcolors : $(OBJ)/getSEDcolors.o $(LIBO) 
+	mkdir -p $(EXE)
+	mkdir -p $(ROOTOUT)
+	$(CXXLINK) -o $(EXE)/getSEDcolors $(OBJ)/getSEDcolors.o $(LIBO) \
+	$(SOPHYAEXTSLBLIST) $(MYLIB) $(ROOTLIB)
+
+$(OBJ)/getSEDcolors.o : $(PROGS)/getSEDcolors.cc $(LIBH)  
+	mkdir -p $(OBJ)
+	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/getSEDcolors.o $(PROGS)/getSEDcolors.cc
 	
 # SIMULATE LINE OF SIGHT LYMAN ALPHA TRANSMISSION
 $(EXE)/lineOfSightLymanAlpha : $(OBJ)/lineOfSightLymanAlpha.o $(LIBO) 
