@@ -31,7 +31,7 @@ LIBH := $(MYCL)/cosmocalcs.h $(MYCL)/geneutils.h $(MYCL)/gftdist.h \
 $(MYCL)/schechter.h $(MYCL)/sinterp.h $(MYCL)/simdata.h $(MYCL)/reddening.h \
 $(MYCL)/sedfilter.h $(MYCL)/genefluct3d.h  $(MYCL)/pkspectrum.h \
 $(MYCL)/mass2gal.h $(MYCL)/powerspec.h $(MYCL)/matrix.h $(MYCL)/igm.h \
-$(MYCL)/hpoly.h $(MYCL)/shapelets.h $(MYCL)/em.h
+$(MYCL)/hpoly.h $(MYCL)/shapelets.h $(MYCL)/em.h $(MYCL)/igmstatistics.h
 #$(MYCL)/constcosmo.h
 #$(MYCL)/root_plots.h
 
@@ -39,7 +39,7 @@ LIBO := $(OBJ)/cosmocalcs.o $(OBJ)/geneutils.o $(OBJ)/gftdist.o \
 $(OBJ)/schechter.o $(OBJ)/sinterp.o $(OBJ)/simdata.o $(OBJ)/reddening.o \
 $(OBJ)/sedfilter.o $(OBJ)/genefluct3d.o  $(OBJ)/pkspectrum.o $(OBJ)/mass2gal.o \
 $(OBJ)/powerspec.o $(OBJ)/matrix.o $(OBJ)/igm.o $(OBJ)/hpoly.o $(OBJ)/shapelets.o\
-$(OBJ)/em.o
+$(OBJ)/em.o $(OBJ)/igmstatistics.o
 #$(OBJ)/root_plots.o
 
 # root libraries
@@ -174,8 +174,8 @@ testTemplateFitting : $(EXE)/testTemplateFitting
 
 ## programs below here have not been CHECKED or maybe even finished...
 
-simulateLSSTColorswithIGM : $(EXE)/simulateLSSTColorswithIGM
-	@echo 'makefile : simulateLSSTColorswithIGM made'
+lsstSbIgmColors : $(EXE)/lsstSbIgmColors
+	@echo 'makefile : lsstSbIgmColors made'
 
 testpsdenscube : $(EXE)/testpsdenscube
 	@echo 'makefile :  testpsdenscube made'
@@ -386,16 +386,16 @@ $(OBJ)/simulateLSSTobsFromTruth.o : $(PROGS)/simulateLSSTobsFromTruth.cc $(LIBH)
 ###################### INCOMPLETE PROGRAMS ####################################
 
 
-$(EXE)/simulateLSSTColorswithIGM : $(OBJ)/simulateLSSTColorswithIGM.o $(LIBO)
+$(EXE)/lsstSbIgmColors : $(OBJ)/lsstSbIgmColors.o $(LIBO)
 	mkdir -p $(EXE)
 	mkdir -p $(ROOTOUT)
 	mkdir -p $(TESTS)
-	$(CXXLINK) -o $(EXE)/simulateLSSTColorswithIGM $(OBJ)/simulateLSSTColorswithIGM.o \
+	$(CXXLINK) -o $(EXE)/lsstSbIgmColors $(OBJ)/lsstSbIgmColors.o \
 	$(SOPHYAEXTSLBLIST) $(MYLIB) $(ROOTLIB) $(LIBO)
 
-$(OBJ)/simulateLSSTColorswithIGM.o : $(PROGS)/simulateLSSTColorswithIGM.cc $(LIBH)
+$(OBJ)/lsstSbIgmColors.o : $(PROGS)/lsstSbIgmColors.cc $(LIBH)
 	mkdir -p $(OBJ)
-	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/simulateLSSTColorswithIGM.o $(PROGS)/simulateLSSTColorswithIGM.cc 
+	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/lsstSbIgmColors.o $(PROGS)/lsstSbIgmColors.cc 
 
 
 	
