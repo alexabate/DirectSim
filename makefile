@@ -94,6 +94,9 @@ calculateKcorrections : $(EXE)/calculateKcorrections
 cfhtColors : $(EXE)/cfhtColors
 	@echo 'makefile : cfhtColors made'
 	
+checkmagsim : $(EXE)/checkmagsim
+	@echo 'makefile : checkmagsim made'
+	
 cluster_mass_function : $(EXE)/cluster_mass_function
 	@echo 'makefile : cluster_mass_function made' 
 	
@@ -313,6 +316,17 @@ $(EXE)/cfhtColors : $(OBJ)/cfhtColors.o $(LIBO)
 $(OBJ)/cfhtColors.o : $(PROGS)/cfhtColors.cc $(LIBH)  
 	mkdir -p $(OBJ)
 	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/cfhtColors.o $(PROGS)/cfhtColors.cc
+	
+# CHECK MAG SIM
+$(EXE)/checkmagsim : $(OBJ)/checkmagsim.o $(LIBO) 
+	mkdir -p $(EXE)
+	mkdir -p $(KCORR)
+	$(CXXLINK) -o $(EXE)/checkmagsim $(OBJ)/checkmagsim.o $(LIBO) \
+	$(SOPHYAEXTSLBLIST) $(MYLIB) $(ROOTLIB)
+
+$(OBJ)/checkmagsim.o : $(PROGS)/checkmagsim.cc $(LIBH)  
+	mkdir -p $(OBJ)
+	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/checkmagsim.o $(PROGS)/checkmagsim.cc
 	
 # CLUSTER MASS FUNCTION
 $(EXE)/cluster_mass_function : $(OBJ)/cluster_mass_function.o $(LIBO) 

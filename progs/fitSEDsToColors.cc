@@ -206,22 +206,9 @@ int main(int narg, char* arg[]) {
     bool isAddMadau = true;
     simData.setMadau(isAddMadau);
     
-    // Number of visits per year (Table 1, Ivezic et al 2008)
-    int uVisitsPerYear = 6;
-    int gVisitsPerYear = 8;
-    int rVisitsPerYear = 18;
-    int iVisitsPerYear = 18;
-    int zVisitsPerYear = 16;
-    int yVisitsPerYear = 16;
     
-    // total number of visits
+    // number of years of operation
     int nYear = 10;
-	int uVisits = uVisitsPerYear*nYear;
-    int gVisits = gVisitsPerYear*nYear;
-    int rVisits = rVisitsPerYear*nYear;
-    int iVisits = iVisitsPerYear*nYear;
-    int zVisits = zVisitsPerYear*nYear;
-    int yVisits = yVisitsPerYear*nYear;
 
     // this is a file for checking
     outfile = outroot + "_fittedSEDs.txt";
@@ -254,28 +241,28 @@ int main(int narg, char* arg[]) {
     gals.AddFloatColumn("Z_ABS_SDSS");
     DataTableRow rowin = gals.EmptyRow();
     
-    // for testing annz
-    //ofstream outp2(outfile.c_str(), ofstream::out);
+    // for testing annz (always i-observed<25.3)
     vector<ofstream*> debug_out;
-    outfile = outroot + "_annz1.txt"; // zero err, all detected
+    outfile = outroot + "_annz_perfect.txt"; // zero err, not all detected
     debug_out.push_back(new ofstream());
     (*debug_out[0]).open(outfile.c_str(), ofstream::out);
-    outfile = outroot + "_annz2.txt"; // zero err, not all detected
+    outfile = outroot + "_annz_m99_e1sig.txt"; // undetected mag=99, undetected error=1-sig
     debug_out.push_back(new ofstream());
     (*debug_out[1]).open(outfile.c_str(), ofstream::out);
-    outfile = outroot + "_annz3.txt"; // i<25.3
+    outfile = outroot + "_annz_m1sig_e3.txt"; // undetected mag=35, undetected error=5
     debug_out.push_back(new ofstream());
     (*debug_out[2]).open(outfile.c_str(), ofstream::out);
-    outfile = outroot + "_annz3a.txt";// i<25.3 u->99, eu-<1-sig
+    outfile = outroot + "_annz_m35_e5.txt";// undetected mag=1-sig, undetected error=3
     debug_out.push_back(new ofstream());
     (*debug_out[3]).open(outfile.c_str(), ofstream::out);
-    outfile = outroot + "_annz4.txt";
-    debug_out.push_back(new ofstream());// add absolute mag to ANNz
+    outfile = outroot + "_annz_1pc.txt";
+    debug_out.push_back(new ofstream());// 1% flux errors
     (*debug_out[4]).open(outfile.c_str(), ofstream::out);
-    outfile = outroot + "_annz5.txt";
-    debug_out.push_back(new ofstream());// add % error to flux
+    outfile = outroot + "_annz_5pc.txt";
+    debug_out.push_back(new ofstream());// 5% flux errors
     (*debug_out[5]).open(outfile.c_str(), ofstream::out);
-    
+
+
     // time how long
     Timer tm("timer",false);
     //Timer tmsm("smalltimes",false);
@@ -340,101 +327,138 @@ int main(int narg, char* arg[]) {
             
         // make some test files for ANNz
         
-        // 1) all have to be detected: TRUTH MAG, ZERO ERROR
-        if (all_detected) {
+        if (mags[3]<25.3) {
+        
+            // 1) none have to be detected: TRUTH MAG, ZERO ERROR
             for (int j=0; j<lsst_filters.size(); j++) 
                 (*debug_out[0]) << mags[j] <<"  ";
             for (int j=0; j<lsst_filters.size(); j++) 
                 (*debug_out[0]) << 0.0 <<"  ";  
             (*debug_out[0]) << z << endl;
             }
-        
-        // 2) none have to be detected: TRUTH MAG, ZERO ERROR
-        for (int j=0; j<lsst_filters.size(); j++) 
-            (*debug_out[1]) << mags[j] <<"  ";
-        for (int j=0; j<lsst_filters.size(); j++) 
-            (*debug_out[1]) << 0.0 <<"  ";  
-        (*debug_out[1]) << z << endl;
             
             
         //tmsm.Split();
         //thphot_time += tmsm.PartialElapsedTimems();
         
         //tmsm.Split();
-        vector<double> uObservation = simData.addLSSTError(mags[0],uVisits, 0);
-		vector<double> gObservation = simData.addLSSTError(mags[1],gVisits, 1);
-		vector<double> rObservation = simData.addLSSTError(mags[2],rVisits, 2);
-		vector<double> iObservation = simData.addLSSTError(mags[3],iVisits, 3);
-		vector<double> zObservation = simData.addLSSTError(mags[4],zVisits, 4);
-        vector<double> yObservation = simData.addLSSTError(mags[5],yVisits, 5);
+        vector<double> uObservation = simData.addLSSTError(mags[0], nYear, 0);
+		vector<double> gObservation = simData.addLSSTError(mags[1], nYear, 1);
+		vector<double> rObservation = simData.addLSSTError(mags[2], nYear, 2);
+		vector<double> iObservation = simData.addLSSTError(mags[3], nYear, 3);
+		vector<double> zObservation = simData.addLSSTError(mags[4], nYear, 4);
+        vector<double> yObservation = simData.addLSSTError(mags[5], nYear, 5);
         
-        double pc = 0.05;
+        double pc = 0.01;
         vector<double> uObservation2 = simData.addError(mags[0],pc, 0);
 		vector<double> gObservation2 = simData.addError(mags[1],pc, 1);
 		vector<double> rObservation2 = simData.addError(mags[2],pc, 2);
 		vector<double> iObservation2 = simData.addError(mags[3],pc, 3);
 		vector<double> zObservation2 = simData.addError(mags[4],pc, 4);
         vector<double> yObservation2 = simData.addError(mags[5],pc, 5);
+        
+        pc = 0.05;
+        vector<double> uObservation3 = simData.addError(mags[0],pc, 0);
+		vector<double> gObservation3 = simData.addError(mags[1],pc, 1);
+		vector<double> rObservation3 = simData.addError(mags[2],pc, 2);
+		vector<double> iObservation3 = simData.addError(mags[3],pc, 3);
+		vector<double> zObservation3 = simData.addError(mags[4],pc, 4);
+        vector<double> yObservation3 = simData.addError(mags[5],pc, 5);
+        
         //tmsm.Split();
         //obsphot_time += tmsm.PartialElapsedTimems();
         
-        // 3) none have to be detected, but iobs<25.3: OBS MAG, OBS ERR
         if (iObservation[0]<25.3) {
+        
+            // 2) undetected mags set to m=99, e=1-sig
             // mags
-            (*debug_out[2]) << uObservation[0] <<"  "<< gObservation[0] <<"  "<< rObservation[0] <<"  ";
-            (*debug_out[2]) << iObservation[0] <<"  "<< zObservation[0] <<"  "<< yObservation[0] <<"  ";
+            (*debug_out[1]) << uObservation[0] <<"  "<< gObservation[0] <<"  "<< rObservation[0] <<"  ";
+            (*debug_out[1]) << iObservation[0] <<"  "<< zObservation[0] <<"  "<< yObservation[0] <<"  ";
             // mag errors
-            (*debug_out[2]) << uObservation[1] <<"  "<< gObservation[1] <<"  "<< rObservation[1] <<"  ";
-            (*debug_out[2]) << iObservation[1] <<"  "<< zObservation[1] <<"  "<< yObservation[1] <<"  ";
+            (*debug_out[1]) << uObservation[1] <<"  "<< gObservation[1] <<"  "<< rObservation[1] <<"  ";
+            (*debug_out[1]) << iObservation[1] <<"  "<< zObservation[1] <<"  "<< yObservation[1] <<"  ";
+            // z
+            (*debug_out[1]) << z << endl;
+            
+            
+            double utmp=uObservation[0], gtmp=gObservation[0], rtmp=rObservation[0], itmp=iObservation[0];
+            double ztmp=zObservation[0], ytmp=yObservation[0];
+            double eutmp=uObservation[1], egtmp=gObservation[1], ertmp=rObservation[1], eitmp=iObservation[1];
+            double eztmp=zObservation[1], eytmp=yObservation[1];
+            double utmp2=utmp, gtmp2=gtmp, rtmp2=rtmp, itmp2=itmp, ztmp2=ztmp, ytmp2=ytmp;
+            double eutmp2=eutmp, egtmp2=egtmp, ertmp2=ertmp, eitmp2=eitmp, eztmp2=eztmp, eytmp2=eytmp;
+            if (uObservation[0]>90.) {
+                utmp = uObservation[2]; eutmp = 3.;
+                utmp2 = 35.; eutmp2 = 5.;
+                }
+            if (gObservation[0]>90.) {
+                gtmp = gObservation[2]; egtmp = 3.;
+                gtmp2 = 35.; egtmp2 = 5.;
+                }
+            if (rObservation[0]>90.) {
+                rtmp = rObservation[2]; ertmp = 3.;
+                rtmp2 = 35.; ertmp2 = 5.;
+                }
+            if (iObservation[0]>90.) {
+                itmp = iObservation[2]; eitmp = 3.;
+                itmp2 = 35.; eitmp2 = 5.;
+                }
+            if (zObservation[0]>90.) {
+                ztmp = zObservation[2]; eztmp = 3.;
+                ztmp2 = 35.; eztmp2 = 5.;
+                }
+            if (yObservation[0]>90.) {
+                ytmp = yObservation[2]; eytmp = 3.;
+                ytmp2 = 35.; eytmp2 = 5.;
+                }
+                
+            // 3) undetected mags set to m=1-sig, e=3
+            // mags
+            (*debug_out[2]) << utmp <<"  "<< gtmp <<"  "<< rtmp <<"  ";
+            (*debug_out[2]) << itmp <<"  "<< ztmp <<"  "<< ytmp <<"  ";
+            // mag errors
+            (*debug_out[2]) << eutmp <<"  "<< egtmp <<"  "<< ertmp <<"  ";
+            (*debug_out[2]) << eitmp <<"  "<< eztmp <<"  "<< eytmp <<"  ";
             // z
             (*debug_out[2]) << z << endl;
             
-            // 6) add percentage error
+            // 4) undetected mags set to m=35, e=5
             // mags
-            (*debug_out[5]) << uObservation2[0] <<"  "<< gObservation2[0] <<"  "<< rObservation2[0] <<"  ";
-            (*debug_out[5]) << iObservation2[0] <<"  "<< zObservation2[0] <<"  "<< yObservation2[0] <<"  ";
+            (*debug_out[3]) << utmp2 <<"  "<< gtmp2 <<"  "<< rtmp2 <<"  ";
+            (*debug_out[3]) << itmp2 <<"  "<< ztmp2 <<"  "<< ytmp2 <<"  ";
             // mag errors
-            (*debug_out[5]) << uObservation2[1] <<"  "<< gObservation2[1] <<"  "<< rObservation2[1] <<"  ";
-            (*debug_out[5]) << iObservation2[1] <<"  "<< zObservation2[1] <<"  "<< yObservation2[1] <<"  ";
+            (*debug_out[3]) << eutmp2 <<"  "<< egtmp <<"  "<< ertmp2 <<"  ";
+            (*debug_out[3]) << eitmp2 <<"  "<< eztmp2 <<"  "<< eytmp2 <<"  ";
             // z
-            (*debug_out[5]) << z << endl;
-            
-            
-            // this is to protect against non detections in u band being shown as "detected"
-            double uband = uObservation[0];
-            double euband = uObservation[1];
-            if (uObservation[0]>28.2 || uObservation[1]>3.) {
-                uband = 99.;
-                euband = 28.65;
-                }
-            
-            // 4) and set undetected u, u=99 eu=1-sig
-            // mags
-            (*debug_out[3]) << uband <<"  "<< gObservation[0] <<"  "<< rObservation[0] <<"  ";
-            (*debug_out[3]) << iObservation[0] <<"  "<< zObservation[0] <<"  "<< yObservation[0] <<"  ";
-            // mag errors
-            (*debug_out[3]) << euband <<"  "<< gObservation[1] <<"  "<< rObservation[1] <<"  ";
-            (*debug_out[3]) << iObservation[1] <<"  "<< zObservation[1] <<"  "<< yObservation[1] <<"  ";
-            // z
-            (*debug_out[3]) << z << "  ";
-            for (int j=0; j<lsst_filters.size(); j++) 
-                (*debug_out[3]) << mags[j] <<"  ";
-            (*debug_out[3]) << R << "  "<< bf << endl;
+            (*debug_out[3]) << z << endl;
             }
+            
+        if (iObservation2[0]<25.3) {
         
-        // 5) add absolute magnitude as ANNz input
-        if (iObservation[0]<25.3) {
+            // 5) add 1% percent error, undetected mags set to m=99, e=1-sig
             // mags
-            (*debug_out[4]) << uObservation[0] <<"  "<< gObservation[0] <<"  "<< rObservation[0] <<"  ";
-            (*debug_out[4]) << iObservation[0] <<"  "<< zObservation[0] <<"  "<< yObservation[0] <<"  ";
-            (*debug_out[4]) << R <<"  ";
+            (*debug_out[4]) << uObservation2[0] <<"  "<< gObservation2[0] <<"  "<< rObservation2[0] <<"  ";
+            (*debug_out[4]) << iObservation2[0] <<"  "<< zObservation2[0] <<"  "<< yObservation2[0] <<"  ";
             // mag errors
-            (*debug_out[4]) << uObservation[1] <<"  "<< gObservation[1] <<"  "<< rObservation[1] <<"  ";
-            (*debug_out[4]) << iObservation[1] <<"  "<< zObservation[1] <<"  "<< yObservation[1] <<"  ";
-            (*debug_out[4]) << 0.0 <<"  ";
+            (*debug_out[4]) << uObservation2[1] <<"  "<< gObservation2[1] <<"  "<< rObservation2[1] <<"  ";
+            (*debug_out[4]) << iObservation2[1] <<"  "<< zObservation2[1] <<"  "<< yObservation2[1] <<"  ";
             // z
             (*debug_out[4]) << z << endl;
             }
+            
+        if (iObservation3[0]<25.3) {
+        
+            // 5) add 5% percent error, undetected mags set to m=99, e=1-sig
+            // mags
+            (*debug_out[5]) << uObservation3[0] <<"  "<< gObservation3[0] <<"  "<< rObservation3[0] <<"  ";
+            (*debug_out[5]) << iObservation3[0] <<"  "<< zObservation3[0] <<"  "<< yObservation3[0] <<"  ";
+            // mag errors
+            (*debug_out[5]) << uObservation3[1] <<"  "<< gObservation3[1] <<"  "<< rObservation3[1] <<"  ";
+            (*debug_out[5]) << iObservation3[1] <<"  "<< zObservation3[1] <<"  "<< yObservation3[1] <<"  ";
+            // z
+            (*debug_out[5]) << z << endl;
+            }
+            
         
         // to write to FITS file
         rowin[0] = z;

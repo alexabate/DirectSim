@@ -211,7 +211,8 @@ public:
 	    {   double fx = getFilterZeroPointFlux(filterX);
 	        double mx = 2.5*log10(fx);
 	        return mx; };
-	
+	// for LSST: -3.11752 -1.65737 -1.90181 -2.06726 -2.66691 -4.33277
+
 	/** Get "zeropoint" of filter, basically integrates dnu/nu filter(nu). 
 	    Returns the zeropoint in flux FREQUENCY UNITS (not magnitudes)        */
 	double getFilterZeroPointFlux(Filter& filterX);
@@ -327,6 +328,7 @@ public:
 	    @param ifO              observation filter id
 	    @param RestFrameFilter  rest-frame filter amag is defined in                  */
 	double GetMag(double zs, int sedID, double amag, int ifO, Filter& restFrameFilter);
+	                       
 	                            
 	/** Function to simulate a true magnitude given: z, sed-type, abs-mag, ext, 
 	    rest-frame-filter, observed-filter. Assumes Madau law IGM if 
@@ -339,6 +341,7 @@ public:
 	    @param ifO              observation filter
 	    @param RestFrameFilter  rest-frame filter amag is defined in */
 	double GetMag(double zs, double sedtype, double amag, double ext, int ifO);
+	                            
 	                            
 	/** Function to simulate a true magnitude given: z, sed-type, abs-mag, ext, 
 	    rest-frame-filter, observed-filter. Uses the **line of sight IGM transmission**
@@ -353,8 +356,9 @@ public:
 	double GetMag(double zs, double sedtype, double amag, double ext,
 	    int ifO, Filter& restFrameFilter, IGMTransmission igmTransmission);
 	
-	/** Add generic flux percentage error to magnitude. Return the observed 
-	    magnitude and magnitude error in a vector
+	
+	/** Add GENERIC flux percentage error to magnitude. Return the observed magnitude and magnitude error in a
+	    vector
 	    @param mag             (true) magnitude 
 	    @param percentError    error on flux in percent of flux (eg 10% is percentError=0.1) 
 	    @param iFilter         index of filter (0=u, 1=g .... 5=y)            */
@@ -362,8 +366,13 @@ public:
         
         Filter filter((*filterArray_[iFilter]));
         double fluxError = percentError*convertABMagToFluxMaggies(mag, filter);
+        double flux = convertABMagToFluxMaggies(mag, filter);
+        
         vector<double> observation; // observed magnitude and magnitude error
-        observation = addFluxError(mag, fluxError, iFilter);
+        observation = addFluxError(flux, fluxError, iFilter);
+
+        double obs_err = abs(mag-observation[0]);
+        observation.push_back(obs_err);
 	    return observation;
         
         };
@@ -372,14 +381,24 @@ public:
 	/** Add LSST photometric error. Returns the observed magnitude and magnitude 
 	    error in a vector
 	    @param mag      (true) magnitude
-	    @param nVisits  number of visits of the telescope in this band        
+	    @param nYear    number of LSST operation       
 	    @param iF       index of filter (0=u, 1=g .... 5=y)                   */
-	vector<double> addLSSTError(double mag, int nVisits, int iF) {
+	vector<double> addLSSTError(double mag, int nYear, int iF) {
 	
 	     if (iF<0 || iF>5)
 	         throw ParmError("ERROR! filter index not in LSST range");
-         double m5 = returnPointSource5sigmaDepth(Cm_[iF], Msky_[iF], Theta_[iF] ,tVis_, km_[iF], airMass_);
-         vector<double> obsmag = getObservedLSSTMagnitude(mag, m5, Gamma_[iF], nVisits, iF);
+         //double m5 = calcPointSource5sigmaDepth(Cm_[iF], Msky_[iF], Theta_[iF] ,tVis_, km_[iF], airMass_);
+         
+         // total number of visits after nYear years
+         int nvis = nYear*nVisYear_[iF];
+         
+         // calculate 5-sigma depth for nvis visits
+         double m5nvisit = m5single_[iF] + 1.25*log10(nYear*nVisYear_[iF]);
+         
+         // BUT to get 1-sigma errors need to subtract -2.5*log10(5) from this
+         //double m1sig = m5nvisit - 2.5*log10(5.);
+         
+         vector<double> obsmag = getObservedLSSTMagnitude(mag, m5nvisit, Gamma_[iF], nYear, iF);
 	     return obsmag;
 	     
 	     };
@@ -458,25 +477,25 @@ public:
 	int returnSedId(double sedtype);
      
     /** Return observed LSST magnitude and magnitude error */
-    vector<double> getObservedLSSTMagnitude(double mag, double m5, double gamma, int nVis, int iFilter);
+    vector<double> getObservedLSSTMagnitude(double mag, double m5, double gamma, int nYear, int iFilter);
 	
 	/** Return observed magnitude and magnitude error after adding flux error 
 	    in the filter indexed by #iFilter
-	    @param mag          true magnitude
+	    @param mag          true flux
 	    @param fluxError    error on flux
 	    @param iFilter      index of filter  */
-	vector<double> addFluxError(double mag, double fluxError, int iFilter);
+	vector<double> addFluxError(double flux, double fluxError, int iFilter);
 	
 	/** Return the LSST random photometric error squared
 	    See equation 3.2 in LSST Science Book (divided by Nvisit)
 	    @param x        \f$x=10^{0.4(m-m5)}\f$  
-	    @param gamma    band-dependent parameter
-	    @param nVis     number of visits */
-	double returnLSSTRandomErrorSq(double x, double gamma, double nVis) {
+	    @param gamma    band-dependent parameter */
+	    //@param nVis     number of visits */
+	double returnLSSTRandomErrorSq(double x, double gamma) {//, double nVis) {
 	
 	    double sigmaRandsq = (0.04 - gamma)*x + gamma*x*x;
         // in magnitudes^2
-        return sigmaRandsq/nVis;
+        return sigmaRandsq; ///nVis;
         };
 		       
     /** Return \f$10^{0.4(m-m5)}\f$ */
@@ -485,10 +504,15 @@ public:
         return x; 
         };
 	
-	/** Return the 5-sigma depth for point sources */
-	double returnPointSource5sigmaDepth(double Cm, double msky, double theta, double tvis, double km, 
-	                                                                                               double X) {
-	    double m5 = Cm + 0.50*(msky - 21) + 2.5*log10(0.7/theta) + 1.25*log10(tvis/30) - km*(X - 1);
+	/** Return the 5-sigma depth for point sources (within particular band) 
+	    @param Cm     band dependent parameter describing system sensitivity
+	    @param msky   sky brightness
+	    @param theta  zenith seeing
+	    @param nvis   number of visits
+	    @param km     atmospheric extinction
+	    @param X      airmass                                                   */
+	double calcPointSource5sigmaDepth(double Cm, double msky, double theta, int nvis, double km, double X) {
+	    double m5 = Cm + 0.50*(msky - 21) + 2.5*log10(0.7/theta) + 1.25*log10(nvis) - km*(X - 1);
         return m5;
         };    
 	   
@@ -503,6 +527,8 @@ public:
         @param zs               redshift of the SED
         @param restFrameFilter  filter absolute magnitude is defined in */
     TArray<double> returnSEDFluxesInRestFrame(double zs);//, Filter& restFrameFilter);
+    
+    vector<double> returnm5single() { return m5single_; };
 
     // not sure why these have to be public
 	SimpleUniverse& su_;            /**< class that holds the cosmological
@@ -533,14 +559,16 @@ protected:
 	//double uGamma_,gGamma_,rGamma_,iGamma_,zGamma_,yGamma_;
 	//double uCm_,gCm_,rCm_,iCm_,zCm_,yCm_;
 	//double ukm_,gkm_,rkm_,ikm_,zkm_,ykm_;
-	double tVis_;          /**< exposure time, 2 back-to-back 15s exposures                   */
-	double airMass_;       /**< median airmass                                                */
-	double sigmaSys_;      /**< systematic photometric error from LSST system                 */
-	vector<double> Msky_;  /**< expected median sky zenith brightness in each band            */
-	vector<double> Theta_; /**< expected delivered median zenith seeing (arcsec) in each band */
-	vector<double> Gamma_; /**< band dependent parameter                                      */
-	vector<double> Cm_;    /**< band dependent parameter                                      */
-	vector<double> km_;    /**< adopted atmospheric extinction in each band                   */
+	vector<int> nVisYear_;    /**< number of visits per year                                     */
+	double tVis_;             /**< exposure time, 2 back-to-back 15s exposures                   */
+	double airMass_;          /**< median airmass                                                */
+	double sigmaSys_;         /**< systematic photometric error from LSST system                 */
+	vector<double> Msky_;     /**< expected median sky zenith brightness in each band            */
+	vector<double> Theta_;    /**< expected delivered median zenith seeing (arcsec) in each band */
+	vector<double> Gamma_;    /**< band dependent parameter                                      */
+	vector<double> Cm_;       /**< band dependent parameter describing system sensitivity        */
+	vector<double> km_;       /**< adopted atmospheric extinction in each band                   */
+	vector<double> m5single_; /**< SINGLE VISIT 5-sigma depth for point sources                  */
 	
 	
 	
