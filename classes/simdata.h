@@ -152,7 +152,8 @@ public:
 	    @param filterX      filter band \f$X(\lambda)\f$                      */
 	double convertFluxMaggiesToABMag(double flux, Filter& filterX) {
 	    double zeroPoint = getFilterZeroPoint(filterX);
-	    double magAB = -2.5*log10(flux) - 56.1 + zeroPoint;
+	    //double magAB = -2.5*log10(flux) - 56.1 + zeroPoint;
+	    double magAB = -2.5*log10(flux) + zeroPoint; // ======================================================================================================
 	    return magAB; };
 	    
 	/** Return AB magnitude given flux in maggie-style WAVELENGTH units:
