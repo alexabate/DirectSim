@@ -12,7 +12,7 @@
 #include "tvector.h"
 #include "cspline.h"
 #include "fioarr.h"
-#include "genericfunc.h"
+//#include "genericfunc.h"
 
 #include "constcosmo.h"
 #include "geneutils.h"

@@ -14,13 +14,16 @@ Perform the usual ```./configure```, ```make```, ```make install```. Type ```./c
 
 2) Install SOPHYA
 -------------------
+ * Download Sophya
+    - http://www.sophya.org/Download/index.html
+    - unpack
 
  * Configure Sophya 
                     
     - Change into the build directory ```cd BuildMgr/```
     - Create the target installation directory (if not already existing):  ```mkdir $WHEREVER/SObjs ```
-    - Define the ```SOPHYABASE``` environment variable:  ```setenv $SOPHYABASE $WHEREVER/SObjs/ ```
-    - Run the configure script: ```./configure -sbase $SOPHYABASE -scxx g++ -extp /usr/local -noext lapack -noext astro``` 
+    - Define the ```SOPHYABASE``` environment variable:  ```setenv SOPHYABASE $WHEREVER/SObjs/ ```
+    - Run the configure script: ```./configure -sbase $SOPHYABASE -scxx g++ -extp [$DIR] -noext lapack -noext astro``` 
       (or include lapack by removing -noext lapack [recommended])
 
  * Compile and build the libraries 

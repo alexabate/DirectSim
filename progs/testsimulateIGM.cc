@@ -5,6 +5,7 @@
 #include <string>
 #include <math.h>
 #include <typeinfo>
+#include <sstream>
 
 #include "fiosinit.h"
 #include "mydefrg.h"
@@ -19,26 +20,24 @@
 
 using namespace std;
 
-void findOpticalDepthAlongLineOfSight(double lambda, vector<double>& redshifts, vector<double>& dopplerPars,
-                                           vector<double>& colDens);
-void printDopplerParameters(ProbabilityDistAbsorbers &pdist, int n);
-void printColDens(ProbabilityDistAbsorbers &pdist, int n);
-void printRedshift(ProbabilityDistAbsorbers &pdist, int numTests, double z);
-
 int main()
 {
-//    cout << endl << endl << endl << endl;
-    double versionNum = 1.17;
+    double versionNum = 2.01;
     cout << endl << endl << "****           Version " << versionNum << "            ****" << endl << endl;
 
-
-
+    // ********************************
     // Initialize RNG
+    // ********************************
+
     cout << "       Initializing the RNG" << endl;
     RandomGenerator rg;
     rg.SetSeed(time(NULL));
 
+
+    // ********************************
     // Initialize the distributions
+    // ********************************
+
     cout << "       Initializing the Distributions" << endl;
     HIColumnDensity colDensityDist;
     AbsorberRedshiftDistribution zDist;
@@ -46,198 +45,206 @@ int main()
 
     ProbabilityDistAbsorbers pdist(rg, zDist, colDensityDist, bDist);
 
-    // Simulate the line of sight
-    cout << "       Simulating the line of sight" << endl;
+
+    // ********************************
+    // Create some vectors and other Variables
+    // ********************************
+
     vector<double> redshifts;
     vector<double> columnDensities;
     vector<double> dopplerPars;
-    double zMax = 6.0;
-    double zStart = 0.0;
+    vector<LineOfSightTrans> LoSvector;
     string outfile = "";
 
-    pdist.simulateLineOfSight(zStart, zMax, redshifts, dopplerPars, 
-                                columnDensities, outfile);
 
+    // ********************************
     // Define the the problem
-    int nmax = 10;                  //Highest Lyman Line to go to
-    double zSource = 5.0;           //Redshift of the background source
-    double lambdaMinA = 4200.;      //Minimum WL in Angstroms
-    double lambdaMaxA = 7800.;      //Maximum WL in Angstroms
-    double lambdaResA = 0.1;        //WL Resolution in Angstroms
-    string transFileName = "./testfiles/testsimulateIGM_IandI2008_zSource5";
+    // ********************************
+
+    int nmax = 10;                                  //Highest Lyman Line to go to
+    int nLoS = 400;                                 //The number of lines of sight to examine for each source redshift
+    double zSource = 1.8;                           //Starting redshift of the background source
 
 
+    double lambdaMinA = 3000.;                    //Minimum WL in Angstroms (LSST minimum wavelength)
+    double lambdaMaxA = 100. + 1250.*(1+zSource); //Maximum WL in Angstroms (About 100A past Lya from an absorber at zSource) (<11,000A)
+
+// Incorrect way for min and max wavelength 
+//    double lambdaMinA = 3000.*(1.+zSource-0.1)/(zSource+1.);         //Minimum WL in Angstroms (LSST minimum wavelength)
+//    double lambdaMaxA = 3000.;                      //Maximum WL in Angstroms (About 100A past Lya from an absorber at zSource) (<11,000A)
+
+
+    double lambdaResA = 0.1;                        //WL Resolution in Angstroms
+//    double lambdaResA = 0.125;                        //WL Resolution in Angstroms
+
+    double zAbsorberMax = zSource;// + zSource*0.1;    //Maximum absorber redshift
+    double zAbsorberStart = 0.0;                    //Starting absorber redshift   
+
+    string transFileName = "";                      //File name for the Transmission file
+    string LoSFileName = "";                        //File name for file containing LoS info
+    string outputPath = "./testfiles/";             //Path from pwd to output files
+
+    stringstream ss;
+    ss << zSource << "zSource_" << nLoS << "nLos_" << nmax << "LynMax.dat";
+    transFileName = outputPath + "Transmission_" + ss.str();
+    LoSFileName = outputPath + "LineOfSightData_" + ss.str();
+
+    string avgNAbsorbsOutFile = outputPath + "avgNAbsorbers.out";
+
+    // ********************************
+    // Initialize Clock
+    // ********************************
 
 /*
-            // TEST CDFS
+    clock_t starttime, endtime;
+    starttime = clock();
+*/
 
-    int numTests = 1000000;
+    // ********************************
+    // Count number of Absorbers per redshift
+    // ********************************
+/*
+    ofstream countAbsorbs;
+    countAbsorbs.open(avgNAbsorbsOutFile.c_str());
 
-    // Print n doppler parameters
-    printDopplerParameters(pdist, numTests);
+    int totalAbs = 0;
 
-    // Print n column densities
-    printColDens(pdist, numTests);
+    for(int j=0; j<16; j++) {
+        for(int i=0; i<nLoS; i++) {
+            pdist.simulateLineOfSight(zAbsorberStart, zAbsorberMax+j*0.1, redshifts, dopplerPars,
+                                      columnDensities, outfile);
 
-    // Print n redshifts at each functional range
-    double z1 = 0.5;
-    double z2 = 2.0;
-    double z3 = 4.5;
-    printRedshift(pdist, numTests, z1);
-    printRedshift(pdist, numTests, z2);
-    printRedshift(pdist, numTests, z3);
+            totalAbs += columnDensities.size();
+
+            redshifts.clear();
+            dopplerPars.clear();
+            columnDensities.clear();
+        }
+
+        countAbsorbs << zAbsorberMax+j*0.1 << "     " << totalAbs/400. << endl;
+        totalAbs = 0;
+    }
+
+    countAbsorbs.close();
 // */
 
-
-/* 
-            // FIND OPTICAL DEPTH THROUGH EACH ABSORBER AND PRINT
-
-    // Find the optical Depth of each absorber along a line of sight
-    double lambda = 4000*pow(10.,-10);
-    findOpticalDepthAlongLineOfSight(lambda, redshifts, dopplerPars, columnDensities);
-// */
-
+    // ********************************
+    // Simulate nLoS lines of sight and record them to a file
+    // ********************************
 
 // /*
+    ofstream LoSData;
+    LoSData.open(LoSFileName.c_str());
 
-            // FIND THE TRANSMISSION ON A LINE OF SIGHT FOR A VECTOR OF WAVELENGTHS
+    LoSData << "Each line of sight goes redshift, doppler parameter, column density" << endl
+            << "zSource: " << zSource << endl
+            << "nLoS: "    << nLoS << endl;
 
-    // Set up the Line of Sight Transmission Object
-    cout << "       Creating LineOfSightTransmission Object" << endl;
-    LineOfSightTrans lineOfSight(redshifts, dopplerPars, columnDensities);
-    lineOfSight.setMaxLine(nmax);
-    lineOfSight.setLymanAll();
+    for(int i=0; i<nLoS; i++) {
+        pdist.simulateLineOfSight(zAbsorberStart, zAbsorberMax, redshifts, dopplerPars,
+                                  columnDensities, outfile);
 
+        LineOfSightTrans lineOfSight(redshifts, dopplerPars, columnDensities);
+        lineOfSight.setMaxLine(nmax);
+        lineOfSight.setLymanAll();
 
-    // Make the vector for the wavelength range
-    cout << "       Defining the Wavelength Range" << endl;
-    vector<double> WL;
+        for(int j=0; j<redshifts.size(); j++)
+            LoSData << redshifts[j] << " ";
+        LoSData << endl;
+        for(int j=0; j<dopplerPars.size(); j++)
+            LoSData << dopplerPars[j] << " ";
+        LoSData << endl;
+        for(int j=0; j<columnDensities.size(); j++)
+            LoSData << columnDensities[j] << " ";
+        LoSData << endl;
+
+        LoSvector.push_back(lineOfSight);
+        redshifts.clear();
+        dopplerPars.clear();
+        columnDensities.clear();
+    }
+
+    LoSData.close();
+
+// */
+
+    // ********************************
+    // Make and write the wavelength vector
+    // ********************************
+
+// /*
+    ofstream transmissionData;
+    transmissionData.open(transFileName.c_str());
+
+    transmissionData << "First line is wavelength in Angstroms each successive line is transmission along a line of sight" << endl
+            << "zSource: " << zSource << endl
+            << "nLoS: "    << nLoS << endl;
+
+    vector<double> wavelengths;
     double lambdaCA = lambdaMinA;
     while(lambdaCA < lambdaMaxA) {
-        WL.push_back(lambdaCA*pow(10.,-10));
+        double wavelengthTemp = lambdaCA*pow(10.,-10);
+        wavelengths.push_back(wavelengthTemp);
+
+        transmissionData << wavelengthTemp << " ";
+//        transmissionData << wavelengthTemp << endl;
+
         lambdaCA += lambdaResA;
     }
 
+    transmissionData << endl;
+//    transmissionData << " ";
 
-    // Calculate the transmission at each wavelength
-    cout << "       Beginning transmission calculation" << endl;
-    vector<double> transmission;
-    for(int i=0; i<WL.size(); i++) {
-        double transWL = lineOfSight.returnTransmission(WL[i], zSource);
-        transmission.push_back(transWL);
+// */
+
+    // ********************************
+    // Calculate the Transmission
+    // ********************************
+
+// /*
+
+    int lineLength = 0;
+
+    for(int k=0; k<nLoS; k++) {
+        vector<double> transmission;
+        for(int i=0; i<wavelengths.size(); i++) {
+            double transWL = LoSvector[k].returnTransmission(wavelengths[i], zSource);
+            transmission.push_back(transWL);
+        }
+
+        for(int i=0; i<transmission.size(); i++) {
+            transmissionData << transmission[i] << " ";
+//            transmissionData << transmission[i] << endl;
+
+
+        }
+        transmissionData << endl;
+//	transmissionData << " ";
+
+        cout << transmission.size() << endl;
     }
 
-
-    // Output the Transmission to a file
-    cout << "       Outputting transmission" << endl;
-    ofstream ofile;
-    ofile.open(transFileName.c_str());
-    for(int i=0; i<transmission.size(); i++) {
-        ofile << WL[i] << " " << transmission[i] << endl;
-    }
-    ofile.close();
+    transmissionData.close();
 // */
 
 
+    // ********************************
+    // End clock and output time
+    // ********************************
+/*
+    endtime = clock();
+    float runTimeTicks = ((float)endtime - (float)starttime);
+    float runTimeSeconds = runTimeTicks / CLOCKS_PER_SEC;
 
+    string clockFileName = outputPath + "clock_" + ss.str();
+    ofstream clockOutput;
+    clockOutput.open(clockFileName.c_str());
+    clockOutput << "Run time was " << runTimeSeconds << " for " << nLoS
+                << " lines of sight." << endl;
+    clockOutput.close();
+    
+
+*/
     return 0;
 };
-
-// Given a line of sight and wavelength, print the optical depth through every absorber
-void findOpticalDepthAlongLineOfSight(double lambda, vector<double>& redshifts, vector<double>& dopplerPars,
-                                           vector<double>& colDens)
-{
-    OpticalDepth opti;
-    opti.setMaxLine(10);
-    opti.setLymanSeriesOnly();
-
-    ofstream ofileOptiDepth;
-    ofileOptiDepth.open("./testfiles/testsimulateIGM_absorberOpticalDepth");
-
-    int numAbsorbers = redshifts.size();
-    for(int i=0; i<numAbsorbers; i++) {
-        double tau = opti.returnObserverFrameOpticalDepth(lambda, redshifts[i],
-                                    colDens[i], dopplerPars[i]);
-//        if(tau > 5)
-//            tau = 0;
-
-        ofileOptiDepth << tau << endl;
-    }
-
-    return;
-};
-
-
-void printDopplerParameters(ProbabilityDistAbsorbers &pdist, int n)
-{
-    string fname = "./testfiles/testsimulateIGM_prb.txt";
-    ofstream ofile;
-    ofile.open(fname.c_str());
-
-    cout << "Drawing doppler parameters." << endl;
-
-    for(int i=0; i<n; i++) {
-        ofile << pdist.drawDoppler() << endl;
-    }
-
-    ofile.close();
-
-    return;
-};
-
-void printColDens(ProbabilityDistAbsorbers &pdist, int n)
-{
-    string fname = "./testfiles/testsimulateIGM_prn.txt";
-    ofstream ofile;
-    ofile.open(fname.c_str());
-
-    cout << "Drawing column densities." << endl;
-
-    for(int i=0; i<n; i++) {
-        ofile << pdist.drawHIColumnDensity() << endl;
-    }
-
-    return;
-};
-
-
-void printRedshift(ProbabilityDistAbsorbers &pdist, int n, double z)
-{
-    string fname = "";
-
-    if(z <= 1.2) 
-        fname = "./testfiles/testsimulateIGM_prz1";
-    else if(z <= 4.0)
-        fname = "./testfiles/testsimulateIGM_prz2";
-    else
-        fname = "./testfiles/testsimulateIGM_prz3";
-
-    ofstream ofile;
-    ofile.open(fname.c_str());
-
-    cout << "Drawing redshifts." << endl;
-
-    for(int i=0; i<n; i++) {
-        ofile << pdist.drawDeltaZ(z) << endl;
-    }
-
-    return;
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

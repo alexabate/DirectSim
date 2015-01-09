@@ -1,4 +1,3 @@
-// -*- LSST-C++ -*-
 #include "machdefs.h"
 #include "sopnamsp.h"
 #include <iostream>
@@ -16,7 +15,7 @@
 #include "constcosmo.h"
 #include "cosmocalcs.h"
 #include "igm.h"
-#include "genericfunc.h"
+//#include "genericfunc.h"
 #include "poly.h"
 #include "mydefrg.h"
 #include "geneutils.h"

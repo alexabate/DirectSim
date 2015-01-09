@@ -218,6 +218,39 @@ protected:
   double z_;                  /**< redshift of galaxy SED                     */
 };
 
+/** @class SEDzFilterProdIGM
+  * Multiply SED, Filter, and IGM transmission together to create an integrand for the k-correction
+  * 
+  * returns: redshifted SED multiplied by the filter transmission and wavelength and IGM transmission
+  *          SED(lambda/(1+z))*Filter(lambda)*IGMTrans(lambda)*lambda
+  *
+  */
+class SEDzFilterProdIGM : public GenericFunc
+{
+public:
+    /** Constructor 
+        @param f    SED
+        @param g    filter
+        @param t    IGM transmission (Observer Frame)
+        @param z    redshift of SED                                           */
+    SEDzFilterProdIGM(GenericFunc& f, GenericFunc& g, GenericFunc& t, double z=0.)
+    : sed_(f) , filt_(g) , trans_(t) , z_(z) {  };
+    
+    /** Returns redshifted SED multiplied by the filter transmission, IGM transmission
+        and wavelength, \f$ SED(\lambda/(1+z))*Filter(\lambda)*IGMtrans(\lambda)*\lambda \f$ where 
+        \lambda is the observed wavelength    
+        @param lambda   observed wavelength                                   */
+    virtual double operator()(double lambda) {
+        double lambdaE = lambda/(1+z_);
+        return (sed_(lambdaE)*filt_(lambda)*trans_(lambda)*lambda);
+        }  
+
+protected:
+  GenericFunc& sed_; 
+  GenericFunc& filt_; 
+  GenericFunc& trans_;
+  double z_;
+};
 
 /** @class SEDGOODSRedfix class
   * 
@@ -390,6 +423,7 @@ public:
         double trans = igm_(lambdaObs);
         return (sed_(lambda)*trans);
         };
+
 
 protected:
     ClassFunc1D& sed_;            /**< SED to add IGM absorption to           */

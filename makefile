@@ -33,8 +33,9 @@ LIBH := $(MYCL)/cosmocalcs.h $(MYCL)/geneutils.h $(MYCL)/gftdist.h \
 $(MYCL)/schechter.h $(MYCL)/sinterp.h $(MYCL)/simdata.h $(MYCL)/reddening.h \
 $(MYCL)/sedfilter.h $(MYCL)/genefluct3d.h  $(MYCL)/pkspectrum.h \
 $(MYCL)/mass2gal.h $(MYCL)/powerspec.h $(MYCL)/matrix.h $(MYCL)/igm.h \
-$(MYCL)/hpoly.h $(MYCL)/shapelets.h $(MYCL)/em.h $(MYCL)/cat2grid.h \
+$(MYCL)/hpoly.h $(MYCL)/shapelets.h $(MYCL)/em.h $(MYCL)/cat2grid.h $(MYCL)/igmstatistics.h\
 $(MYCL)/fitkbaoscale.h $(MYCL)/chisqstats.h $(MYCL)/massfunc.h
+
 #$(MYCL)/constcosmo.h
 #$(MYCL)/root_plots.h
 
@@ -42,8 +43,9 @@ LIBO := $(OBJ)/cosmocalcs.o $(OBJ)/geneutils.o $(OBJ)/gftdist.o \
 $(OBJ)/schechter.o $(OBJ)/sinterp.o $(OBJ)/simdata.o $(OBJ)/reddening.o \
 $(OBJ)/sedfilter.o $(OBJ)/genefluct3d.o  $(OBJ)/pkspectrum.o $(OBJ)/mass2gal.o \
 $(OBJ)/powerspec.o $(OBJ)/matrix.o $(OBJ)/igm.o $(OBJ)/hpoly.o $(OBJ)/shapelets.o\
-$(OBJ)/em.o $(OBJ)/cat2grid.o $(OBJ)/fitkbaoscale.o $(OBJ)/chisqstats.o \
+$(OBJ)/em.o $(OBJ)/igmstatistics.o $(OBJ)/cat2grid.o $(OBJ)/fitkbaoscale.o $(OBJ)/chisqstats.o \
 $(OBJ)/massfunc.o
+
 #$(OBJ)/root_plots.o
 
 # root libraries
@@ -255,6 +257,9 @@ testTemplateFitting : $(EXE)/testTemplateFitting
 	@echo 'makefile : testTemplateFitting made'
 
 ## programs below here have not been CHECKED or maybe even finished...
+
+lsstSbIgmColors : $(EXE)/lsstSbIgmColors
+	@echo 'makefile : lsstSbIgmColors made'
 
 testpsdenscube : $(EXE)/testpsdenscube
 	@echo 'makefile :  testpsdenscube made'
@@ -628,7 +633,19 @@ $(OBJ)/simulateLSSTobsFromTruth.o : $(PROGS)/simulateLSSTobsFromTruth.cc $(LIBH)
 	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/simulateLSSTobsFromTruth.o \
 	$(PROGS)/simulateLSSTobsFromTruth.cc 
 	
-###################### BAO PROGRAMS ############################################
+###################### INCOMPLETE PROGRAMS ####################################
+
+
+$(EXE)/lsstSbIgmColors : $(OBJ)/lsstSbIgmColors.o $(LIBO)
+	mkdir -p $(EXE)
+	mkdir -p $(ROOTOUT)
+	mkdir -p $(TESTS)
+	$(CXXLINK) -o $(EXE)/lsstSbIgmColors $(OBJ)/lsstSbIgmColors.o \
+	$(SOPHYAEXTSLBLIST) $(MYLIB) $(ROOTLIB) $(LIBO)
+
+$(OBJ)/lsstSbIgmColors.o : $(PROGS)/lsstSbIgmColors.cc $(LIBH)
+	mkdir -p $(OBJ)
+	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/lsstSbIgmColors.o $(PROGS)/lsstSbIgmColors.cc 
 
 # ADD GAUSSIAN Z ERROR TO CATALOG
 $(EXE)/addGausszerr : $(OBJ)/addGausszerr.o $(LIBO)
