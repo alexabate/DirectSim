@@ -91,6 +91,8 @@ double PhotometryCalcs::CompColor(double z, GenericFunc& sed, Filter& filterX, F
 
 double PhotometryCalcs::restFrameFlux(GenericFunc& sed, Filter& filter, double zs)
 {
+ /* I think there is a problem with this - Matt Kirby 
+     
     BlueShiftFilter blueshiftFilter(filter, zs);// returns filter(lam*(1+zs))
     SEDzFilterProd sedXlambdaXfilter(sed, blueshiftFilter, 0.);// returns sed*lambda*filter
     // if last arg !=0 then sed would be redshifted (sed(lam/(1+z)))
@@ -103,9 +105,21 @@ double PhotometryCalcs::restFrameFlux(GenericFunc& sed, Filter& filter, double z
 	
 	double f0 = integrandSED.Value()/zpFluxFilter;
 	//cout << integrandSED.Value() <<"  ";
+// */
+
+// /* Matt's code
+
+    SEDzFilterProd sedXlambdaXfilter(sed, filter, zs);
+
+    //integrate
+    FilterIntegrator integrandSED(sedXlambdaXfilter, lmin_, lmax_);
+
+    double zpFluxFilter = getFilterZeroPointFlux(filter);
+
+    double f0 = integrandSED.Value()/zpFluxFilter;
 	
 	return f0;
-
+// */
 };
 
 
@@ -782,7 +796,7 @@ void SimData::setLSSTPars()
 	airMass_ = 1.2;
 
     // systematic error
-    sigmaSys_ = 0.005;
+    sigmaSys_ = 0.0025;
 };
 
 /******* ReadKCorrections methods ********************************************/
