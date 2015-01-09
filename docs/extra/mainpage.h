@@ -1,19 +1,22 @@
-/** \mainpage DirectSim
+/** \mainpage DirectSim (aka Franzona)
 *
-* @authors Alexandra Abate, Reza Ansari, Christophe Magneville ...
+* @authors Alexandra Abate (UArizona), Reza Ansari (LAL), Lidens Cheng (UArizona), 
+* Matthew Kirby (UArizona), Christophe Magneville (Saclay)
 *
 * \tableofcontents
 *
 * <hr>
 * @section intro Introduction
-* [Describe things the codes are able to do]
-* Please see the documentation in the "Related Pages" tab above on how to run 
+* Simulation of galaxy catalogs for cosmological analysis. Please see the 
+* documentation in the "Related Pages" tab above on how to run 
 * the programs and hopefully get what you want!
+*
+* This code repository is hosted on <A HREF="https://github.com/alexabate/DirectSim"> github </A> 
 *
 * <hr>
 * @section install Installation
 *
-* For installation instructions, please see the file <CODE>install</CODE> in the main 
+* For installation instructions, please see the file <CODE>INSTALL.md</CODE> in the main 
 * repository directory, or see the install page under the "Related Pages" tab.
 *
 * <hr>
@@ -23,8 +26,9 @@
 * The source code:
 * - <B>classes</B> Contains all the definitions and source code for the classes
 * - <B>progs</B> Contains the programs
+* - <B>baoprogs</B> Contains the programs related to power spectrum estimation and BAO
 *
-* Compiled code:
+* Compiled code (directories created on first compilation):
 * - <B>objs</B> Object files 
 * - <B>exe</B> Executables
 *
@@ -40,12 +44,16 @@
 * - <B>kCorrections</B>: If <CODE>calculateKcorrections</CODE> has been run, contains pre-calculated
 *                 k-corrections for different SED-filter combinations.
 * - <B>LFs</B>: Contains luminosity functions
-*
+* - <B>dat</B>: Contains data required for parts of the simulation
+* - <B>docs</B>: Where the doxygen documation is generated
+* - <B>picklesStellarLib</B>: Pickles stellar library, relating to star simulation
 *
 * Try to keep to something like LSST coding standards:
 * <A HREF="https://dev.lsstcorp.org/trac/wiki/CodingStandardsDesirable"> Coding Standards </A>
 *
-*
+* For info on how to use git see:<BR>
+* <A HREF="http://www.slideshare.net/saharabeara/advanced-git-tutorial"> Advanced Git Tutorial </A> by Sarah Sharp <BR>
+* The <A HREF="http://git-scm.com/book"> Pro Git book </A> <BR>
 *
 * <hr>
 * @section notes Release notes

@@ -1,0 +1,97 @@
+/*!
+\page grid_data Grid galaxy data ready for power spectrum computation
+
+<CODE> grid_data </CODE>
+
+
+Read in a galaxy catalog and output the gridded      
+galaxy data. Name of catalog to read is specified with  
+<CODE>-C</CODE> option, root name of file to output gridded data  
+to is specifed with <CODE>-O</CODE> option.                        
+		
+		
+The grid is specified by giving the number of pixels 
+in each dimension, the pixel size and the redshift of
+the center pixel via the <CODE>-P</CODE> option.                   
+		
+		
+The sky area the catalog covers is set with option <CODE>-a</CODE>,
+this refers to the opening angle in radians that is  
+covered by the observation cone. This variable is    
+used in determining how many pixels of the gridded   
+data should in fact contain data.                    
+		
+		
+If the galaxy catalog was simulated such that the z  
+dimension is the radial direction then this is       
+indicated with option <CODE>-r</CODE>.                           
+		
+		
+The names of the redshift columns to read in can be  
+supplied with the <CODE>-z</CODE> option, the first argument is the observed 
+redshift column name and the second (optional) argument is the spectroscopic 
+redshift column name. Both arguments must be separated by a comma.         
+		
+		
+If the catalog is subject to selection effects (not   
+all galaxies were observed) then a selection function 
+must either be computed or read in. To read in the    
+selection function pass the root name of the          
+selection function file to be read with the <CODE>-s</CODE> option.
+Otherwise if it is to be computed, pass the root name 
+of the selection function file to be written AND the  
+file containing a list of all the redshifts with the  
+<CODE>-s</CODE> option, separated by a comma.                       
+		
+		
+Four grids are output to the file passed to the      
+program via the <CODE>-O</CODE> option:                           
+- grid of normalised galaxy number per grid cell <BR>    
+- grid of weighted normalised galaxy number per grid cell (weighted by selection function)<BR>
+- grid of normalised random catalog per grid cell (weighted by selection function)<BR>
+- grid of redshifts at the pixel centers <BR>
+		
+If there is no selection function correction then the
+weighting = 1 and the grid of normalised galaxy      
+number and grid of normalised galaxy number are identical.                                           
+        
+A random catalog must be generated to account for the
+shot noise. The mean density of this catalog is set  
+with the <CODE>-m</CODE> option. 
+        
+						
+This code uses the cosmology of double \f$h=0.71, \Omega_M=0.267804, \Omega_L=0.73 \f$ 
+(SimLSS cosmology)      
+		
+
+EXAMPLE 1: A galaxy catalog is stored in a file      
+catalog.fits that covers a circular area of sky with 
+radius \f$ \pi/4 \f$. You want the grid to be specified by    
+Nx,Ny,Nz=500,500,500 with pixels of size 6 Mpc and   
+centered at a redshift of 0.5. The selection function
+of the catalog is in file sf.txt. The observed       
+redshifts are in the column named 'zp' of the catalog
+and the true redshifts are in the column named 'zs'. 
+The gridded galaxy data must be written to file      
+grids.fits:
+		
+		
+<CODE>$ grid data -C catalog.fits -a 0.7854 -P 500,500,500,0.5,6. -s sf.txt -z zp,zs -O grids.fits    <BR> </CODE>
+		
+     
+Below are the usage instructions
+	
+<CODE>Usage: grid_data [...options...] 
+opt |       argument         | description
+----|------------------------|---------------------------------------------
+-C  | input_catalog          | FITS filename containing galaxy catalog         <BR>
+-O  | out_grids_name         | Write gridded data to this FITS file            <BR>      
+-a  | SkyArea                | Specify sky area (radians)                      <BR>       
+-r  | [noarg]                | z-dimension of catalog IS radial direction      <BR>
+-P  | Nx,Ny,Nz,zref,Res      | Number of pixels, redshift of central pixel, pixel size <BR>       
+-z  | ZOCol,ZSCol            | column names to read redshifts from (see above) <BR> 
+-m  | nc                     | Mean density of random grid
+-s  | sf_file_root,all_z_file| Do selection function correction (see above)    <BR>
+-d  | debug_out              | root stem of output filename objects are written to when debugging</CODE> 
+
+*/

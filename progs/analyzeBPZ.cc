@@ -24,7 +24,7 @@
 #include "mydefrg.h"
 
 #include "hpoly.h"
-#include "genericfunc.h"
+//#include "genericfunc.h"
 #include "constcosmo.h"
 #include "cosmocalcs.h"
 #include "igm.h"

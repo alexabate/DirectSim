@@ -1,30 +1,39 @@
 /**
-* @file geneutils.h
-* @brief Contains a series of useful, generic methods
-*
-*
-* @author Alex Abate, Reza Ansari, ...
-* Contact: abate@email.arizona.edu
-*
-* Created on: 2008
-* @date 2008
-*
-*/
+ * @file  geneutils.h
+ * @brief Contains a series of useful, generic methods
+ *
+ * @note Better interpolations class is in sinterp.h
+ *
+ * @author Alex Abate, Reza Ansari, ...
+ * Contact: abate@email.arizona.edu
+ *
+ * Created on: 2008
+ * @date 2008
+ *
+ */
+ 
 #ifndef GENEUTILS_SEEN
 #define GENEUTILS_SEEN
 
-#include "machdefs.h"
 #include <math.h>
-#include "genericfunc.h"
+#include <vector>
+#include <algorithm>
+#include <iostream>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+
+// sophya
+#include "machdefs.h"
+// Sophya update v2.3 June 2013 replaces genericfunc with classfunc
+//#include "genericfunc.h"
+#include "classfunc.h"
 #include "histos.h"
 #include "tvector.h"
 #include "cspline.h"
-
-#include <vector>
-#include <algorithm>
-
-// Some useful classes for interpolation and integration etc
-// Better interpolations class is in sinterp.h
+#include "pexceptions.h"
+#include "hisprof.h"
+#include "srandgen.h"
 
 namespace SOPHYA {
 
@@ -129,6 +138,71 @@ void Compute_GaussLeg(unsigned short glorder,vector<double>& x,vector<double>& w
 
 //------ Some special functions -----------------------
 
+/** Calculate (sin(Nx)/sin(x))^2. Approximation used if sin(x)^2 ~ 1.5e-6/N^2
+    @param x    x
+    @param N    N
+    @param app  if true always use approximation                              */  
+double SinNXsX_Sqr(double x, unsigned long N, bool app=false);
+
+//------- Integration functions ------------------------------------------------
+
+/** Integrate function with ONE variable 
+    @param func     function to integrate
+    @param xmin     lower integral bound
+    @param xmax     upper integral bound
+    @param perc     integral precision
+    @param dxinc    search increment
+    @param dxmax    max possible increment
+    @param glorder  Gauss-Legendre order                                      */
+double IntegrateFunc(ClassFunc1D const& func, double xmin, double xmax,
+    double perc=0.1, double dxinc=-1., double dxmax=-1., unsigned short glorder=4);
+
+/** Integrate function with ONE variable and ONE parameter/ or one variable set to a constant
+    parameter/constant variable must be the SECOND argument to func.          
+    @param func     function to integrate
+    @param par      parameter to set in function
+    @param xmin     lower integral bound
+    @param xmax     upper integral bound
+    @param perc     integral precision
+    @param dxinc    search increment
+    @param dxmax    max possible increment
+    @param glorder  Gauss-Legendre order                                      */
+double IntegrateFunc(ClassFunc2D const&  func, double par, double xmin, double xmax,
+    double perc=0.1, double dxinc=-1., double dxmax=-1., unsigned short glorder=4);
+
+/** Integrate function with ONE variable in log space
+    @param func     function to integrate
+    @param lxmin    lower integral bound (log)
+    @param lxmax    upper integral bound (log)
+    @param perc     integral precision
+    @param dxinc    search increment
+    @param dxmax    max possible increment
+    @param glorder  Gauss-Legendre order                                      */
+double IntegrateFuncLog(ClassFunc1D const& func, double lxmin, double lxmax,
+    double perc=0.1, double dlxinc=-1., double dlxmax=-1., unsigned short glorder=4);
+
+/** Integrate function w/trapezium method in log space
+    @param func     function to integrate 
+    @param xmin     lower integral bound
+    @param xmax     upper integral bound
+    @param nx       integration precision (number of trapesiums)              */
+double IntegrateFuncTrapLogSpace(ClassFunc1D const& func, double xmin, double xmax, int nx);
+
+/** Compute Gauss-Legendre                               
+    @param glorder  Gauss-Legendre order
+    @param x        x values where coefficients are calculated
+    @param w        value of associated coefficients
+    @param x1       lower interval limit
+    @param x2       upper interval limit                                      */
+void Compute_GaussLeg(unsigned short glorder, vector<double>& x, vector<double>& w,
+    double x1=0., double x2=1.);
+
+
+
+//------- Some special functions -----------------------------------------------
+
+/** Log of \f$ \Gamma $/f function
+    @param x    x                                                             */
 double LogGammaFunc(double x);
 double ERF(double x);
 double GAMMP(double a, double x);
@@ -198,10 +272,14 @@ double findMinimumPosition(TArray<double> array, int& iRow, int& jCol);
 double findMinimumPosition(vector<double> array, int& iElement);
 
 /** Find closest value within a vector to some given value
-@param values is a vector of doubles
-@param val is a double
-*/
-int findClosestElement(vector<double> values,double val);
+    @param values is a vector of doubles
+    @param val is a double                                                    */
+int findClosestElement(vector<double> values, double val);
+
+/** Find closest value within a vector to some given value
+    @param values is a vector of doubles
+    @param val is a double                                                    */
+int findClosestElement(TVector<r_8> values, double val);
 
 /** Check if a vector is sorted in ascending order */
 bool sortCheck(vector<double> values);

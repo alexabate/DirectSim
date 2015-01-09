@@ -20,7 +20,9 @@
 #include <math.h>
 
 #include "array.h"
-#include "genericfunc.h"
+// Sophya update v2.3 June 2013 replaces genericfunc with classfunc
+//#include "genericfunc.h"
+#include "classfunc.h"
 #include "pexceptions.h"
 #include "stsrand.h"
 #include "sopnamsp.h"
@@ -70,7 +72,7 @@ public:
         @param sed              rest-frame SED of object \f$f_\lambda(\lambda)\f$
         @param filterX          filter object observed in \f$X(\lambda)\f$
         @param restFrameFilter  rest-frame filter \f$Y(\lambda)\f$            */
-	double Kcorr(double z, GenericFunc& sed, Filter& filterX, Filter& restFrameFilter);
+	double Kcorr(double z, ClassFunc1D& sed, Filter& filterX, Filter& restFrameFilter);
 	
 	/** The k-correction calculation when the rest-frame and observed-frame bandpasses
 	    are the same:  \f$ K_{xy} = -2.5\log10\left( \frac{1}{1+z} 
@@ -79,7 +81,7 @@ public:
 	    @param z                redshift of object \f$z\f$
         @param sed              rest-frame SED of object \f$f_\lambda(\lambda)\f$
         @param filterX          filter object observed in (same as rest-frame filter) \f$X(\lambda)\f$*/
-	double Kcorr1Filter(double z, GenericFunc& sed, Filter& filterX);
+	double Kcorr1Filter(double z, ClassFunc1D& sed, Filter& filterX);
 
 	/** Calculate galaxy color: 
 	    \f$ C_{xy} = -2.5\log10\left(
@@ -91,7 +93,7 @@ public:
         @param sed              rest-frame SED of object \f$f_\lambda(\lambda)\f$
         @param filterX          filter object observed in \f$X(\lambda)\f$
         @param filterY          other filter object observed in \f$Y(\lambda)\f$  */
-	double CompColor(double z, GenericFunc& sed, Filter& filterX, Filter& filterY);
+	double CompColor(double z, ClassFunc1D& sed, Filter& filterX, Filter& filterY);
 	
 	/** Calculate rest-frame flux of object in band \f$X(\lambda\f$ in FREQUENCY units: 
         \f$ F_\nu(\lambda^{eff}_e) = 
@@ -100,11 +102,11 @@ public:
         @param sed      rest-frame SED of object \f$f_\lambda(\lambda)\f$
         @param filter   filter object observed in \f$X(\lambda)\f$
         @param zs       redshift of object                                    */
-	double restFrameFlux(GenericFunc& sed, Filter& filter, double zs);
+	double restFrameFlux(ClassFunc1D& sed, Filter& filter, double zs);
 	            
 	/** Rest-frame flux in WAVELENGTH units: 
 	    \f$ F_\lambda(\lambda^{eff}_e) = \frac{F_\nu(\lambda^{eff}_e)}{\lambda_e^2} \f$*/
-	double restFrameFluxLambda(GenericFunc& sed, Filter& filter, double zs) {
+	double restFrameFluxLambda(ClassFunc1D& sed, Filter& filter, double zs) {
 	    double f0nu = restFrameFlux(sed,filter, zs);
 	    BlueShiftFilter blueshiftFilter(filter, zs);
 	    double lamEffRF = effectiveFilterWavelength(blueshiftFilter);
@@ -122,7 +124,7 @@ public:
 	    @param dL           luminosity distance at zs
 	    @param sed          SED of object
 	    @param filterX      arbitrary filter band                             */
-	double convertABMagToFlux(double mag, double zs, double dL, GenericFunc& sed, Filter& filterX) {
+	double convertABMagToFlux(double mag, double zs, double dL, ClassFunc1D& sed, Filter& filterX) {
         double magPart = pow(10,-0.4*mag);
         SEDzFilterProd sedXlambdaXfilter(sed, filterX, 0);// returns sed*lambda*filter
         FilterIntegrator integrandSED(sedXlambdaXfilter, lmin_, lmax_);
@@ -139,7 +141,7 @@ public:
 	    @param sed          SED of object
 	    @param filterX      arbitrary filter band
 	    @param filterY      filter band object observed in                           */
-	double convertABMagToFluxLambda(double mag, double zs, double dL, GenericFunc& sed, Filter& filterX, Filter& filterY) {
+	double convertABMagToFluxLambda(double mag, double zs, double dL, ClassFunc1D& sed, Filter& filterX, Filter& filterY) {
 	    double fnu = convertABMagToFlux(mag, zs, dL, sed, filterX);
 	    double lambdaEff = effectiveFilterWavelength(filterY);
         double fl = fnu/(lambdaEff*lambdaEff);
@@ -216,13 +218,13 @@ public:
 	/** Calculate effective wavelength of filter.  Calculates: 
 	    \f$ \frac{\int X(\lambda)\lambda d\lambda}{\int X(\lambda) d\lambda}\f$
 	    where the integrals are between the filter lower and upper edges.*/
-	double effectiveFilterWavelength(GenericFunc& filterX);
+	double effectiveFilterWavelength(ClassFunc1D& filterX);
 	
 	/** Return the value of the maximum transmission of the filter 
 	    @param  filterX     filter transmission function
 	    @param  lambdaAtMax wavelength at maximum transmission (returned by method)
 	    @param  nStep       number of steps in the search between #lmin_, #lmax_*/
-	double findFilterMax(GenericFunc& filterX, double& lambdaAtMax, int nStep=1000);
+	double findFilterMax(ClassFunc1D& filterX, double& lambdaAtMax, int nStep=1000);
 	
 	/** Find the wavelength closest to the transmission value #trans in filter
 	    #iFilter between lmin and lmax
@@ -232,7 +234,7 @@ public:
 	    @param  lmax        search for closest wavelength ending at #lmax
 	    @param  nStep       number of steps in the search between #lmin
 	                        and #lmax */
-	double findFilterTransValue(GenericFunc& filterX, double trans, double lmin,
+	double findFilterTransValue(ClassFunc1D& filterX, double trans, double lmin,
 	                                            double lmax, int nStep=1000);
 	
 	/** Find wavelength edges of filter iFilter 
@@ -240,7 +242,7 @@ public:
 	    @param lmax             upper wavelength edge of filter (returned by method)
 	    @param filterX          filter transmission function
 	    @param edgeDefinition   percent of filter maximum defined as the "edge"*/
-	void findFilterEdges(double& lmin, double& lmax, GenericFunc& filterX, 
+	void findFilterEdges(double& lmin, double& lmax, ClassFunc1D& filterX, 
 	                                            double edgeDefinition=0.05);
 	                                            
 	/** Return rest frame wavelength: \f$ \lambda_e = \frac{\lambda_o}{1+z} \f$
@@ -387,8 +389,8 @@ public:
 		{ ebvmax_=ebvmax; ebvmaxEl_=ebvmaxEl; };
 		
     /** Set if applying Madau absorption */
-    void setMadau(bool isAddMadau)
-        { isAddMadau_ = isAddMadau; };
+    void setMadau(bool isAddMadau, bool isLyC=true)
+        { isAddMadau_ = isAddMadau; isLyC_ = isLyC; };
 			
 	
 	// INTERNAL FUNCTIONS: THESE SHOULD BE PROTECTED? //
@@ -469,6 +471,7 @@ protected:
     int nStarbursts_;               /**< number of starbursts in sedArray =   //
     nStarbursts_ = nsed_ - nEllipticals_ - nSpirals_                          */
     bool isAddMadau_;               /**< add Madau absorption                 */
+    bool isLyC_;                    /**< include Lyman continuum in Madau absorption */
     bool isReadKcorr_;              /**< read k corrections from file         */
 	int nsed_;                      /**< number of SEDs                       */
 	int nFilters_;                  /**< number of filters                    */

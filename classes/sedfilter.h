@@ -23,7 +23,9 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
-#include "genericfunc.h"
+// Sophya update v2.3 June 2013 replaces genericfunc with classfunc
+//#include "genericfunc.h"
+#include "classfunc.h"
 #include "tvector.h"
 
 #include "reddening.h"
@@ -59,7 +61,7 @@ namespace SOPHYA {
   * The SED can be optionally interpolated or reddened
   * 
   */
-class SED : public GenericFunc
+class SED : public ClassFunc1D
 {
 public:
     /** Default constructor */
@@ -80,7 +82,7 @@ public:
     void readSED(string& fname, double xmin, double xmax, int npt=1024);
       
     /** @warning code doesn't seem to like this! */
-    virtual double operator()(double x)
+    virtual double operator()(double x) const
             { return returnFlux(x); };
             
     /** Set up interpolation of the SED */
@@ -93,19 +95,19 @@ public:
         What is returned depends on isRedden and isInterp values
         Either: interpSED(), addReddening() or interpAddReddening() is called 
         @param lambda   rest-frame wavelength                                 */
-    double returnFlux(double lambda);
+    double returnFlux(double lambda) const;
     
     /** To return the reddened value 
         @param lambda   rest-frame wavelength                                 */
-    double addReddening(double lambda);
+    double addReddening(double lambda) const;
     
     /** To return the interpolated value
         @param lambda   rest-frame wavelength                                 */
-    double interpSED(double lambda);
+    double interpSED(double lambda) const;
     
     /** To return the reddened and interpolated value
         @param lambda   rest-frame wavelength                                 */
-    double interpAddReddening(double lambda);
+    double interpAddReddening(double lambda) const;
     
     /** return bool holding interpolation information*/
     bool returnInterpBool(){ return isInterp_; };
@@ -132,6 +134,7 @@ protected:
     double      _test_;
 };
 
+
 /** @class
   * SED interpolation class
   * 
@@ -143,27 +146,28 @@ protected:
   * with SED class itself
   * 
   */
-class SEDInterp : public GenericFunc
+class SEDInterp : public ClassFunc1D
 {
 public:
     
     SEDInterp(SED& sed1, SED& sed2, double mult1, double mult2)
-	: sed1_(sed1), sed2_(sed2), mult1_(mult1), mult2_(mult2) {
-	    double eps=1e-6;
-	    if ( abs(mult1+mult2-1.)>eps)
-	        throw ParmError("ERROR! SED factors must sum to 1");
+    : sed1_(sed1), sed2_(sed2), mult1_(mult1), mult2_(mult2) {
+        double eps=1e-6;
+        if ( std::abs(mult1+mult2-1.)>eps)
+            throw ParmError("ERROR! SED factors must sum to 1");
     };
-	 
-	/** returns interpolated SED 
-	    @param lambda   rest-frame wavelength                                 */
-    virtual double operator()(double lambda)
+     
+    /** returns interpolated SED 
+        @param lambda   rest-frame wavelength                                 */
+    virtual double operator()(double lambda) const
             {  return (mult1_*sed1_(lambda)+mult2_*sed2_(lambda));  };
 
 protected:
-    SED& sed1_, sed2_; 
-    double mult1_, mult2_;
+    SED& sed1_;      /**< SED 1                                               */
+    SED& sed2_;      /**< SED 2                                               */
+    double mult1_;   /**< fraction of SED 1 in new SED                        */
+    double mult2_;   /**< fraction of SED 2 in new SED                        */
 };
-
 
 
 /** @class SEDzFilterProd
@@ -181,21 +185,21 @@ protected:
   * cancel because:
   * K12 = mAB(z) - mAB(z=0)
   */
-class SEDzFilterProd : public GenericFunc
+class SEDzFilterProd : public ClassFunc1D
 {
 public:
     /** Constructor 
         @param f    SED
         @param g    filter
-        @param z    redshift of SED                                           */
-    SEDzFilterProd(GenericFunc& f, GenericFunc& g, double z=0.)
+        @param z    redshift of galaxy SED                                           */
+    SEDzFilterProd(ClassFunc1D& f, ClassFunc1D& g, double z=0.)
     : sed_(f) , filt_(g) , z_(z) {  };
     
     /** Returns redshifted SED multiplied by the filter transmission and wavelength,
         \f$ SED(\lambda/(1+z))*Filter(\lambda)*\lambda \f$ where \lambda is the 
         observed wavelength    
         @param lambda   observed wavelength                                   */
-    virtual double operator()(double lambda) {
+    virtual double operator()(double lambda) const {
         double lambdaE = lambda/(1+z_);
         return (sed_(lambdaE)*filt_(lambda)*lambda);
         }  
@@ -205,9 +209,9 @@ public:
 // /lambda^2 if SED in units of frequency and magnitudes have dnu definition
 
 protected:
-  GenericFunc& sed_; 
-  GenericFunc& filt_; 
-  double z_;
+  ClassFunc1D& sed_;          /**< SED                                        */
+  ClassFunc1D& filt_;         /**< filter function                            */
+  double z_;                  /**< redshift of galaxy SED                     */
 };
 
 /** @class SEDzFilterProdIGM
@@ -244,7 +248,6 @@ protected:
   double z_;
 };
 
-
 /** @class SEDGOODSRedfix class
   * 
   *
@@ -277,7 +280,7 @@ protected:
   * \f$ SED^{red}=SED^{fix}(\lambda)10^(-0.4k(\lambda)E(B-V)) \f$ 
   *
   */
-class SEDGOODSRedfix: public GenericFunc
+class SEDGOODSRedfix: public ClassFunc1D
 {
 public:
 
@@ -288,39 +291,40 @@ public:
         @param law      Reddening law to use (=0 Cardelli,=1 Calzetti)
         @param RvCard   Rv parameter of Cardelli law
         @param lam_eff0 effective wavelength (for correcting GOODS reddening) */
-	SEDGOODSRedfix(GenericFunc& S,double z,double EBmV=0.,int law=0, 
-			double RvCard=3.5,double lam_eff0=6510e-10)
-    	: sed_(S) , z_(z) , EBmV_(EBmV) , law_(law) , RvCard_(RvCard) , 
-    			lam_eff0_(lam_eff0){    };
-    			
-    /** returns reddened SED after correcting for GOODS reddening
+    SEDGOODSRedfix(ClassFunc1D& S,double z,double EBmV=0.,int law=0, 
+            double RvCard=3.5,double lam_eff0=6510e-10)
+        : sed_(S) , z_(z) , EBmV_(EBmV) , law_(law) , RvCard_(RvCard) , 
+                lam_eff0_(lam_eff0){    };
+                
+    /** Return reddened SED after correcting for GOODS reddening
         @param lambda   rest-frame wavelength                                 */
-    virtual double operator()(double lambda) {
+    virtual double operator()(double lambda) const {
         double lameff=lam_eff0_/(1+z_);
-	
+    
         Reddening red;
-		double k,kfix;
-		if (law_<1) {
-			kfix=red.Cardelli(lameff,RvCard_);
-			k=red.Cardelli(lambda,RvCard_);
-			}
-		if (law_>0) {
-			kfix=red.Calzetti(lameff);
-			k=red.Calzetti(lambda);
-			}
-	
-		return (sed_(lambda)*pow(10,-0.4*k*EBmV_)/
-					pow(10,-0.4*kfix*EBmV_));
+        double k,kfix;
+        if (law_<1) {
+            kfix=red.Cardelli(lameff,RvCard_);
+            k=red.Cardelli(lambda,RvCard_);
+            }
+        if (law_>0) {
+            kfix=red.Calzetti(lameff);
+            k=red.Calzetti(lambda);
+            }
+    
+        return (sed_(lambda)*pow(10,-0.4*k*EBmV_)/
+                    pow(10,-0.4*kfix*EBmV_));
         };
 
 protected:
-  GenericFunc& sed_;    /**< SED to apply host galaxy redening to             */
-  double z_;            /**< redshift of the SED                              */
-  double EBmV_;         /**< E(B-V) host galaxy extinction value              */
-  int law_;             /**< law_=0 uses Cardelli law, law_=1 uses Calzetti law */
-  double RvCard_;       /**< Rv value */
+  ClassFunc1D& sed_;       /**< SED to apply host galaxy redening to          */
+  double z_;               /**< redshift of the SED                           */
+  double EBmV_;            /**< E(B-V) host galaxy extinction value           */
+  int law_;                /**< law_=0 uses Cardelli law, law_=1 uses Calzetti law */
+  double RvCard_;          /**< Rv value                                      */
   double lam_eff0_;     //
 };
+
 
 /** @class SEDRedden class
   * 
@@ -329,7 +333,7 @@ protected:
   * Default reddening law is Cardelli
   * Default Cardelli Rv=3.5
   */
-class SEDRedden : public GenericFunc
+class SEDRedden : public ClassFunc1D
 {
 public:
 
@@ -338,29 +342,29 @@ public:
         @param EBmV     E(B-V) value of galaxy
         @param law      Reddening law to use (=0 Cardelli,=1 Calzetti)
         @param RvCard   Rv parameter of Cardelli law                          */
-    SEDRedden(GenericFunc& S, double EBmV=0., int law=0, double RvCard=3.5)
+    SEDRedden(ClassFunc1D& S, double EBmV=0., int law=0, double RvCard=3.5)
     : sed_(S) , EBmV_(EBmV) , law_(law) , RvCard_(RvCard) { }
     
-    /** returns reddened SED 
+    /** Return reddened SED 
         @param lambda   rest-frame wavelength                                 */
-    virtual double operator()(double lambda) {
-    	
+    virtual double operator()(double lambda) const {
+        
         Reddening red;
-	
-	    double k;
-	    if (law_<1)
-		    k=red.Cardelli(lambda,RvCard_);
-	    if (law_>0)
-		    k=red.Calzetti(lambda);
-	
-	    return (sed_(lambda)*pow(10,-0.4*k*EBmV_));
+    
+        double k;
+        if (law_<1)
+            k=red.Cardelli(lambda,RvCard_);
+        if (law_>0)
+            k=red.Calzetti(lambda);
+    
+        return (sed_(lambda)*pow(10,-0.4*k*EBmV_));
         } ;
 
 protected:
-  GenericFunc& sed_; //SED to redden
-  double EBmV_;	//E(B-V) extinction value
-  int law_;//if law_=0 uses Cardelli law, if law_=1 uses Calzetti law
-  double RvCard_;//Rv value
+  ClassFunc1D& sed_;      /**< SED to redden                                  */
+  double EBmV_;           /**< E(B-V) extinction value                        */
+  int law_;               /**< if law_=0 Cardelli law, if law_=1 Calzetti law */
+  double RvCard_;         /**< Rv value                                       */
 };
 
 
@@ -368,53 +372,61 @@ protected:
   * 
   * Add Madau absorption
   */
-class SEDMadau : public GenericFunc
+class SEDMadau : public ClassFunc1D
 {
 public:
-    /** Constructor */
-    SEDMadau(GenericFunc& S, double zSED)
-    : sed_(S) , zSED_(zSED) { };
+    /** Constructor 
+        @param S       SED to add Madau absorption to 
+        @param zSED    redshift of galaxy SED                                 
+        @param isLyC   include Lyman continuum absorption                     */
+    SEDMadau(ClassFunc1D& S, double zSED, bool isLyC=true)
+    : sed_(S) , zSED_(zSED) , isLyC_(isLyC) { };
     
-    /** 
+    /** Return SED with Madau absorption applied
         @param lambda   rest-frame wavelength */
-    virtual double operator()(double lambda) {
-        Madau madau;
+    virtual double operator()(double lambda) const {
+        Madau madau(5,isLyC_); // 5 refers to max number of Lyman lines
         // THINK THIS SHOULD BE RETURNING THE REST FRAME TRANSMISSION
-	    double trans = madau.returnRestFrameTransmission(lambda, zSED_);
-	    return (sed_(lambda)*trans);
+        double trans = madau.returnRestFrameTransmission(lambda, zSED_);
+        return (sed_(lambda)*trans);
         };
 
 protected:
-    GenericFunc& sed_;      /**< SED to add Madau absorption to               */
-    double zSED_;           /**< redshift of SED                              */        
+    ClassFunc1D& sed_;       /**< SED to add Madau absorption to              */
+    double zSED_;            /**< redshift of SED                             */
+    bool isLyC_;            /**< include Lyman continuum absorption           */     
 };
+
 
 /** @class SEDIGM class
   * 
   * Add IGM absorption from a particular line of sight
   */
-class SEDIGM : public GenericFunc
+class SEDIGM : public ClassFunc1D
 {
 public:
-    /** Constructor */
-    SEDIGM(GenericFunc& S, GenericFunc& T, double zSED)
+    /** Constructor 
+        @param S       SED to add IGM absorption to
+        @param T       IGM transmission
+        @param zSED    redshift of galaxy SED                                 */
+    SEDIGM(ClassFunc1D& S, ClassFunc1D& T, double zSED)
     : sed_(S) , igm_(T) , zSED_(zSED) { };
     
-    /** 
-        @param lambda   restframe wavelength                           
-               */
-    virtual double operator()(double lambda) {
+    /** Return SED with IGM absorption applied
+        @param lambda   restframe wavelength                                  */
+    virtual double operator()(double lambda) const {
         double lambdaObs = lambda*(1+zSED_);
-	    double trans = igm_(lambdaObs);
-	    return (sed_(lambda)*trans);
+        double trans = igm_(lambdaObs);
+        return (sed_(lambda)*trans);
         };
 
 
 protected:
-    GenericFunc& sed_;      /**< SED to add IGM absorption to                 */
-    GenericFunc& igm_;      /**< IGM absorption along line of sight           */
-    double zSED_;           /**< redshift of SED                              */        
+    ClassFunc1D& sed_;            /**< SED to add IGM absorption to           */
+    ClassFunc1D& igm_;            /**< IGM absorption along line of sight     */
+    double zSED_;                 /**< redshift of SED                        */        
 };
+
 
 /** ReadSedList class
   * 
@@ -426,7 +438,7 @@ public:
     /** Constructor, finds the file sedFile and counts number of SEDs inside 
         @param sedFile  filename containing list of SEDs 
         @param prt      print level, if prt>0 extra statements are printed */
-    ReadSedList(string sedFile,int prt=0);
+    ReadSedList(string sedFile, int prt=0);
     
     /** Read environment variable $SEDLOC */
     string getSedDirEnviromentVar();
@@ -438,7 +450,7 @@ public:
         pointers pointing to each SED object 
         @param lmin minimum wavelength of SED in meters
         @param lmax maximum wavelength of SED in meters */
-    void readSeds(double lmin=1e-7,double lmax=1e-6);
+    void readSeds(double lmin=5e-8, double lmax=2.5e-6);
     
     /** If interpolating between the SEDs call this method straight after
         readSeds()
@@ -451,10 +463,10 @@ public:
         elliptical galaxies 
         @param nStepRed number of times to redden 
         @param redMax   maximum limit to redden to (even steps between 0 and redMax */
-    void reddenSeds(int nStepRed,double redMax);
+    void reddenSeds(int nStepRed, double redMax);
     
     /** Write contents of sedArray to a file */
-    void writeSpectra(string outFile,double lmin=1e-7,double lmax=1e-6,
+    void writeSpectra(string outFile, double lmin=5e-8, double lmax=2.5e-6,
                                                                  int nl=1500);
                                                                  
     /** Return sedArray */
@@ -528,10 +540,11 @@ public:
                                 bool zero_outside = true, int npt=1024);
 };
 
+
 /** @class BlueShiftFilter
   *
   */
-class BlueShiftFilter : public GenericFunc
+class BlueShiftFilter : public ClassFunc1D
 {
 public:
     
@@ -541,15 +554,16 @@ public:
     
     /** returns the value of the filter transmission at the rest-frame 
         wavelength of the object */
-    virtual double operator()(double lambda) {
+    virtual double operator()(double lambda) const {
         double lambdaRF = lambda*(1+z_);
         return (filt_(lambdaRF));
         };
 
 protected:
-  Filter& filt_;    /**< class holding the filter function */
-  double z_;        /**< redshift of the object */
+    Filter& filt_;    /**< class holding the filter function */
+    double z_;        /**< redshift of the object */
 };
+
 
 /** @class FilterProd class
   * To multiply filter transmission by 1/lambda
@@ -568,17 +582,17 @@ protected:
   * be in units of W/m^2/Hz because magnitude in band X is defined flux density 
   * at a particular wavelength
   */
-class FilterProd : public GenericFunc
+class FilterProd : public ClassFunc1D
 {
 public:
     
     /** Constructor */
     FilterProd(Filter& g)
-    : filt_(g){ }
+    : filt_(g){ };
     
     /** returns the value of the filter transmission at #lambda, divided by 
         #lambda */
-    virtual double operator()(double lambda) {
+    virtual double operator()(double lambda) const {
         return (filt_(lambda)/lambda);//********* DOUBLE CHECK THIS *********//
         }  
 
@@ -586,26 +600,27 @@ protected:
   Filter& filt_;    /**< class holding the filter function */
 };
 
+
 /** @class FilterXLambda class
   * To multiply filter transmission value by the wavelength
   *
   */
-class FilterXLambda : public GenericFunc
+class FilterXLambda : public ClassFunc1D
 {
 public:
     
     /** Constructor */
-    FilterXLambda(GenericFunc& g)
+    FilterXLambda(ClassFunc1D& g)
     : filt_(g){ }
     
     /** returns the value of the filter transmission at #lambda, multiplied by 
         #lambda */
-    virtual double operator()(double lambda) {
+    virtual double operator()(double lambda) const {
         return (filt_(lambda)*lambda);//********* DOUBLE CHECK THIS *********//
         }  
 
 protected:
-  GenericFunc& filt_;    /**< class holding the filter function */
+  ClassFunc1D& filt_;          /**< class holding the filter function         */
 };
 
 
@@ -613,56 +628,57 @@ protected:
   * To multiply filter with 1/lambda^2
   *
   */
-class FilterProdProd : public GenericFunc
+class FilterProdProd : public ClassFunc1D
 {
 public:
-  FilterProdProd(Filter& g)
-    : filt_(g)
-    {
-    }
-  virtual double operator()(double lambda)
-    {
-    return (filt_(lambda)/(lambda*lambda));
-    }  
+    FilterProdProd(Filter& g)
+    : filt_(g) {};
+    
+    virtual double operator()(double lambda) {
+        return (filt_(lambda)/(lambda*lambda));
+        }  
 
 protected:
-  Filter& filt_; 
+    Filter& filt_; 
 };
 
 
 //--- Does int F(lambda)/lambda dlambda or SED(lambda)*F(lambda) or whatever
 // Simple summing integration
-class FilterIntegrator : public GenericFunc
+class FilterIntegrator : public ClassFunc1D
 {
 public:
-  FilterIntegrator(GenericFunc& f, double xmin, double xmax, int Nstep=500) 
-    : f_(f) , xmin_(xmin) , xmax_(xmax) , Nstep_(Nstep)
-    {
-    }
-	
+  FilterIntegrator(ClassFunc1D& f, double xmin, double xmax, int Nstep=500) 
+    : f_(f) , xmin_(xmin) , xmax_(xmax) , Nstep_(Nstep) { }
+    
+   /** This is defined to override the pure virtual function defined in ClassFunc1D
+        otherwise FilterIntegrator is sometimes treated as an abstract class        */
+    virtual double operator() (double) const { };
+    
    double Value() {
-		if (xmin_>=xmax_){
-		    string emsg="FilterIntegrator::Value() integral limits don't make sense ";
-			throw out_of_range(emsg);
-			}
-					
-			if (Nstep_ <= 0)
-				Nstep_ = 500;
+        if (xmin_>=xmax_){
+            string emsg="FilterIntegrator::Value() integral limits don't make sense ";
+            throw out_of_range(emsg);
+            }
+                    
+            if (Nstep_ <= 0)
+                Nstep_ = 500;
 
-			double dx = (xmax_ - xmin_) / (Nstep_-1);
-			double x = xmin_;
-			double sum=0;
-			for (int i=1; i<Nstep_; i++, x += dx)
-				sum += f_(x);
-			
-			return sum * dx;
-		}
+            double dx = (xmax_ - xmin_) / (Nstep_-1);
+            double x = xmin_;
+            double sum=0;
+            for (int i=1; i<Nstep_; i++, x += dx)
+                sum += f_(x);
+            
+            return sum * dx;
+        }
 
 protected:
-  GenericFunc& f_; 
+  ClassFunc1D& f_; 
   double xmin_, xmax_;
   int Nstep_;
 };
+
 
 /** ReadFilterList class
   * 
@@ -674,7 +690,7 @@ public:
     /** Constructor, finds the file sedFile and counts number of filters inside 
         @param sedFile  filename containing list of filters 
         @param prt      print level, if prt>0 extra statements are printed */
-    ReadFilterList(string filterFile,int prt=0);
+    ReadFilterList(string filterFile, int prt=0);
     
     /** Read environment variable $FILTLOC */
     string getFilterDirEnviromentVar();
@@ -686,10 +702,10 @@ public:
         pointers pointing to each Filter object 
         @param lmin minimum wavelength of filter in meters
         @param lmax maximum wavelength of filter in meters */
-    void readFilters(double lmin=1e-7,double lmax=1e-6);
+    void readFilters(double lmin=5e-8, double lmax=2.5e-6);
     
     /** Write contents of filterArray to a file */
-    void writeFilters(string outFile,double lmin=1e-7,double lmax=1e-6,
+    void writeFilters(string outFile, double lmin=5e-8, double lmax=2.5e-6,
                                                                  int nl=1500);
                                                                  
     /** Return filterArray */
@@ -697,8 +713,7 @@ public:
                 { return filterArray_; };
     
     /** Return total number of filters */
-    int getNTot()
-                { return ntot_; };
+    int getNTot() { return ntot_; };
                 
 private:
     int prt_;                       /**< print level */
@@ -726,19 +741,19 @@ private:
 class SEDCovMat
 {
 public:
-	SEDCovMat(double lmin,double dl,int nl)
-	: lmin_(lmin) , dl_(dl) , nl_(nl) {  };
+    SEDCovMat(double lmin,double dl,int nl)
+    : lmin_(lmin) , dl_(dl) , nl_(nl) {  };
 
-	TArray<double> MakeCovMat(SED **sedarray,int nsed,
-						TVector<double>& meanSED);
-	TArray<double> TransposeMult(TArray<double> SEDmatrix);
-	
-	void SetWavelengths(double lmin,double dl,int nl)
-		{ lmin_=lmin; dl_=dl; nl_=nl; };
-	
+    TArray<double> MakeCovMat(SED **sedarray,int nsed,
+                        TVector<double>& meanSED);
+    TArray<double> TransposeMult(TArray<double> SEDmatrix);
+    
+    void SetWavelengths(double lmin,double dl,int nl)
+        { lmin_=lmin; dl_=dl; nl_=nl; };
+    
 protected:
-	double lmin_,dl_;
-	int nl_;
+    double lmin_,dl_;
+    int nl_;
 
 };
 
@@ -754,13 +769,13 @@ public:
 
     /** Constructor for calculating eigenvectors and eigenvalues from the spectra
         in sedArray */
-    TemplatePCA(vector<SED*> sedArray, double lmin=1e-7, double lmax=1e-6, 
+    TemplatePCA(vector<SED*> sedArray, double lmin=5e-8, double lmax=2.5e-6, 
                                                                  int nl=1500);
     
     /** Constructor for projecting the spectra in sedArray onto the eigenvectors 
         read from file eigVectFile */
-    TemplatePCA(vector<SED*> sedArray,string eigVectFile, double lmin=1e-7, 
-                                                double lmax=1e-6,int nl=1500);
+    TemplatePCA(vector<SED*> sedArray,string eigVectFile, double lmin=5e-8, 
+                                                double lmax=2.5e-6,int nl=1500);
                                                                 
     /** should add argument to here to reflect different normalization choices*/
     void normalizeSpectra();
@@ -854,16 +869,16 @@ protected:
     TMatrix<double> dataMatrix_;        /**< matrix of normalized, mean subbed SEDs */
     //TPrincipal* principal_;             /**< class that does PCA calc */
     TVector<double> normValues_;        /**< normalization of each spectrum */
-    TVector<double>	meanValues_;        /**< mean values of each wl bin (over SEDs)*/
+    TVector<double> meanValues_;        /**< mean values of each wl bin (over SEDs)*/
     TMatrix<double> covMatrix_;         /**< data covariance matrix */
     TMatrixD eigenVectors_;             /**< eigenvectors */
     TVectorD eigenValues_;              /**< eigenvalues */
     TMatrix<double> reconstructedSpectra_;/**< rows: wavelength, cols: SEDs */
-	TMatrix<double> eigenvalsProjSpec_; /**< doesn't depend on # of eigenvalues kept 
-	                                         (well length does). Size is (nEigKept,nsed)
-	                                         Is basically the projection of each SED
-	                                         onto the first nEigKept eigenvectors */
-	                                         
+    TMatrix<double> eigenvalsProjSpec_; /**< doesn't depend on # of eigenvalues kept 
+                                             (well length does). Size is (nEigKept,nsed)
+                                             Is basically the projection of each SED
+                                             onto the first nEigKept eigenvectors */
+                                             
 };                 
 
       

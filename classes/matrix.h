@@ -15,35 +15,36 @@
 #ifndef MATRIX_SEEN
 #define MATRIX_SEEN
 
-#include "sopnamsp.h"
-#include "machdefs.h"
 #include <math.h>
-#include "tvector.h"
-#include "cspline.h"
-
 #include <vector>
 
-
+// sophya
+#include "sopnamsp.h"
+#include "machdefs.h"
+#include "tvector.h"
+#include "cspline.h"
 
 namespace SOPHYA {
 
 
 struct SVD 
 	{
-	// Object for singular value decomposition of a matrix A, and related functions
+	/** Object for singular value decomposition of a matrix A, and related functions */
 	int m,n;
 	TMatrix<double> u,v;
 	TVector<double> w;
 	double eps,tsh;
 
-	// Constructor
+	/** Constructor */
 	SVD(TMatrix<double> &a); 
 
-	// to calculate the inverse
+	/** Calculate the inverse */
 	TMatrix<double> matrix_inv_svd();
 
-	// Solve with (apply the pseudoinverse to) one or more right-hand sides
+	/** Solve with (apply the pseudoinverse to) one or more right-hand sides */
 	void solve(TVector<double> &b, TVector<double> &x, double thresh);
+	
+	/** Solve with (apply the pseudoinverse to) one or more right-hand sides */
 	void solve(TMatrix<double> &b, TMatrix<double> &x, double thresh);
 
 	// Quantities associated with the range and nullspace of A

@@ -1,5 +1,3 @@
-// -*- LSST-C++ -*-
-
 /**
  * @file  hpoly.h
  * @brief 
@@ -25,7 +23,9 @@
 
 // sophya
 #include "sopnamsp.h"
-#include "genericfunc.h"
+// Sophya update v2.3 June 2013 replaces genericfunc with classfunc
+//#include "genericfunc.h"
+#include "classfunc.h"
 #include "pexceptions.h"
 #include "mydefrg.h"
 
@@ -44,7 +44,7 @@
   * pre-compiled set of low-order hermite functions
   *
   */
-class Hermite //: public GenericFunc
+class Hermite
 {
 public:
     /** Constructor */
@@ -55,13 +55,13 @@ public:
    //     { return returnHermiteN(order, x); };
 
     /** Returns the 1D Hermite polynomial of order n Hn(x)                    */
-    double returnHermiteN(int order, double x);
+    double returnHermiteN(int order, double x) const;
     
     /** Returns the Hermite coefficients for 1D polynomial of order n         */
-    vector<double> getHermiteCoeffs(int order);
+    vector<double> getHermiteCoeffs(int order) const;
     
     /** Calculates the Hermite coefficients for 1D polynomial of order n      */
-    vector<double> calculateHermiteCoeffs(int order);
+    vector<double> calculateHermiteCoeffs(int order) const;
     
     /** Set the pre-calculated lower order coefficients */
     void setLowOrderCoeffs();

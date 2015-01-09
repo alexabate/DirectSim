@@ -2,7 +2,6 @@
  * @file  reddening.h
  * @brief Calculate Cardelli and Calzetti reddening laws
  *
- * Could add more information here I think
  *
  * @author Alex Abate
  * Contact: abate@email.arizona.edu
@@ -15,20 +14,20 @@
 #ifndef REDDENING_H_SEEN 
 #define REDDENING_H_SEEN 
 
-#include "machdefs.h"
-#include "sopnamsp.h"
-#include "pexceptions.h"
 #include <math.h>
 #include <iostream>
 
-//#include "genericfunc.h"
+// sophya
+#include "machdefs.h"
+#include "sopnamsp.h"
+#include "pexceptions.h"
 
 /** Reddening class
   *
   * Class that calculates the Cardelli and Calzetti reddening laws
   *
   */
-class Reddening //: public GenericFunc
+class Reddening 
 {
 public :
     /** Constructor */

@@ -1,0 +1,44 @@
+/*!
+\page fitkbao Fit the BAO scale to the "wiggles only" power spectrum
+
+<CODE> fitkbao </CODE>
+
+Given an input power spectrum + errors fit the BAO scale to the "wiggles only"
+power spectrum.
+	
+The input power spectrum has already been corrected for  
+shot noise, selection, photo-z etc and is supplied to the
+program with option <CODE>-P</CODE>.                                 
+	
+
+Method: divide observed power spectrum by a reference    
+power spectrum and fit a sine wave described by some     
+amplitude, and a characteristic scale. To compute the    
+reference power spectrum the redshift of the observed 
+power spectrum must be supplied with option <CODE>-z</CODE>, and the  
+values of \f$ \sigma_8 \f$ and the spectral index parameters must 
+supplied with option <CODE>-c</CODE>
+
+	
+Results are written to files starting with the root name 
+supplied with the <CODE>-O</CODE> option. The \f$ \chi^2 \f$ values,      
+reference power spectrum, best-fit sinusoid and fit      
+results are written to files 
+	         
+	
+This code uses the cosmology of double \f$h=0.71, \Omega_M=0.267804, \Omega_L=0.73 \f$.
+                
+
+Below are the usage instructions
+	
+<CODE>Usage: fitkbao [...options...] 
+opt |       argument  | description
+----|-----------------|---------------------------------------------
+-P  | ps_file         | file containing power spectrum file to read in (3 columns: k (Mpc^-1), P(k) Mpc^3, err)  <BR>
+-O  | outfile_root    | file root name to write results to <BR>
+-z  | zref            | redshift of power spectrum  <BR>      
+-c  | sigma8,n        | sigma8 and spectral index <BR>
+
+</CODE> 
+
+*/

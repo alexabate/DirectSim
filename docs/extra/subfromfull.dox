@@ -1,0 +1,33 @@
+/*!
+\page subfromfull Read in either gridded galaxy data or a SimLSS grid and output a sub grid
+
+<CODE> subfromfull </CODE>
+
+Read in either a file containing gridded galaxy data     
+(output from <CODE>grid_data</CODE> program) or a SimLSS grid of      
+overdensities (output from <CODE>simdensity</CODE> program) using     
+option <CODE>-F</CODE>, and write out a sub-portion of these grid(s)  
+to a new file specified via the <CODE>-O</CODE> option.               
+
+To specify the sub-portion of these grid(s) give its     
+pixel ranges in the following way via option <CODE>-x</CODE> (range of
+sub-grid pixels in x-dimension), <CODE>-y</CODE> (range of sub-grid   
+pixels in y-dimension), <CODE>-z</CODE> (range of sub-grid pixels in  
+z-dimension).                                            
+
+<CODE>$ subfromfull -F grids.fits  -O subgrids.fits -x 10,100 -y 10,100 -z 300,390 <BR> </CODE>
+     
+Below are the usage instructions
+	
+<CODE>Usage: subfromfull [...options...] 
+opt |       argument  | description
+----|-----------------|---------------------------------------------
+-F  | infile          | file containing gridded galaxy data or SimLSS grid  <BR>
+-O  | outfile         | filename to write sub-grids to                      <BR>      
+-x  | x1,x2           | range of sub-grid pixels in x-dimension             <BR>       
+-y  | y1,y2           | range of sub-grid pixels in y-dimension             <BR>
+-z  | z1,z2           | range of sub-grid pixels in z-dimension             <BR>       
+-s  | [noarg]         | file is SimLSS density grid                         <BR> 
+</CODE> 
+
+*/

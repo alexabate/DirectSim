@@ -121,7 +121,8 @@ void SVD::solve(TVector<double> &b, TVector<double> &x, double thresh =-1. )
 			x(j)=s;
 		}
 
-	};
+};
+
 
 void SVD::solve(TMatrix<double> &b, TMatrix<double> &x, double thresh=-1.)
 // Solves m sets of n equations A · X = B using the pseudoinverse of A. The 
@@ -170,7 +171,7 @@ void SVD::decompose()
 				for (k=i;k<m;k++) {
 					u(k,i) /= scale;
 					s += u(k,i)*u(k,i);
-				}
+				    }
 				f=u(i,i);
 				// Hard coded SIGN operation
 				double val;
@@ -185,7 +186,7 @@ void SVD::decompose()
 						for (s=0.0,k=i;k<m;k++) s += u(k,i)*u(k,j);
 						f=s/h;
 						for (k=i;k<m;k++) u(k,j)+= f*u(k,i);
-					}
+					    }
 					for (k=i;k<m;k++) u(k,i) *= scale;
 				}
 			}
@@ -197,7 +198,7 @@ void SVD::decompose()
 					for (k=l-1;k<n;k++) {
 						u(i,k) /= scale;
 						s += u(i,k)*u(i,k);
-					}
+					    }
 					f=u(i,l-1);
 					// Hard coded SIGN operation
 					double val;
@@ -212,10 +213,10 @@ void SVD::decompose()
 					for (j=l-1;j<m;j++) {
 						for (s=0.0,k=l-1;k<n;k++) s += u(j,k)*u(i,k);
 						for (k=l-1;k<n;k++) u(j,k) += s*rv1(k);
-					}
+					    }
 					for (k=l-1;k<n;k++) u(i,k) *= scale;
-				}
-			}
+				    }
+			    }
 			// hard coded the MAX operation below
 			if ( anorm > (abs(w(i))+abs(rv1(i))) )
 				anorm=anorm;
@@ -230,14 +231,14 @@ void SVD::decompose()
 					for (j=l;j<n;j++) {
 						for (s=0.0,k=l;k<n;k++) s += u(i,k)*v(k,j);
 						for (k=l;k<n;k++) v(k,j) += s*v(k,i);
+						}
 					}
-				}
 				for (j=l;j<n;j++) v(i,j)=v(j,i)=0.0;
-			}
+				}
 			v(i,i)=1.0;
 			g=rv1(i);
 			l=i;
-		}
+			}
 		// Hard coded MIN operation
 		int istart;		
 		if ( m < n )
@@ -260,17 +261,17 @@ void SVD::decompose()
 			} else for (j=i;j<m;j++) u(j,i)=0.0;
 			++u(i,i);
 		}    
-		for (k=n-1;k>=0;k--) {        //Diagonalization of the bidiagonal form: Loop over
-			for (its=0;its<30;its++) {//   singular values, and over allowed iterations.
+		for (k=n-1;k>=0;k--) { //Diagonalization of the bidiagonal form: Loop over
+			for (its=0;its<30;its++) {// singular values, and over allowed iterations.
 				flag=true;                  
 				for (l=k;l>=0;l--) { //Test for splitting.
 					nm=l-1;
 					if (l == 0 || abs(rv1(l)) <= eps*anorm) {
 						flag=false;
 						break;
-					}
+						}	
 					if (abs(w(nm)) <= eps*anorm) break;
-				}
+					}
 				if (flag) {        
 					c=0.0;  //Cancellation of rv1(l), if l > 0.
 					s=1.0;
@@ -289,9 +290,9 @@ void SVD::decompose()
 							z=u(j,i);
 							u(j,nm)=y*c+z*s;
 							u(j,i)=z*c-y*s;
+							}
 						}
-					}
-				}
+					}	
 				z=w(k);             
 				if (l == k) { //Convergence.    
 					if (z < 0.0) { //Singular value is made nonnegative.
@@ -358,17 +359,20 @@ void SVD::decompose()
 				w(k)=x;
 			}
 		}
-	};
+	
+};
 
-	void SVD::reorder()
-		// Given the output of decompose, this routine sorts the singular values, and 
-		// corresponding columns of u and v, by decreasing magnitude. Also, signs of 
-		// corresponding columns are flipped so as to maximize the number of positive elements.
-	{
-		int i,j,k,s,inc=1;
-		double sw;
-		TVector<double> su(m), sv(n);
-		do { inc *= 3; inc++; } while (inc <= n); //Sort. The method is Shell’s sort.
+
+void SVD::reorder()
+// Given the output of decompose, this routine sorts the singular values, and 
+// corresponding columns of u and v, by decreasing magnitude. Also, signs of 
+// corresponding columns are flipped so as to maximize the number of positive elements.
+{
+		
+	int i,j,k,s,inc=1;
+	double sw;
+	TVector<double> su(m), sv(n);
+	do { inc *= 3; inc++; } while (inc <= n);     //Sort. The method is Shell’s sort.
 		do {                                      //(The work is negligible as compared
 			inc /= 3;                             //to that already done in decompose.)
 			for (i=inc;i<n;i++) {     
@@ -382,7 +386,7 @@ void SVD::decompose()
 					for (k=0;k<n;k++) v(k,j) = v(k,j-inc);
 					j -= inc;
 					if (j < inc) break;
-				}
+				    }
 				w[j] = sw;
 				for (k=0;k<m;k++) u(k,j) = su(k);
 				for (k=0;k<n;k++) v(k,j) = sv(k);
@@ -397,23 +401,24 @@ void SVD::decompose()
 				for (j=0;j<n;j++) v(j,k) = -v(j,k);
 			}
 		}
-	}
+		
+};
 
-	double SVD::pythag(const double a, const double b)
-		// Computes (a^2 + b^2)^(1/2) without destructive underflow or overflow.
-		// THIS IS THE SAME AS THE DPYTHAG ROUTINE
-	{
+double SVD::pythag(const double a, const double b)
+// Computes (a^2 + b^2)^(1/2) without destructive underflow or overflow.
+// THIS IS THE SAME AS THE DPYTHAG ROUTINE
+{
 		double absa=abs(a), absb=abs(b);
 		// Hard code SQR operation
 		return (absa > absb ? absa*sqrt(1.0+(absb/absa)*(absb/absa)) :
 			(absb == 0.0 ? 0.0 : absb*sqrt(1.0+(absa/absb)*(absa/absb))));
-	}
+};
 
-	TMatrix<double> SVD::matrix_inv_svd()
-		// Invert matrix, formula is:
-		// inv(A) = V * inv(W) * U^T
-	{
 
+TMatrix<double> SVD::matrix_inv_svd()
+// Invert matrix, formula is:
+// inv(A) = V * inv(W) * U^T
+{
 
 		// solve with svbksb for each column of inverse matrix
 		TVector<double> BB(n);
@@ -441,7 +446,8 @@ void SVD::decompose()
 
 		return Y;
 
-	}
+};
+
 	
 TArray<double> Transpose(TArray<double> matrix)
 {
@@ -460,7 +466,8 @@ TArray<double> Transpose(TArray<double> matrix)
 	return transpose;
 };
 
-TMatrix<double> Mult(TMatrix<double> matrix1,TMatrix<double> matrix2)
+
+TMatrix<double> Mult(TMatrix<double> matrix1, TMatrix<double> matrix2)
 {
     
     int nx1=matrix1.NRows();
@@ -495,7 +502,8 @@ TMatrix<double> Mult(TMatrix<double> matrix1,TMatrix<double> matrix2)
 
 };
 
-TArray<double> Mult(TArray<double> matrix1,TArray<double> matrix2)
+
+TArray<double> Mult(TArray<double> matrix1, TArray<double> matrix2)
 {
 
     int n1x=matrix1.SizeX();

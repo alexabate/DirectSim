@@ -1,0 +1,50 @@
+/*!
+\page get_sf Calculate selection function of observed catalog
+
+<CODE> getsf </CODE>
+
+Compute selection functions \f$ n_{pz}(z)/n_{true}(z) \f$ and \f$ n_{sz}(z)/n_{true}(z) \f$
+
+	
+Read in a catalog containing all the simulated galaxies  
+and a catalog of the observed galaxies. The catalog that 
+that contains all the simulated galaxies may be stored in
+more than one file. Supply all these filenames separated 
+by commas to the program with the <CODE> -F </CODE> option. Supply the  
+filename of the catalog of observed galaxies with the <CODE> -O </CODE>
+option.                                                  
+	
+	
+The <CODE> -z </CODE> option passes the names of the columns to read the
+redshifts from, separated by commas, in the following    
+order: observed photometric redshifts, observed spec     
+redshifts, simulated redshifts. The default names are:   
+'zp', 'z' and 'z'                                        
+	
+
+The selection function \f$ n_{sz}/n_{true} \f$ will be written to
+the file [SFTextFile]_specz_nofz.txt and the selection   
+function \f$ n_{pz}/n_{true} \f$ will be written to the file     
+[SFTextFile]_nofz.txt, where SFTextFile is supplied to   
+the program using the <CODE> -o </CODE> option.                         
+	
+If the <CODE> -d </CODE> option is used ppf files containing the n(z)   
+are output to a file                                     
+	
+	
+EXAMPLES: 
+	
+<CODE>$ getsf -F full.fits -O obs.fits -o selectfunc -z zp,z,z <BR> </CODE>
+<CODE>$ getsf -F full1.fits,full2.fits,full3.fits -O obs.fits -o selectfunc -z zp,z,z <BR> </CODE>
+     
+Below are the usage instructions
+	
+<CODE>Usage: getsf [...options...] 
+opt | argument   | description
+----|------------|---------------------------------------------
+-F  | FullCat    | FITS filename containing simulated catalog(s)  <BR>
+-O  | ObsCat     | FITS file containing observed catalog    <BR>      
+-o  | sfunc      | root name of selection function file    <BR>       
+-z  | zp,zs,zz   | column names to read redshifts from (see above)<BR>
+-d  | [noarg]    | Save n(z) Histos to a ppf file           <BR> </CODE>       
+*/

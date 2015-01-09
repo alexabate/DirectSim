@@ -1,3 +1,17 @@
+/**
+ * @file  igm.h
+ * @brief Contains classes that provide functions to Monte Carlo simulate the IGM
+ *
+ * Could add more information here I think
+ *
+ * @author Alex Abate
+ * Contact: abate@email.arizona.edu
+ *
+ * Created on: 20 Aug 2012
+ * @date 20 Aug 2012
+ *
+ */
+
 #ifndef IGM_H_SEEN
 #define IGM_H_SEEN
 
@@ -9,7 +23,9 @@
 #include <string>
 
 // sophya
-#include "genericfunc.h"
+// Sophya update v2.3 June 2013 replaces genericfunc with classfunc
+//#include "genericfunc.h"
+#include "classfunc.h"
 #include "sopnamsp.h"
 #include "mydefrg.h"
 //#include "pexceptions.h"
@@ -20,49 +36,56 @@
 #include "sinterp.h"
 
 
-/* */
 
-/** AtomicCalcs
+/** @class AtomicCalcs
   *
   * Class that holds basic atomic calculations and constants mostly to do with
   * the Lyman series
   * 
   *
   */
-
 class AtomicCalcs
 {
 public:
+    /** Constructor */
     AtomicCalcs();
 
-    /** Return the Lyman Series 1) Wavelength in m 2) and in Angstroms and 3)frequency
+    /** Return the Lyman Series wavelength in meters
+        @param    n is the starting energy level for a Lyman transition (down to m=1)
+                  (minimum n is 2)                                              */
+    double returnWavelengthLymanSeries(int n);
+    
+    /** Return the Lyman Series wavelength in Angstroms
+        @param    n is the starting energy level for a Lyman transition (down to m=1)
+                  (minimum n is 2)                                              */
+    double returnWavelengthAngstrLymanSeries(int n);
+    
+    /** Return the Lyman Series wavelength in frequency
         @param  n is the starting energy level for a Lyman transition (down to m=1)
                 (minimum n is 2)                                              */
-    double returnWavelengthLymanSeries(int n);
-    double returnWavelengthAngstrLymanSeries(int n);
     double returnFrequencyLymanSeries(int n);
 
     /** Return Doppler width in meters with line center wavelength corresponding
         to Lyman series n \f$ \Delta\lambda=\lambda_i\frac{b}{c} \f$
-        @param nLine starting energy level of the Lyman line transition
-        @param dopplerParKMS doppler parameter in km/s                        */
+        @param nLine            starting energy level of the Lyman line transition
+        @param dopplerParKMS    doppler parameter in km/s                     */
     double returnDopplerWidthWL(int nLine, double dopplerParamKMS);
 
     /** Return Doppler width in s^-1 with line center frequency corresponding to 
         Lyman series n \f$ \Delta\nu=\nu_i\frac{b}{c} \f$
-        @param n starting energy level of the Lyman line transition
-        @param dopplerParKMS doppler parameter in km/s                        */
+        @param n              starting energy level of the Lyman line transition
+        @param dopplerParKMS  doppler parameter in km/s                       */
     double returnDopplerWidthFreq(int nLine, double dopplerParamKMS);
 
     /** Return the (unitless) wavelength difference relative to resonant wavelength
        in Doppler units
-       @param lambda wavelength in meters */
+       @param lambda     wavelength in meters                                 */
     double returnX(double lambda, int nLine, double dopplerPar);
 
-    /** Return the damping constant for the Lyman line beginning at nLine */
+    /** Return the damping constant for the Lyman line beginning at nLine     */
     double returnGamma(int nLine);
 
-    /** Return the Oscillator Strength for the Lyman line beginning at nLine */
+    /** Return the Oscillator Strength for the Lyman line beginning at nLine  */
     double returnOscillatorStrength(int nLine);
 
     /** Return (unitless) damping parameter a */            
@@ -76,11 +99,11 @@ public:
 
 protected:
     std::vector<double> gammaSeries_;   /**< damping constant of the Lyman series in s^-1 */
-    std::vector<double> fSeries_;       /**< oscillator strength of the Lyman series */
-    double sigmaLymanLimitCM2_;         /**< cross-section at the lyman limit in cm^2 */
-    double freqLymanLimitInvSec_;       /**< frequency of the lyman limit in s^-1 */
-    int nLymanAlpha_;                   /**< starting level of a lyman alpha transition */
-    int nLineMaxMax_;                   /**< maximum Lyman series line possible to use */
+    std::vector<double> fSeries_;       /**< oscillator strength of the Lyman series      */
+    double sigmaLymanLimitCM2_;         /**< cross-section at the lyman limit in cm^2     */
+    double freqLymanLimitInvSec_;       /**< frequency of the lyman limit in s^-1         */
+    int nLymanAlpha_;                   /**< starting level of a lyman alpha transition   */
+    int nLineMaxMax_;                   /**< maximum Lyman series line possible to use    */
 };
 
 
@@ -221,6 +244,30 @@ class ProbabilityDistAbsorbers
 {
 public:
     ProbabilityDistAbsorbers(RandomGeneratorInterface& rg,
+// AA: I think the below conflict should be removed? Left in just in case
+/*<<<<<<< HEAD
+                            AbsorberRedshiftDistribution& absorberZDist,
+                            HIColumnDensity& hiColumnDensity,
+                            DopplerParDistribution& dopplerParDist
+        );
+    
+    /** Simulate a line of sight distribution of absorbers, returns number of 
+        absorbers
+        @param zStart           Starting redshift of line of sight distribution
+        @param zMax             Max redshift along line of sight
+        @param redshifts        Vector of absorber redshifts (sorted in ascending order)
+        @param dopplerPars      Vector of absorber doppler parameters 
+        @param columnDensity    Vector of absorber column densities 
+    int simulateLineOfSight(double zStart,double zMax, 
+                    vector<double>& redshifts, vector<double>& dopplerPars,
+                               vector<double>& columnDensities, string outfile);
+            
+    void simulateAbsorber(double zCurrent, double& redshift, double& dopplerPar,
+                                                    double& columnDensity);
+    /** Draw deltaZ of next absorber (next absorber is at zLast+deltaZ).  This 
+        uses the "Inverse Transformation method"
+        @param zLast Redshift of last absorber                                  
+=======*/
                              AbsorberRedshiftDistribution& absorberZDist,
                              HIColumnDensity& hiColumnDensity,
                              DopplerParDistribution& dopplerParDist);
@@ -234,6 +281,7 @@ public:
 
     /** Using the inverse transform method and equation 7 in 
         Inoue & Iwata 2008      */
+//>>>>>>> b174eb658571fc61c81d79c7fa2a0db330092148
     double drawDeltaZ(double zLast);
     /** Draw a column density from the distribution given in 
        Inoue & Iwata 2008 equation 4        */
@@ -434,8 +482,8 @@ class Madau:
 public:
     /** Constructor
         @param nLineMax     Maximum Lyman-series to include                   */
-    Madau(int nLineMax=5)
-    : nLineMax_(nLineMax)
+    Madau(int nLineMax=5, bool isLyC=true)
+    : nLineMax_(nLineMax) , isLyC_(isLyC)
         { setAbsorptionStrengths(); };
     
     /** Return the transmission in the observer's frame along a line of sight
@@ -474,6 +522,7 @@ protected:
     int nLineMax_;          /**< Maximum Lyman series to include              */
     int nLineMaxMadau_;     /**< Maximum Lyman series can include             */
     vector<double> Avals_;  /**< Absorption strength of Lyman-alpha to delta  */
+    bool isLyC_;            /**< Include Lyman continuum absorption           */
 
 
 };

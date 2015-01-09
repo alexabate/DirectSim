@@ -63,7 +63,7 @@ void usage(void)
                                 
  	cout << "  AA April 2010"<<endl<<endl;
 
-	cout << " -o : outfileroot: root filename of outputs (DEFAULT=baseSimulation)"<<endl;
+	cout << " -o : outfileroot: root filename of outputs, stored in output/ dir (DEFAULT=baseSimulation)"<<endl;
 	cout << " -z : zfile: read cumulative redshift distribution from FITS binary table file";
 	cout << "  [ZFILE]"<<endl;
 	cout << " -m : mfile: read cumulative mag distribution array from FITS file [MFILE]"<<endl;
@@ -71,6 +71,7 @@ void usage(void)
 	cout << " -Z : zMin,zMax: minimum,maximum redshift to simulate from, up to (DEFAULT=0.01,3)"<<endl;
 	cout << " -M : mMin,mMAx,zmMin,zmMax: minimum,maximum magnitude, redshift used to calculate"<<endl;
 	cout << "      the magnitude, redshift CDF with (DEFAULT=-24,-13,0,6) "<< endl;
+	cout << "      Do not need this if cumulative mag distribution is read from file with option -m"<<endl;
 	cout << endl;
 }
 
@@ -91,12 +92,12 @@ int main(int narg, char* arg[])
     string mfile; bool ReadM=false;
     double skyArea = 2; // in square degrees
     double zMin=0.01, zMax = 3.;
-    double mMin=-24, mMax=-13;
+    double mMin=-24., mMax=-13.;
     double zMinMag = 0., zMaxMag = 6.;
   
     cout << " decoding command line arguments ..."<<endl;
     char c;
-    while((c = getopt(narg,arg,"ho:z:m:a:Z:")) != -1)  {
+    while((c = getopt(narg,arg,"ho:z:m:a:Z:M:")) != -1)  {
         switch (c)  {
 		    case 'o' :
 			    outfileroot = optarg;

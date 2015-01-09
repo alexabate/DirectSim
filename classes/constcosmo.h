@@ -56,6 +56,7 @@ static const double WAVE_LYMANLIM_ANGSTR = 911.75;  // in angstroms
 // Astronomy units
 static const double JANSKY_IN_WM2HZ = 1.e-26;  // 1 Jansky in Watts/m^2/Hz
 static const double SOLARMASS_IN_G = 1.98844e+33; // Solar mass in grams
+static const double SOLARMASS_IN_KG = 1.98844e+30; // Solar mass in kilograms
 static const double GRAMPERCM3_IN_MSOLPERMPC3 = 1.477428208143872e+40; 
                                                     // 1 g/cm^3 in 1 Msol/Mpc^3
 // GCm3toMsolMpc3_Cst = (MpctoMeters_Cst*100)^3 / SolarMass_Cst
@@ -73,6 +74,7 @@ static const double PHOTON_DENSITY_TODAY_KGM3 = 4.6417e-31;// Photon density tod
 static const double PHOTON_NUMDENSITY_PER_CM3_TODAY = 410.4;// Photon number density today /cm^3 
 static const double PHOTON_AND_NU_DENSITY_TODAY_KGM3 = 7.8042e-31; // Photon+neutrino density (kg/m^3) 
 static const double Z_RECOMBINATION = 1088.; // Value in WMAP ApJ paper
+static const double DELTA_C = 1.686;    // Overdensity for collapse (spherical model)
 
 // PI!
 static const double PI = 3.141592;

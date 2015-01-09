@@ -1,6 +1,6 @@
 #include "readsim.h"
 
-ReadSim::ReadSim(TArray<r_8> drho,  int nbadplanes) 
+ReadSim::ReadSim(TArray<r_8> drho, int nbadplanes) 
 : d_(drho)
 // reads in SimLSS output which is a 3D cube of delta values
 // delta is overdensity: (rho-rho^bar) / rho^bar
@@ -8,18 +8,20 @@ ReadSim::ReadSim(TArray<r_8> drho,  int nbadplanes)
 // these are removed here
 {
 	drho_ = d_(Range(0, d_.SizeX()-nbadplanes-1), Range::all(), Range::all());
-	cout << "    Mass2Gal::Mass2Gal(TArray<r_4> drho,  int nbadplanes=" << nbadplanes << ")" << endl<<endl;
+	cout << "    Mass2Gal::Mass2Gal(TArray<r_4> drho,  int nbadplanes=";
+	cout << nbadplanes << ")" << endl<<endl;
 	
 	cout << "    Print TArray properties:"<<endl;
 	drho_.Show();
 	cout<<endl;
-	}
+
+};
 
 
 void ReadSim::ReadHeader(FitsInOutFile& fin)
 // reads in fits file header so the parameters of the simulated cube can be used
 {
-cout <<"     ReadSim::ReadHeader()"<<endl;
+    cout <<"     ReadSim::ReadHeader()"<<endl;
 	// read in values from fits header
 	string DXs, DYs, DZs, DKXs, DKYs, DKZs, NXs, NYs, NZs, zrefs, idmids;
 	DKXs=fin.KeyValue("DKX");
@@ -60,13 +62,15 @@ cout <<"     ReadSim::ReadHeader()"<<endl;
 	idmidx_=(long)ceil(atof(NXs.c_str())/2);
 	
 	cout << "    Print SimLSS cube properties ...."<<endl;
-	cout << "    dk's: (DKX,DKY,DKZ)="<<Dkx_<<","<<Dky_<<","<< Dkz_<<endl;
-	cout << "    dx's: (DX,DY,DZ)="<<Dx_<<","<<Dy_<<","<< Dz_<<endl;
-	cout << "    N's:  (NX,NY,NZ)="<<Nx_<<","<<Ny_<<","<< Nz_<<endl;
-	cout << "    zref: "<< zref_<<endl;
-	cout << "    index of centre pixel (z,y,x)="<<idmidz_<<","<<idmidy_<<","<<idmidx_ <<endl<<endl;
+	cout << "    dk's: (DKX,DKY,DKZ)="<< Dkx_<<","<< Dky_ <<","<< Dkz_<<endl;
+	cout << "    dx's: (DX,DY,DZ)="<< Dx_ <<","<< Dy_ <<","<< Dz_ <<endl;
+	cout << "    N's:  (NX,NY,NZ)="<< Nx_ <<","<< Ny_ <<","<< Nz_ <<endl;
+	cout << "    zref: "<< zref_ <<endl;
+	cout << "    index of centre pixel (z,y,x)="<< idmidz_ <<","<< idmidy_;
+	cout <<","<< idmidx_ <<endl<<endl;
 	cout <<"     EXIT ReadSim::ReadHeader()"<<endl;
-}
+};
+
 
 sa_size_t ReadSim::CleanNegativeMassCells()
 // the way SimLSS works means there can be values of delta<-1
@@ -74,12 +78,12 @@ sa_size_t ReadSim::CleanNegativeMassCells()
 // however it is unphysical as it is equivalent to negative mass
 // therefore if the cell has delta <-1 it sets delta=-1
 {
-  sa_size_t nbad = 0;
+    sa_size_t nbad = 0;
 
-  for(sa_size_t iz=0; iz<drho_.SizeZ(); iz++) 
-    for(sa_size_t iy=0; iy<drho_.SizeY(); iy++) 
-	  for(sa_size_t ix=0; ix<drho_.SizeX(); ix++) 
-	    if (drho_(ix, iy, iz)<-1.)  {drho_(ix, iy, iz) =-1; nbad++;}
+    for(sa_size_t iz=0; iz<drho_.SizeZ(); iz++) 
+        for(sa_size_t iy=0; iy<drho_.SizeY(); iy++) 
+	        for(sa_size_t ix=0; ix<drho_.SizeX(); ix++) 
+	            if (drho_(ix, iy, iz)<-1.)  {drho_(ix, iy, iz) =-1; nbad++;}
 
   cout << "    ReadSim::CleanNegativeMassCells() nbad=" << nbad << endl;
   return nbad;

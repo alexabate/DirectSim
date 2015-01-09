@@ -1,9 +1,8 @@
-// -*- LSST-C++ -*-
 #include "shapelets.h"
 
 /******* BasisFuncs methods ***************************************************/
 
-double BasisFuncs::phiBasisFunc(int n, double x)
+double BasisFuncs::phiBasisFunc(int n, double x) const
 {
 
     if (n<0)

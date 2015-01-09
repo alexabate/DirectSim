@@ -1,0 +1,44 @@
+/*!
+\page add_gauss Add Gaussian redshift errors
+
+<CODE> addGausszerr </CODE>
+
+Add a Gaussian redshift error to the galaxies in a catalog. The redshift error 
+is added either directly to the redshift itself, or to the z-coordinate. If the error
+is added to the z-coordinate the redshifts are recomputed according to the new 
+radial distance to the galaxy. To add errors to the z-coordinate instead of the 
+redshift coordinate use option <CODE>-z</CODE>.
+
+The size of the error added to the redshift is \f$\sigma_z(1+z) \f$ which is 
+converted into an equivalent comoving distance if it is to be added to the comoving 
+distance. The value of \f$\sigma_z\f$ is supplied to the program using option <CODE>-E</CODE>. 
+The value of \f$z\f$ is either the redshift of the galaxy in question, or the 
+redshift value supplied to the program using the <CODE>-Z</CODE> option. 
+
+If the catalog has been simulated with the radial dimension parallel to the 
+z-dimension use option <CODE>-r</CODE>. This option has no effect if the error 
+is being added directly to the redshift.                                         
+	
+EXAMPLE 1: Add a photometric redshift error of size 0.03*(1+z) to the 
+spectroscopic redshifts in column labelled 'zs' in a file called cat.fits and 
+output the augmented data to a file called Gausscat.fits            
+
+<CODE>$ addGausszerr -C cat.fits -O Gausscat.fits -E 0.03 -c zs </CODE>
+
+EXAMPLE 2: As example 1, but add the photometric redshift error to the 
+z-coordinate (comoving distance in z-dim) instead, and make this error constant 
+for all galaxies, defined as: sigma_z*(1+zref), where zref=1.              
+
+Below are the usage instructions
+	
+<CODE>Usage: addGausszerr [...options...] 
+opt | argument   | description
+----|------------|---------------------------------------------
+ -C | CatName    | FITS filename containing catalog <BR> 
+ -O | OutCatName | FITS file containing output catalog with Gaussian z errors <BR> 
+ -E | PZerr      | Size of photometric redshift error:PZerr*(1+zs) [DEFAULT=0.03] <BR>    
+ -c | ZSCol      | Name of column of spec-z <BR>       
+ -z | [noarg]    | Add error to z-coordinate instead of redshift [DEFAULT=no] <BR>       
+ -Z | zref       | Add constant redshift error with value PZerr*(1+zref) [DEFAULT=no] <BR>   
+ -r | [noarg]    | z-dimension IS radial direction in catalog [DEFAULT=no]. Has no effect if adding error directly to the redshift    <BR> </CODE>
+*/

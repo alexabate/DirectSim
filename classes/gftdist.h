@@ -1,7 +1,9 @@
 /**
  * @file  gftdist.h
  * @brief Contains a series of classes for generating galaxy distributions;
- *        galaxy redshifts, types, magnitudes
+ *        galaxy redshifts, types, magnitudes. Use CumulDistZ and DrawZ when
+ *        simulating a distribution without clustering. Just use CumulDistM,
+ *        DrawM, TypeRatio when simulating galaxies with clustering.
  *
  * @todo <CODE>CumulDistZ::Output2File</CODE> <BR>
  *       When the calculated redshift CDF is output to a file the cosmology and
@@ -26,6 +28,11 @@
  * @todo <CODE>DrawM::Draw</CODE> <BR>
  *       Replace with 2D interpolation table
  *
+ * @todo Move <CODE>VolElement</CODE> somewhere more appropriate
+ *
+ * @todo Write wrapper class like <CODE>SimBaseCatalog</CODE> when simulating
+ *       galaxies with clustering (ie leave out the DrawZ part)
+ *
  * @author Alex Abate, Reza Ansari, ...
  * Contact: abate@email.arizona.edu
  *
@@ -40,29 +47,33 @@
 // generic stuff
 #include <iostream>
 #include <fstream>
+#include <stdlib.h>
 
 // sophya stuff
+#include "machdefs.h"
+#include "sopnamsp.h"
 #include "array.h"
-#include "genericfunc.h"
+// Sophya update v2.3 June 2013 replaces genericfunc with classfunc
+//#include "genericfunc.h"
+#include "classfunc.h"
 #include "pexceptions.h"
 #include "randinterf.h" // This define RandomGenerator interface class
-#include "sopnamsp.h"
 #include "ctimer.h"
 #include "fiosinit.h"
 #include "fitsioserver.h"
 #include "swfitsdtable.h"
 
-// stuff in classes dir
-#include "schechter.h"
-#include "cosmocalcs.h"
+// DirectSim
 #include "mydefrg.h"  // definition of default RandomGenerator
 #include "sinterp.h"
 #include "geneutils.h"
+#include "cosmocalcs.h"
+#include "schechter.h"
 
 namespace SOPHYA {
 
-//******* CumulDistZ *********************************************************//
 
+//******* CumulDistZ *********************************************************//
 /** @class
   * CumulDistZ class
   *
@@ -74,8 +85,8 @@ class CumulDistZ {
 public:
 	/** Default constructor */
 	CumulDistZ()
-	: lfpars_(lfp_default_) , su_(su_default_) , zmin_(0) , zmax_(0)
-	 , nptinteg_(0) , nptinterp_(0) {    };
+	: lfpars_(lfp_default_), su_(su_default_), zmin_(0), zmax_(0),
+	  nptinteg_(0), nptinterp_(0) {    };
 	
 	/** Constructor when calculating table
 	    @param lfpars       class holding LF parameters and their evolution
@@ -83,23 +94,27 @@ public:
 	    @param zmin         minimum redshift of cumulative distribution function
 	    @param zmax         maximum redshift of cumulative distribution function
 	    @param nptinteg     number of points to use in integration of ?
-	    @param nptinterp    number of points to use in interpolation of ?     */
-	CumulDistZ(LFParameters& lfpars,SimpleUniverse& su,double zmin=0.,
-			double zmax=6.,int nptinteg=1000,int nptinterp=100,
-				int prt=0);
+	    @param nptinterp    number of points to use in interpolation of ?     
+	    @param prt          print level                                       */
+	CumulDistZ(LFParameters& lfpars, SimpleUniverse& su, double zmin=0.,
+			double zmax=6., int nptinteg=1000, int nptinterp=100, int prt=0) 
+	: lfpars_(lfpars), su_(su), zmin_(zmin), zmax_(zmax), nptinteg_(nptinteg),
+      nptinterp_(nptinterp) {
+			SetUp(lfpars_, su_, zmin_, zmax_, nptinteg_, nptinterp_, prt); };
 				
 	/** Constructor when reading table 
 	    @param fname    FITS file to read from
         @param prt      printing level                                        */
-	CumulDistZ(string fname,int prt=0);
+	CumulDistZ(string fname, int prt=0)
+	: lfpars_(lfp_default_), su_(su_default_), zmin_(0), zmax_(0), nptinteg_(0),
+      nptinterp_(0) { SetUp(fname, prt); };
 
 	//METHODS//
 	
-	/** Returns value of cumultive redshift distribution function at redshift z
+	/** Return value of cumultive redshift distribution function at redshift z
 	    \f$ F_z(z)=\frac{\int_0^z\int_M_1^M_2 \phi(M,z')dV(z')dM}
 	                {\int_0^z_{max}\int_M_1^M_2  \phi(M,z')dV(z')dM}          */
-	virtual double operator()(double z)
-		{ return schZint_(z); };
+	virtual double operator() (double z) { return schZint_(z); };
 
     /** Set up for reading distribution from a FITS bintable file 
         @param fname    FITS file to read from
@@ -116,7 +131,8 @@ public:
 	void SetUp(LFParameters& lfpars, SimpleUniverse& su, double zmin=0.,
 			double zmax=6., int nptinteg=1000, int nptinterp=100, int prt=0);
 				
-	/** Print n values of the distribution between zmin and zmax+0.1 as a check */
+	/** Print n values of the distribution between zmin and zmax+0.1 as a check 
+	    @param nvals    number of values to print                             */
 	void PrintDist(int nvals) {
 		cout << "     CumulDistZ::PrintDist Printing "<< nvals <<" values from";
 		cout << " the cumulative z dist ... "<<endl;
@@ -132,18 +148,21 @@ public:
 			//cout << "     "<<zv_[j] <<"  "<<scv_[j]<<endl; }
 		};
 
-    /**< Output 2D array of cumulative redshift distribution to a FITS file
+    /** Output 2D array of cumulative redshift distribution to a FITS file
          binary table.  The zmin and zmax of the calculated distribution are
          included in the filename
         @param outfileroot  root name of FITS file to write to                */
 	void Output2File(string outfileroot);
-	
+
+	/** Return min and max redshift of the redshift cdf 
+	    @param zmin     min redshift
+	    @param zmax     max redshift                                          */
 	void returnZminZmax(double& zmin, double& zmax)
 	    { zmin = zmin_; zmax = zmax_; };
 
 protected:
 	LFParameters& lfpars_;      /**< class that stores the LF parameters and evolution */
-	SimpleUniverse& su_;        /**< class that calculates cosmological quantities  */
+	SimpleUniverse& su_;        /**< class that calculates cosmological quantities     */
 	double zmin_;               /**< min redshift of cdf                      */
 	double zmax_;               /**< max redshift of cdf                      */
 	int nptinteg_;              /**< number of points in integration of \f$\phi(z)\f$*/
@@ -156,8 +175,8 @@ protected:
 
 };
 
-//******* CumulDistM *********************************************************//
 
+//******* CumulDistM *********************************************************//
 /** @class
   * CumulDistM class
   *
@@ -171,8 +190,7 @@ class CumulDistM {
 public:
 
 	/** Default constructor */
-	CumulDistM()
-	: lfpars_(lfpars_default_) , su_(su_default_) , Mmin_(0) , Mmax_(0)
+	CumulDistM(): lfpars_(lfpars_default_) , su_(su_default_) , Mmin_(0) , Mmax_(0)
 	{    };
 
 	/** Constructor 
@@ -180,8 +198,7 @@ public:
 	@param su       does cosmological calclations
 	@param Mmin     sets lower integration bound
 	@param Mmax     sets upper integration bound                              */
-	CumulDistM(LFParameters& lfpars, SimpleUniverse& su, double Mmin=-24, 
-			double Mmax=-13)
+	CumulDistM(LFParameters& lfpars, SimpleUniverse& su, double Mmin=-24, double Mmax=-13)
 		: lfpars_(lfpars) , su_(su) , Mmin_(Mmin) , Mmax_(Mmax){    };
 		
 	// copy constructor
@@ -205,17 +222,16 @@ public:
 	    { Mmin = Mmin_; Mmax = Mmax_; };
 
 protected:
-	LFParameters& lfpars_;
-	SimpleUniverse& su_;
-	double Mmin_,Mmax_;
+	LFParameters& lfpars_;      /**< class that stores the LF parameters and evolution */
+	SimpleUniverse& su_;        /**< class that calculates cosmological quantities     */
+	double Mmin_;               /**< min absolute magnitude of cdf            */
+	double Mmax_;               /**< max absolute magnitude of cdf            */
 	LFParameters lfpars_default_;
 	SimpleUniverse su_default_;
 };
 
 
-
 //******* DrawZ **************************************************************//
-
 /** @class
   * DrawZ class
   *
@@ -234,7 +250,6 @@ public:
 	    // Get zmin and zmax
 	    cumz.returnZminZmax(zmin_, zmax_);
 	    
-	
 	    // Reverse interpolation table
 	    vector<double> zvals, cumzvals;
 		double dz = (zmax_ - zmin_)/(npt - 1);
@@ -255,22 +270,27 @@ public:
 
 		};
 
+    /** Draw redshift from redshift cdf                                       */
 	double Draw(){
 	    // draw a flat random number between 0 and 1 (open interval)
 	    double rn=rg_.Flat01();
-	    double zs = revCumZ_(rn);
+	    double zs = revCumZ_(rn); // cdf goes from 0 to 1, return z at that value
 	    return zs;
 	    };
-	    
+
+	/** Return min and max z of cdf 
+	    @param zmin     min z of cdf
+	    @param zmax     max z of cdf                                          */
 	void returnZminZmax(double& zmin, double& zmax)
 	    { zmin = zmin_; zmax = zmax_; };
 
 protected:
 	SInterp1D revCumZ_;             /**< reverse interpolation of \f$F_z(z)\f$ */
 	RandomGeneratorInterface& rg_;  /**< random number generation              */
-	double zmin_;
-	double zmax_;
+	double zmin_;                   /**< min z of cdf                          */
+	double zmax_;                   /**< max z of cdf                          */
 };
+
 
 //******* DrawM **************************************************************//
 /** @class
@@ -284,7 +304,9 @@ public:
 
 	/** Default constructor 
 	    @param cumm cumulative magnitude distribution \f$ F_M(M,z) \f$ (interp table) */
-	DrawM(CumulDistM& cumm);
+	DrawM(CumulDistM& cumm)
+	: cumm_(cumm) , rg_(rg_default_) , mmin_(1) , mmax_(1), zmin_(-1) , zmax_(-1)
+    {  };
 	
 	/** Constructor when calculating 2D array of cumulative magnitude distribution 
 	    @param cumm     cumulative magnitude distribution \f$ F_M(M,z) \f$ (interp table)
@@ -296,21 +318,24 @@ public:
 	    @param nptz     number of z values in 2D array
 	    @param nptm     number of absolute mag values in 2D array*/
 	DrawM(CumulDistM& cumm, RandomGeneratorInterface& rg, double mmin=-24,
-		double mmax=-13, double zmin=0., double zmax=6., int nptz=600, int nptm=600);
+		double mmax=-13, double zmin=0., double zmax=6., int nptz=600, int nptm=600)
+	: cumm_(cumm_), rg_(rg_), mmin_(mmin), mmax_(mmax), zmin_(zmin), zmax_(zmax)
+    { SetUp(rg_, mmin_, mmax_, zmin_, zmax_, nptz, nptm); };
 				
 	/** Constructor when reading 2D array of cumulative magnitude distribution 
 	    from a file 
 	    @param fname    FITS filename containing pre-calculated 2D array of 
 	                    F_M(M,z)                                              */
-	DrawM(string fname);
-	
+	DrawM(string fname)
+	: cumm_(cumm_default_), rg_(rg_default_), mmin_(1), mmax_(1), zmin_(-1), zmax_(-1)
+    { SetUp(fname); };
+    
 	// Destructor
 	//virtual ~DrawM();
 	
 	/** Calculate 2D array of cumulative magnitude distribution              */
-	void SetUp(RandomGeneratorInterface& rg,double mmin=-24,
-		double mmax=-13,double zmin=0.,double zmax=6.,int nptz=600,
-			int nptm=600);
+	void SetUp(RandomGeneratorInterface& rg, double mmin=-24, double mmax=-13,
+	           double zmin=0., double zmax=6., int nptz=600, int nptm=600);
 
     /** Read 2D array of cumulative magnitude distribution from a file       */
 	void SetUp(string infile);
@@ -334,10 +359,10 @@ public:
 		for (int i=0; i<mv_.Size(); i++)
 			for (int j=0; j<zv_.Size(); j++) { 
 
-				double m=mmin_+i*dm_;
-				double z=zmin_+j*dz_;			
-				double cv=cumm_(m,z); // this is a calculation NOT an interpolation!
-				int nantest=my_isnan(cv);
+				double m = mmin_+i*dm_;
+				double z = zmin_+j*dz_;			
+				double cv = cumm_(m,z); // this is a calculation NOT an interpolation!
+				int nantest = my_isnan(cv);
 				if (nantest>0) { 
 					cout << "     Found nan: z = "<< z <<", m = "<< m;
 					cout << ", cv = "<< cv <<" setting cv->0" <<endl;
@@ -345,11 +370,11 @@ public:
 					}
 				
 				// filling the arrays
-				mv_(i)=m;
-				zv_(j)=z;
-				cumval_(i,j)=cv;  // dim1=m, dim2=z
+				mv_(i) = m;
+				zv_(j) = z;
+				cumval_(i,j) = cv;  // dim1=m, dim2=z
 				
-				if (i<1 && (j<10 && j>8 || j<20 && j>18) ) {
+				if ( (i<1) && ( (j<10 && j>8) || (j<20 && j>18) ) ) {
 		            tm.Split();
 		            cout <<"     10 loops took "<< tm.PartialElapsedTimems() <<"ms"<<endl;
 		            }
@@ -365,15 +390,16 @@ public:
         in the array @cumval_
         THIS SHOULD BE REPLACED WITH A 2D INTERP TABLE                        */
 	double Draw(double z);
-	
+
+	/** Return min and max redshift of 2D array used to draw magnitudes from  */
 	void returnZminZmax(double& zmin, double& zmax)
 	    { zmin = zmin_; zmax = zmax_; };
 
 protected:
 	CumulDistM& cumm_;  /**< cumulative magnitude distribution \f$ F_M(M,z) \f$ (interp table) */
-	RandomGeneratorInterface& rg_;/**< draws random numbers */
-	TVector<r_8> mv_;
-	TVector<r_8> zv_;
+	RandomGeneratorInterface& rg_;/**< draws random numbers                       */
+	TVector<r_8> mv_;           /**< magnitude grid values                        */
+	TVector<r_8> zv_;           /**< redshift grid values                         */
 	TArray<r_8> cumval_;        /**< 2D array of cumulative mag distribution      */
 	double mmin_;               /**< minimum absolute magnitude value in 2D array */
 	double mmax_;               /**< maximum absolute magnitude value in 2D array */
@@ -385,20 +411,30 @@ protected:
 	DR48RandGen rg_default_;
 };
 
+
 //******* DrawType ***********************************************************//
-// class to draw type
+/** @class
+  * DrawType class
+  *
+  * Class to draw galaxy type
+  *
+  */
 class DrawType {
 public:
-	DrawType(TypeRatio tr,RandomGeneratorInterface& rg)
-	: tr_(tr) , rg_(rg)
-	{  };
-	
+    /** Constructor 
+        @param tr   ratio of each galaxy type with redshift and magnitude
+        @param rg   random number generator                                   */
+	DrawType(TypeRatio tr, RandomGeneratorInterface& rg)
+	: tr_(tr) , rg_(rg) {  };
+
+	/** Return 
+	    @param */
 	virtual int operator() (double m, double z) { 
 	
-	    double rn=rg_.Flat01();
-		double Fe,Fs,Fl;
+	    double rn = rg_.Flat01();
+		double Fe, Fs, Fl;
 		// return type fractions at the redshift and magnitude
-		tr_(m,z,Fe,Fs,Fl);
+		tr_(m, z, Fe, Fs, Fl);
 	    if (rn>=0 && rn<Fe)
 		    return 1;
 		else if (rn>=Fe && rn<(Fe+Fs))
@@ -408,24 +444,27 @@ public:
 		 };
 	
 protected:
-    TypeRatio tr_;
-	RandomGeneratorInterface& rg_;
+    TypeRatio tr_;                  /**< ratio of each galaxy type with mag, z  */
+	RandomGeneratorInterface& rg_;  /**< random number generator                */
 };
 
-//******* SimBaseCatalog *****************************************************//
 
+//******* SimBaseCatalog *****************************************************//
 /** @class
   * SimBaseCatalog class
   *
-  * Simulates the base catalog of galaxy properties from redshift, absolute
-  * magnitude and type distributions
+  * Simulates the base catalog of galaxy properties: redshift, magnitude and 
+  * type. No clustering
   *
   */
 class SimBaseCatalog {
 public:
 
-    /** Constructor */
-	SimBaseCatalog(DrawZ& drz,DrawM& drm,DrawType& drt)
+    /** Constructor: simulate galaxy properties without clustering 
+        @param drz  redshift distribution
+        @param drm  absolute magnitude distribution
+        @param drt  galaxy type distribution                                  */
+	SimBaseCatalog(DrawZ& drz, DrawM& drm, DrawType& drt)
 	: drz_(drz) , drm_(drm) , drt_(drt)
 	{  
 	
@@ -441,26 +480,31 @@ public:
 	        }
 	};
 
-    /** Simulate ngal galaxies and output to FITS file */
+    /** Simulate ngal galaxies and output to FITS file
+        @param ngal         number of galaxies to simulation
+        @param outfileroot  FITS file to write galaxies to                    */
 	void DoSim(long ngal, string outfileroot);
 	
-	/** Simulate one galaxy  */
+	/** Simulate single galaxy  
+	    @param z    simulated galaxy redshift
+	    @param am   simulated galaxy absolute magnitude
+	    @param typ  simulated galaxy type                                     */
 	void DoSim(double& z, double& am, double& typ)
 	    {   z=drz_.Draw();
 		    am=drm_.Draw(z);
 		    typ=(double)drt_(am,z); };
 
 protected:
-	DrawZ& drz_;
-	DrawM& drm_;
-	DrawType& drt_;
-	double zmin_;
-	double zmax_;
+	DrawZ& drz_;        /**< redshift distribution                            */
+	DrawM& drm_;        /**< absolute magnitude distribution                  */
+	DrawType& drt_;     /**< galaxy type distribution                         */
+	double zmin_;       /**< min redshift of distributions                    */
+	double zmax_;       /**< max redshift of distributions                    */
 
 };
 
-//******* NGalZ **************************************************************//
 
+//******* NGalZ **************************************************************//
 /** @class
   * NGalZ class
   *
@@ -475,17 +519,17 @@ public:
         @param lfpars   LF parameters as a function of z
         @param su       class that does cosmological calculations
         @param npt      number of points to integrate LF with                 */
-	NGalZ(LFParameters& lfpars,SimpleUniverse& su,int npt=1000)
+	NGalZ(LFParameters& lfpars, SimpleUniverse& su, int npt=1000)
        : lfpars_(lfpars) , su_(su) , npt_(npt) {       };
  
     /** Returns the number of galaxies between two redshifts and some solid angle
         @param zmin minimum redshift
         @param zmax maximum redshift
         @param sa   solid angle in steradians                                 */
-	virtual long operator()(double zmin,double zmax,double sa) {
+	virtual long operator() (double zmin, double zmax, double sa) {
 	
-		SchechterZVol schZ(lfpars_,su_);
-		schZ.SetInteg(zmin,zmax,npt_);
+	    // The below class returns phi(z) = [int phi(M|z) dM]*dV(z)
+		SchechterZVol schZ(lfpars_, su_);
 		double val=schZ.Integrate();
 		long ntot=(long)val*sa;
 		return ntot; 
@@ -494,7 +538,7 @@ public:
 
     /** Reset the number of points to integrate the LF with */
 	void SetInteg(int npt)
-		{ npt_=npt; };
+		{ npt_ = npt; };
 
 protected:
 	LFParameters& lfpars_;  /**< class that holds LF parameters and their evolution */
@@ -502,8 +546,39 @@ protected:
 	int npt_;               /**< number of points to integrate LF with        */
 };
 
-//******* GalFlxTypDist ******************************************************//
 
+//******* VolElement *********************************************************//
+/** @class
+  * VolElement class
+  *
+  * Calculate dV/dz as a function of redshift
+  *
+  * @warning Move this class somewhere more appropriate?
+  */
+class VolElement : public ClassFunc1D
+{
+public:
+    /** Constructor 
+        @param su   does cosmological calculations
+        @param sa   solid angle                                               */
+    VolElement(SimpleUniverse& su, double sa)
+	: su_(su) , sa_(sa) { }
+
+	/** Return dV/dz
+	    @param z    redshift                                                  */
+    virtual double operator()(double z) const {
+	    su_.SetEmissionRedShift(z);
+	    double dVdz=su_.HubbleLengthMpc()*pow(su_.RadialCoordinateMpc(),2)*su_.Gz(z)*sa_;
+        return (dVdz);
+        }
+  
+protected:
+    SimpleUniverse& su_;    /**< does cosmological calculations               */
+    double sa_;             /**< solid angle                                  */
+};
+
+
+//******* GalFlxTypDist ******************************************************//
 /** @class
   * GalFlxTypDist class
   *
@@ -527,7 +602,7 @@ bool Check();
 
 // Adds a galaxy type with the corresponding magnitude distribution
 // See the .cc file for more information 
-int AddGalType(GenericFunc& magf, double magmin, double magmax, double fr=1, 
+int AddGalType(ClassFunc1D& magf, double magmin, double magmax, double fr=1, 
                int nbinmag=20, int nstep=2000);
 // Once all galaxy type-magnitude functions are added using AddGalType, pick a 
 // galaxy type and mag at random according to these distributions using:
@@ -547,7 +622,7 @@ ostream& Print(ostream& os) const;
 
 // THESE SHOULD BE PUT IN SEPARATE CLASS - they simulate the redshift distribution 
 // according to the volume element 
-int GetZDist(GenericFunc& dVdz, double zmin,double zmax, int nbin=100, int nstep=2000);
+int GetZDist(ClassFunc1D& dVdz, double zmin,double zmax, int nbin=100, int nstep=2000);
 int GetZ(double&) const ;
 
 void PrintDist(string);
@@ -573,26 +648,6 @@ inline ostream& operator << (ostream& s, GalFlxTypDist const & gfd)
   {  gfd.Print(s);  return(s);  }
   
   
-//******* VolElement *********************************************************//
-class VolElement : public GenericFunc
-{
-// dV/dz as a function of redshift
-public:
-  VolElement(SimpleUniverse& su, double sa)
-	: su_(su) , sa_(sa)
-	{
-	}
-	
-  virtual double operator()(double z)
-    {
-	su_.SetEmissionRedShift(z);
-	double dVdz=su_.HubbleLengthMpc()*pow(su_.RadialCoordinateMpc(),2)*su_.Gz(z)*sa_;
-    return (dVdz);
-    }
-  
-  protected:
-  SimpleUniverse& su_;
-  double sa_; 
-};
+
 } // End namespace SOPHYA
 #endif
