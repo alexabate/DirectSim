@@ -20,7 +20,6 @@
 #include "resusage.h"
 
 #include "geneutils.h"
-//#include "cat2grid.h"
 #include "powerspec.h"
 #include "mass2gal.h"
 
@@ -28,11 +27,13 @@
 //#include "fitkbaoscale.h"
 //#include "chisqstats.h"
 
-#define PI 3.141592
+
 /*
    Program to compute the power spectrum directly from the 
    over-density cube with and without fudging pixels with
    over-density<-1 (ie mass<0)
+   
+   TODO CHECK THIS WORKS
    
    This code uses the cosmology of double h=0.71, OmegaM=0.267804, OmegaL=0.73 
    (default over-density simulation cosmology)
@@ -120,32 +121,19 @@ int main(int narg, char* arg[])
 	/* read over-density cube */
 	cout << "0/ Reading input file = " << cubefile << endl;  
 	FitsInOutFile fin(cubefile,FitsInOutFile::Fits_RO);
-	TArray<r_8> drho;
-	fin >> drho;
-	cout << drho.Info();
-	cout << "    print original drho array size: "<<drho.SizeX()<<"x"<<drho.SizeY();
-	cout <<"x"<<drho.SizeZ()<<endl<<endl<<endl;
 	
 	// the array to fill
-	TArray<r_8> dens;
+	
 	   
 	/* remove N extra planes */
 	cout << "1/ Initialise Mass2Gal: remove planes" << endl;
 	RandomGenerator rg;
-	Mass2Gal m2g(drho,su,rg,xplanes);
+	Mass2Gal m2g(fin,su,rg);
 
-	/* read in cube and pixel properties from fits header */
-	cout << "1.1/ Read in cube properties from fits header" << endl;
-	m2g.ReadHeader(fin);
-	// xplanes should be the difference between NZ and drho.SizeX()
-	int NZ=m2g.ReturnNZ();
-	int diff = drho.SizeX()-NZ;
-	drho.ZeroSize();
-	if( xplanes!=abs(diff) )
-		throw ParmError("ERROR: removed wrong number of planes from over-density cube");
 		
 	/* Check the std and mean */
-	m2g.MassArray(dens);
+	TArray<r_8> dens;
+	m2g.ODensArray(dens);
 	double meanc,sigc,meanfc,sigfc;
 	MeanSigma(dens, meanc, sigc);
 	cout << endl<<"1.2/ RAW DENS CUBE STATS: Mean = " << meanc << ", Var = ";
@@ -167,8 +155,7 @@ int main(int narg, char* arg[])
 
 	cout << "2b/ Compute power spectrum of fudged over-density cube" << endl;
 	/* fudge */
-	m2g.CleanNegativeMassCells(); 
-	m2g.MassArray(dens);
+	m2g.ODensArray(dens);
 	MeanSigma(dens, meanfc, sigfc);
 	cout << endl<<"2b.2/ FUDGED DENS CUBE STATS: Mean = " << meanfc << ", Var = ";
 	cout << sigfc*sigfc<< ", Var/2 = " << sigfc*sigfc/2 << endl;

@@ -54,7 +54,7 @@ MassFunc::MassFunc(SimpleUniverse& su, PkSpecCalc& pk, double zref, double sig8,
 }; 
 
 
-double MassFunc::FindVar(double R)
+double MassFunc::FindVar(double R) const
 {
 
 	VarianceSpectrum varpk(pk_, R, VarianceSpectrum::TOPHAT, IntType_);
@@ -85,7 +85,7 @@ double MassFunc::FindVar(double R)
 };
 
 
-double MassFunc::fST(double mv)
+double MassFunc::fST(double mv) const
 // Sheth-Torman function
 {
 	// the parameters
@@ -102,7 +102,7 @@ double MassFunc::fST(double mv)
 };
 
 
-double MassFunc::sigsqM(double mv)
+double MassFunc::sigsqM(double mv) const
 // Variance as a function of M
 {
 
@@ -118,7 +118,7 @@ double MassFunc::sigsqM(double mv)
 };
 
 
-double MassFunc::dlnsigdlnm(double mv, double lmstep)
+double MassFunc::dlnsigdlnm(double mv, double lmstep) const
 // Differentiate ln(variance) by ln(mass)
 {
 

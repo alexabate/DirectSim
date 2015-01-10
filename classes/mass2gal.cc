@@ -6,133 +6,16 @@
    A. Abate  LAL , 2009 
 -------------------------------------------*/
 
-//******* Constructors *******************************************************//
+//******* SimFromOverDensity *************************************************//
 
-Mass2Gal::Mass2Gal(TArray<r_8> drho,  SimpleUniverse& su, RandomGeneratorInterface& rg, int nbadplanes) 
-: su_(su) , rg_(rg)
-// Reads in SimLSS output which is a 3D cube of delta values
-// NOTE: SimLSS outputs cube so:
-// AXIS 1 = Z (RADIAL) AXIS
-// AXIS 2 = Y AXIS
-// AXIS 3 = X AXIS
-// delta is overdensity: (rho-rho^bar) / rho^bar
-// the way the FFT is performed in SimLSS means there are 1 or 2 extra planes in the FIRST dimension
-// these are removed here
-// su_ holds the cosmological parameters of the SimLSS simulation
-// int nbadplanes should be the difference between NX and drho.SizeX()
-{
-
-	cout <<"    Mass2Gal constructor: reads in density cube"<<endl;
-	mass_ = drho(Range(0, drho.SizeX()-nbadplanes-1), Range::all(), Range::all()).PackElements();
-	cout << "    Mass2Gal::Mass2Gal(TArray<r_4> drho,  int nbadplanes=" << nbadplanes << ")" << endl;
-  	mass_.Show();
-	
-	cout <<"    Length of each dimension of mass cube: "<<endl;
-	cout <<"    1st = "<< mass_.SizeX() <<", 2nd = "<< mass_.SizeY() ;
-	cout <<", 3rd = "<< mass_.SizeZ() <<endl;
-
-	// We have to initialize the distance to redshift conversion interpolator
-	int_8 nz=1000000;
-	vector<double> zrs, codist;
-	double minz=0, maxz=10;
-	double dz = (maxz-minz)/(nz-1);
-	for(int kk=0; kk<nz; kk++) {
-	
-        double zs=minz+kk*dz;
-        su_.SetEmissionRedShift(zs);
-        double cod =su_.RadialCoordinateMpc(); // radial distance 
-        zrs.push_back(zs);
-        codist.push_back(cod); 
-		}
-	double mind = codist[0];
-	double maxd = codist[codist.size()-1];
-	dist2z_.DefinePoints(codist,zrs,mind,maxd,2*nz);
-	
-	fg_nodrho = false; // to check if we are simulating from mass distribution or not
-	fg_readvals = false; // to check if header values have been read in
-	fg_cleancells = false; // to check haven't cleaned cells
-	SFApplied = false;
-	RandPos_ = false;
-}
-
-Mass2Gal::Mass2Gal(int_8 ng,SimpleUniverse& su, RandomGeneratorInterface& rg)
-: ng_(ng) , su_(su) , rg_(rg)
-// Constructor for when simulating a catalog without clustering information
-// used by SimData class
-{
-	cout <<"    Mass2Gal constructor: simulating galaxy catalog without clustering ..."<<endl;
-
-	// We have to initialize the distance to redshift conversion interpolator
-	int_8 nz=1000;
-	vector<double> zrs, codist;
-	double minz=0, maxz=10;
-	double dz = (maxz-minz)/(nz-1);
-	for(int kk=0; kk<nz; kk++) {
-	
-        double zs=minz+kk*dz;
-        su_.SetEmissionRedShift(zs);
-        double cod =su_.RadialCoordinateMpc(); // radial distance 
-        zrs.push_back(zs);
-        codist.push_back(cod); 
-		}
-	double mind = codist[0];
-	double maxd = codist[codist.size()-1];
-	dist2z_.DefinePoints(codist,zrs,mind,maxd,2*nz);
-	
-	fg_nodrho = true;// to check if we are simulating from mass distribution or not
-	fg_readvals = false;// to check if header values have been read in
-	fg_cleancells = false; // to check haven't cleaned cells
-	SFApplied = false;
-};
-
-
-// Copy Mass2Gal 
-Mass2Gal& Mass2Gal::Set(const Mass2Gal& a)
-{
-
-	Nx_ = a.Nx_;
-	Ny_ = a.Ny_;
-	Nz_ = a.Nz_;
-	Dx_ = a.Dx_;
-	Dy_ = a.Dy_;
-	Dz_ = a.Dz_;	
-	Dkx_ = a.Dkx_;
-	Dky_ = a.Dky_;
-	Dkz_ = a.Dkz_; 
-	zref_ = a.zref_;		
-	ng_ = a.ng_;				
-	idmidz_ = a.idmidz_;
-	idmidy_ = a.idmidy_;
-	idmidx_ = a.idmidx_;
-	mass_ = a.mass_;
-	ngals_ = a.ngals_;
-	//if (NbDimensions() < 1) 		
-//	xvals_ = a.xvals_;
-//	yvals_ = a.yvals_;
-//	zvals_ = a.zvals_;
-//	comdist_ = a.comdist_;
-//	zdist_ = a.zdist_;
-//	theta_ = a.theta_;
-//	phi_ = a.phi_; 
-//	MB_ = a.MB_;	
-//	typeint_ = a.typeint_;		 
-//	extincBmV_ = a.extincBmV_;	
-}
-
-//******* Methods  ***********************************************************//
-void Mass2Gal::ReadHeader(FitsInOutFile& fin)
+void SimFromOverDensity::ReadHeader(FitsInOutFile& fin)
 // reads in SimLSS fits file header so the parameters of the simulated cube can be used
 // NOTE: "x" labelled quantiies refer to x DIRECTION in the simulation, and do not refer
 // to dimension 1 of the FITS cube etc, because SimLSS outputs cube so:
 // AXIS 1 = Z (RADIAL) AXIS
 // AXIS 2 = Y AXIS
 // AXIS 3 = X AXIS
-
 {
-	cout <<endl<<"    Mass2Gal::ReadHeader()"<<endl;
-	
-	if(fg_nodrho)
-		throw ParmError("No clustering information: cannot read simulation FITS header");
 	
 	// read in values from fits header
 	string DXs, DYs, DZs, DKXs, DKYs, DKZs, NXs, NYs, NZs, zrefs, idmids;
@@ -175,20 +58,18 @@ void Mass2Gal::ReadHeader(FitsInOutFile& fin)
 	su_.SetEmissionRedShift(zref_);
 	DCref_=su_.RadialCoordinateMpc(); // radial distance of central pixel: Z COORD POS OF CENTRE PIXEL
 	
-	cout << "    check reading fits header ...."<<endl;
-	cout << "    dk's: (DKX,DKY,DKZ)="<< Dkx_ <<","<< Dky_ <<","<< Dkz_ <<endl;
-	cout << "    dx's: (DX,DY,DZ)="<< Dx_ <<","<< Dy_ <<","<< Dz_ <<endl;
-	cout << "    N's: (NX,NY,NZ)="<< Nx_ <<","<< Ny_ <<","<< Nz_ <<endl;
-	cout << "    zref:"<< zref_ <<endl;
-	cout << "    index of centre pixel (z,y,x)="<< idmidz_ <<","<< idmidy_ <<",";
+	cout << "     check reading fits header ...." << endl;
+	cout << "     dk's: (DKX,DKY,DKZ)="<< Dkx_ <<","<< Dky_ <<","<< Dkz_ <<endl;
+	cout << "     dx's: (DX,DY,DZ)="<< Dx_ <<","<< Dy_ <<","<< Dz_ <<endl;
+	cout << "     N's: (NX,NY,NZ)="<< Nx_ <<","<< Ny_ <<","<< Nz_ <<endl;
+	cout << "     zref: "<< zref_ <<", Dc(zref) = "<< DCref_ << endl;
+	cout << "     index of centre pixel (z,y,x)="<< idmidz_ <<","<< idmidy_ <<",";
 	cout << idmidx_ <<endl<<endl;
-	
-	fg_readvals = true;
-	cout <<endl<<"    EXIT Mass2Gal::ReadHeader()"<<endl;
-}
+
+};
 
 
-sa_size_t Mass2Gal::CleanNegativeMassCells()
+sa_size_t SimFromOverDensity::CleanNegativeMassCells()
 // the way SimLSS works means there can be values of delta<-1
 // this is equivalent to nonlinear structure formation
 // however it is unphysical as it is equivalent to negative mass
@@ -196,14 +77,10 @@ sa_size_t Mass2Gal::CleanNegativeMassCells()
 // (i)  changes delta values -> rho/rho^bar by adding 1 to all cells.
 // (ii) if the cell has delta <-1 it sets rho/rho^bar=0 (equiv to first setting delta=-1, then adding 1)
 {
-	cout <<endl<<"    Mass2Gal::CleanNegativeMassCells()"<<endl;
 
-	if(fg_nodrho)
-		throw ParmError("No clustering information: cannot clean cells");
-	
-	double mean,tmp;
+	double mean, tmp;
 	MeanSigma(mass_, mean, tmp);
-	cout <<"    Mean over-density BEFORE cell cleaning = "<<mean<<endl;
+	cout <<"     Mean over-density BEFORE cell cleaning = "<< mean <<endl;
 
 	sa_size_t nbad = 0;
 	for(sa_size_t iz=0; iz<mass_.SizeZ(); iz++) 
@@ -214,29 +91,22 @@ sa_size_t Mass2Gal::CleanNegativeMassCells()
 				else 
 					{ mass_(ix, iy, iz) = (float)(0.);  nbad++; }
 
-	cout <<"    Mass2Gal::CleanNegativeMassCells() nbad=" << nbad << endl;
+	cout <<"     ::CleanNegativeMassCells() nbad=" << nbad << endl;
 
-	cout <<"    Length of each dimension of mass cube: "<<endl;
-	cout <<"    1st = "<< mass_.SizeX() <<", 2nd = "<< mass_.SizeY() <<", 3rd = ";
+	cout <<"     Length of each dimension of mass cube: "<< endl;
+	cout <<"     1st = "<< mass_.SizeX() <<", 2nd = "<< mass_.SizeY() <<", 3rd = ";
 	cout << mass_.SizeZ() <<endl;
-
-	fg_cleancells=true;
 	
 	MeanSigma(mass_, mean, tmp);
 	mean_overdensity_ = mean - 1;
-	cout <<"    Mean over-density AFTER cell cleaning = "<< mean_overdensity_ <<endl;
-	
-	cout <<"    EXIT Mass2Gal::CleanNegativeMassCells()"<<endl<<endl;
+	cout <<"     Mean over-density AFTER cell cleaning = "<< mean_overdensity_ <<endl;
 	return nbad;
-}
+};
 
-sa_size_t Mass2Gal::CheckNegativeMassCells()
+
+sa_size_t SimFromOverDensity::CheckNegativeMassCells()
 // double checks there are no cells with negative mass
 {
-	cout <<endl<<"    Mass2Gal::CheckNegativeMassCells()"<<endl;
-
-	if(fg_nodrho)
-		throw ParmError("No clustering information: cannot check cells");
 
 	sa_size_t nbad = 0;
 	for(sa_size_t iz=0; iz<mass_.SizeZ(); iz++) 
@@ -246,13 +116,73 @@ sa_size_t Mass2Gal::CheckNegativeMassCells()
 					nbad++;
 		
 	if (nbad>0)
-		cout << "PROBLEM! Mass2Gal::CheckNegativeMassCells() nbad=" << nbad << endl;
+		cout << "PROBLEM! ::CheckNegativeMassCells() nbad=" << nbad << endl;
 
-	cout <<"    EXIT Mass2Gal::CheckNegativeMassCells()"<<endl<<endl;
 	return nbad;
-}
+};
 
-void Mass2Gal::ConvertToMeanNGal(float conv, bool Simple)
+
+TVector<r_8> SimFromOverDensity::ReturnGridSpec()
+// Returns number of pixels and pixel size in a vector
+// Can use this as input into other classes
+// Useful when computing power spectrum of the grid
+// Can calculate Dk via: 2*pi/(N*cellsize)
+{
+
+	if(fg_nodrho)
+		throw ParmError("No clustering information: cannot return simulation grid specs");
+		
+	int row=4; 
+	TVector<r_8> gridspec(row); 
+	gridspec(0)=Nx_; 
+	gridspec(1)=Ny_; 
+	gridspec(2)=Nz_; 
+	gridspec(3)=Dx_;
+	return gridspec;
+};
+
+
+
+//******* Constructors *******************************************************//
+
+
+
+/*// Copy Mass2Gal 
+Mass2Gal& Mass2Gal::Set(const Mass2Gal& a)
+{
+
+	Nx_ = a.Nx_;
+	Ny_ = a.Ny_;
+	Nz_ = a.Nz_;
+	Dx_ = a.Dx_;
+	Dy_ = a.Dy_;
+	Dz_ = a.Dz_;	
+	Dkx_ = a.Dkx_;
+	Dky_ = a.Dky_;
+	Dkz_ = a.Dkz_; 
+	zref_ = a.zref_;		
+	ng_ = a.ng_;				
+	idmidz_ = a.idmidz_;
+	idmidy_ = a.idmidy_;
+	idmidx_ = a.idmidx_;
+	mass_ = a.mass_;
+	ngals_ = a.ngals_;
+	//if (NbDimensions() < 1) 		
+//	xvals_ = a.xvals_;
+//	yvals_ = a.yvals_;
+//	zvals_ = a.zvals_;
+//	comdist_ = a.comdist_;
+//	zdist_ = a.zdist_;
+//	theta_ = a.theta_;
+//	phi_ = a.phi_; 
+//	MB_ = a.MB_;	
+//	typeint_ = a.typeint_;		 
+//	extincBmV_ = a.extincBmV_;	
+}*/
+
+//******* Methods  ***********************************************************//
+
+/*void Mass2Gal::ConvertToMeanNGal(float conv, bool Simple)
 // converts rho/rho^bar to a (mean) number of galaxies in the cell
 // follows the following logic:
 // Define quantities:
@@ -280,8 +210,6 @@ void Mass2Gal::ConvertToMeanNGal(float conv, bool Simple)
 	if(fg_nodrho)
 		throw ParmError("No clustering information: cannot convert rho/rho^bar to ngal^bar");
 	
-	if(!fg_readvals)
-		throw ParmError("ERROR!: SimLSS cube information not read in from FITS header");
 		
 	cout <<"    Conversion value="<< conv <<endl;
 	int ndim=3;
@@ -332,22 +260,32 @@ sa_size_t Mass2Gal::ApplyPoisson()
 	ng_ = ngals_.Sum();
 	cout <<"    EXIT Mass2Gal::ApplyPoisson()"<<endl<<endl;
 	return totngals;		
-};
+};*/
 
 
-sa_size_t Mass2Gal::CreateGalCatalog(int idsim, string fitsname, GalFlxTypDist& gfd, 
-    bool extinct, bool AMcut, double SkyArea, bool ZisRad)
+sa_size_t Mass2Gal::CreateGalCatalog(int idsim, string outroot, double conv, 
+                                              GalFlxTypDist& gfd, bool doSimple)
 {
 	if(fg_nodrho)
 		throw ParmError("No clustering information: cannot apply Poisson fluctuations to ngal^bar");
+		
+    if (doSimple && + doAbsMagCut_)
+        throw ParmError("ERROR: simple sim AND abs mag cut set");
+	
 	
 	Timer tm("CreateGalCatalog");
+	string outfile;
+	
 	
 	// Create swap space FITS file structure
-	FitsInOutFile swf(fitsname, FitsInOutFile::Fits_Create);	
+	outfile = outroot + "_galaxycatalog.fits";
+	FitsInOutFile swf(outfile, FitsInOutFile::Fits_Create);	
 	SwFitsDataTable gals(swf, 2048);
+	//swf.MoveAbsToHDU(2);
+	
+	// columns required: to method later
 	gals.AddLongColumn("GalID");
-	if (ZisRad) {
+	if (isZRadDir_) {
 		gals.AddFloatColumn("x");
 		gals.AddFloatColumn("y");
 		}
@@ -356,160 +294,233 @@ sa_size_t Mass2Gal::CreateGalCatalog(int idsim, string fitsname, GalFlxTypDist& 
 		gals.AddFloatColumn("phi");
 		}
 	gals.AddFloatColumn("zs");
-	gals.AddFloatColumn("type");
-	gals.AddFloatColumn("MB");
-	// @todo add option to output more/less info
-	//gals.AddFloatColumn("d_com"); 
-	//gals.AddFloatColumn("Ext");
-	//gals.AddFloatColumn("cz"); // cell redshift
+	if (!doSimple) {
+	    gals.AddFloatColumn("type");
+	    gals.AddFloatColumn("MB");
+	    }
+	else {
+	   gals.AddFloatColumn("dcom");
+	   gals.AddFloatColumn("xpos");
+	   gals.AddFloatColumn("ypos");
+	   gals.AddFloatColumn("zpos");
+	   }
+
+	    
 	DataTableRow row = gals.EmptyRow();
 	
-	// For true z only catalog WITHOUT ABSOLUTE MAG CUT
-	string fitsname2 = "ZONLY_"+fitsname;
-	FitsInOutFile swf2(fitsname2, FitsInOutFile::Fits_Create);	
-	SwFitsDataTable gals2(swf2, 2048);
-	gals2.AddLongColumn("GalID");
-	gals2.AddFloatColumn("zs");
-	DataTableRow row2 = gals2.EmptyRow();
 	
-	// Interpolate maximum observable absolute magnitude verses redshift
-	// If not cutting on absolute magnitude the interpolation function
-	// has no meaning
-	if(!AMcut) {
-		// If not cutting just fill with junk MB(z) function
-		for (int i=0;i<10;i++)
-			{zv_.push_back(i+1); MBmax_.push_back(10);}
-		}
-	int nint=1000;
-	SInterp1D maxAM(zv_, MBmax_, zv_[0], zv_[zv_.size()-1], nint);
+	// For true z only catalog WITHOUT ABSOLUTE MAG CUT
+	outfile = outroot + "_alltruez.fits";
+	FitsInOutFile swfz(outfile, FitsInOutFile::Fits_Create);	
+	SwFitsDataTable zdata(swfz, 2048);
+	zdata.AddLongColumn("GalID");
+	zdata.AddFloatColumn("zs");
+	DataTableRow tmp = zdata.EmptyRow();
+	size_t s = tmp.Size();
+	//cout << "s = "<< s << endl;
+	vector<string> colnames;
+	colnames.push_back("GalID");
+	colnames.push_back("zs");
+	vector<size_t> sizes;
+	sizes.push_back(s/2);
+	sizes.push_back(s/2);
+	DataTableRow rowz(colnames,sizes); 
+	rowz[0] = 1; rowz[1] = 0.; // have to do this else problem closing if file not used
+	zdata.AddRow(rowz);
+	
+	
+	// for ppf file containing n(z) histogram
+	int nbin=10000;
+	double minz=0, maxz=10;
+	Histo nz(minz,maxz,nbin);
+	
+	
+    // returns faintest absolute mag allowed at each z
+	SInterp1D maxAM = MaxAbsMag();
+
 	
 	// to create object id
 	uint_8 gid0=idsim*100000000000LL; // LL seems to be needed by some compilers
-	cout <<"    Simulation ID = "<< gid0 <<endl;
+	cout <<"     Simulation ID = "<< gid0 <<endl;
 	uint_8 gid;
-	uint_8 seq=0,seq2=0;
+	uint_8 seq=0, seq2=0; // total number of gals that go in files
 
-	cout <<  " Mass2Gal::CreateGalCatalog  start looping over cube cells NCells= " << ngals_.Size() << " NGals=" << ng_ << " ... "<<endl;
-	uint_8 ngsum=0;  // counter for checking  
-	uint_8 nginfile=0,nginzfile=0;  // count of galaxies going into file, total gals simulated
+	cout <<"     Mass2Gal::CreateGalCatalog start looping over cube cells NCells = ";
+	cout << mass_.Size() << endl;
 	
-	for(sa_size_t iz=0; iz<ngals_.SizeZ(); iz++)// Z direction (~redshift direction)
-        for(sa_size_t iy=0; iy<ngals_.SizeY(); iy++)// Y direction (transverse plane)
-            for(sa_size_t ix=0; ix<ngals_.SizeX(); ix++) {// X direction (transverse plane) 
+	ng_ = 0; // total number of galaxies in the simulation
+	
+	for(sa_size_t iz=0; iz<mass_.SizeX(); iz++)// Z direction (~redshift direction)
+        for(sa_size_t iy=0; iy<mass_.SizeY(); iy++)// Y direction (transverse plane)
+            for(sa_size_t ix=0; ix<mass_.SizeZ(); ix++) {// X direction (transverse plane) 
 		  
-		        // pick a cell
-		        int_8 ng=ngals_(ix,iy,iz); // num galaxies in this cell
-		        // comoving distance to center of cell:
-		        double xc, yc, zc, dc;
-		        GetCellCoord(ix,iy,iz, xc, yc, zc); // given pixel indices (ix,iy,iz) get comoving coords
-		        double rx,ry,rz,rr,rtet,rphi,rreds;// note names theta,phi reverse of the usual spehric. coord convention
-		        double mag,gtype,gext;  // galaxy absolute magnitude and type and internal extinction
-		        dc = sqrt(xc*xc+yc*yc+zc*zc);// comoving distance to each pixel center
+		  
+		    // each cell:
+            // - get total number of galaxies by poisson fluctuating (rho/rho_bar*conv)
+            uint_8 ngals = rg_.PoissonAhrens(conv*mass_(iz,iy,ix));
+            if (isConstDens_)
+                ngals = rg_.PoissonAhrens(conv);
+            
+       
+            // - get comoving x,y,z position of center of cell
+            double xc,yc,zc;
+            GetCellCoord(ix,iy,iz,xc,yc,zc);
 
-                for(int ing=0; ing<ng; ing++) { // from gal 1 to gal n in cell...
-			
-			        if(RandPos_) {
-				        // We generate random positions with flat distribution inside the cell
-				        rx = xc+rg_.Flatpm1()*(Dx_/2);
-				        ry = yc+rg_.Flatpm1()*(Dy_/2);
-				        rz = zc+rg_.Flatpm1()*(Dz_/2);
-				        }
-			        else {
-				        // Or we use cell center position
-				        rx = xc;
-				        ry = yc;
-				        rz = zc;
-				        }
-				
-			    if (ZisRad)
-				    Conv2ParaCoord(rz,rr);
-			    else
-				    Conv2SphCoord(rx,ry,rz,rr,rphi,rtet); 
-			
-			    // convert comoving distance into a redshift
-			    rreds = dist2Redshift(rr);
-			
-			    // draw the galaxy properties
-			    mag = DrawMagType(gfd, gtype);
-			    gext=0.;// extinction is set to 0 for now
-			    ngsum++;// should be same as ng_
-			
-			    double mAM =  maxAM(rreds); // given redshift of galaxy what's max (faintest) absolute mag possible
-			    if((mag<mAM) && (rphi<SkyArea)) { // magnitude cut and sky area selection
-				
-				    // object id, gal id starts at 1 not 0
-				    seq++; // adding up TOTAL number of gals put into file
-				    gid = gid0+seq;
+
+            // loop over all gals in cell
+            for (int ig=0; ig<ngals; ig++) {
+            
+                // - for each gal in cell
+                
+                
+                // - get x,y,z
+                double rx,ry,rz;
+                if (doRandPos_) {
+                    //   - get random x,y,z position in cell -> comoving distance
+                    rx = xc + rg_.Flatpm1()*(Dx_/2.);
+				    ry = yc + rg_.Flatpm1()*(Dy_/2.);
+				    rz = zc + rg_.Flatpm1()*(Dz_/2.);
+				    }
+                else {
+                    rx = xc;
+                    ry = yc;
+                    rz = zc;
+                    }
+                      
+                      
+		        //   - convert x,y,z to a angular position
+		        double dcom, phi, theta;
+		        if (isZRadDir_) {
+		            Conv2ParaCoord(rz,dcom);
+		            phi = 1e-9; // no sky area selection
+		            }
+		        else
+			        Conv2SphCoord(rx,ry,rz,dcom,phi,theta); 
+
+
+                //   - convert distance to a redshift
+                double zs = dist2Redshift(dcom);
+                
+                
+                //   - galaxy properties
+                double mag, gtype, gext;
+                if (!doSimple) {
+                    // draw the galaxy properties
+			        mag = DrawMagType(gfd, gtype);
+			        gext = 0.;// extinction is set to 0 for now
+                    }
+                    
+                    
+                //   - faintest absolute mag allowed at this z
+                double mAM =  maxAM(zs);
+                //cout << mag <<"  " << mAM << endl;
+                
+                
+                // magnitude cut and sky area selection
+                // mAM is very very faint (=10) if no doAbsMagCut_
+                if( (mag<mAM) && (phi<SkyArea_) ) { 
+                
+                    // object id, gal id starts at 1 not 0
+				    seq++; // adding up TOTAL number of gals put into cat file
+				    gid = gid0 + seq;
 
                     row[0] = gid;
-                    row[1] = rx; 
-                    row[2] = ry; 
-                    row[3] = rreds; 
-                    row[4] = gtype; 
-                    row[5] = mag; 
-                    //row[5] = nginfile;
-					//row[5] = gext;
-					//row[7] = creds;
-					
-				    if (ZisRad) {
+                    
+                    if (isZRadDir_) {
 					    row[1] = rx; 
 					    row[2] = ry; 
 					    }
 				    else {
-					    row[1] = rtet; 
-					    row[2] = rphi; 
+					    row[1] = theta; 
+					    row[2] = phi; 
 					    }
+                    row[3] = zs;
+                    if (!doSimple) {
+                        row[4] = gtype; 
+                        row[5] = mag;
+                        }
+                    else {
+                        row[4] = dcom;
+                        row[5] = rx;
+                        row[6] = ry;
+                        row[7] = rz;
+                        }
 
 				    gals.AddRow(row);
-				    nginfile++;
 				    }
-
-			    if(rphi<SkyArea) 
-				    nginzfile++; // counts ALL in sim
 				    
-			//For the ZONLY file (only if doing magnitude cut)
-			if( rphi<SkyArea&&AMcut ) { // JUST sky area selection
+				// counting everything in simulation
+				if (phi<SkyArea_) {
+                    ng_++;
+                    nz.Add(zs); // for n(z) histogram
+                    }
+                  
+				    
+			    //For the ZONLY file (only makes file if doing a magnitude cut)
+			    if( phi<SkyArea_ && doAbsMagCut_ ) { // but do JUST sky area selection
 				
-				// object id, gal id starts at 1 not 0
-				seq2++; // adding up TOTAL number of gals put into file
-				gid = gid0+seq2;
+				    // object id, gal id starts at 1 not 0
+				    seq2++; // adding up TOTAL number of gals put into z file
+				    gid = gid0 + seq2;
 
-				row2[0] = gid;
-				row2[1] = rreds; 
+                    if (seq2<1) {
+                        // clear and start again
+                        zdata.Clear();
+                        zdata.AddLongColumn("GalID");
+	                    zdata.AddFloatColumn("zs");
+                        }
 
-				gals2.AddRow(row2);
-				nginzfile++; // adding number of gals in file
-			    }
+				    rowz[0] = gid;
+				    rowz[1] = zs; 
+				    zdata.AddRow(rowz);
+
+			        }
 				
-            }  // end of loop over galaxies in the cell 
+                }  // end of loop over galaxies in the cell 
+                
         } // end of loop over ix (cells) 
-	cout <<" Mass2Gal::CreateGalaxyCatalog() finished loop"<<endl;
-
-	// want to delete swf2 file if no magnitude cut, not sure how to do this
+	cout <<"     Mass2Gal::CreateGalaxyCatalog() finished loop"<<endl;
 	
-	gals.Info()["NAllObject"]=nginzfile;// ALL in sim
-	gals.Info()["NBrightObject"]=nginfile;// ALL in file 1
-	gals.Info()["MeanOverDensity"]=mean_overdensity_;// important
 
-	if( AMcut ){
-		gals2.Info()["NAllObject"]=nginzfile;// ALL in sim
-		gals2.Info()["NBrightObject"]=nginfile;// ALL in file 1
-		gals2.Info()["MeanOverDensity"]=mean_overdensity_;// important
+    // write n(z) to file
+	outfile = outroot + "_nofz.ppf";
+	POutPersist pos(outfile);
+	pos << nz;
+	
+	if (!doAbsMagCut_ )
+	    seq2 = seq;
+	
+	cout << "     Mean over-density of original (cleaned) over-density grid = ";
+	cout << mean_overdensity_ << endl;
+	// write info to headers
+	gals.Info()["NAll"] = seq2; // ALL in sim
+	gals.Info()["NBri"] = seq; // ALL in file 1
+	gals.Info()["MeanOD"] = mean_overdensity_; // important
+	//cout << "check "<< gals.Info()["NAll"] << "  "<< gals.Info()["NBri"];
+	//cout <<"  "<< gals.Info()["MeanOD"] << endl;
+
+
+	if( doAbsMagCut_ ){
+		zdata.Info()["NAll"] = seq2; // ALL in sim
+		zdata.Info()["NBri"] = seq; // ALL in file 1
+		zdata.Info()["MeanOD"] = mean_overdensity_; // important
 		}
-	else	 {
-		if( remove(fitsname2.c_str()) != 0 )
-    			cout << "Error deleting ZTRUE file" << endl;
+	else {
+	    cout <<"     Deleting true z file because it's not needed"<<endl;
+	    outfile = outroot + "_alltruez.fits";
+		if( remove(outfile.c_str()) != 0 )
+		    cout << "Error deleting ZTRUE file" << endl;
 		}
 
-	cout <<" Mass2Gal::CreateGalaxyCatalog() done - ng_ = " << ng_;
-	cout << "(?=" <<  ngsum << " ) NGal in file = " << nginfile << endl;
-	cout <<"                                        seq = " << seq;
-	cout <<" (should == NGal in file)"<<endl;
-	cout<<"                                        Total NGal simulated = " << nginzfile <<endl;
-	return nginfile;
-}
+	cout <<"     Mass2Gal::CreateGalaxyCatalog() done - ng_ = " << ng_ << endl;
+    cout <<"     Total number of galaxies in catalog = "<< seq << endl;
+    if( doAbsMagCut_ )
+        cout <<"     Total number of galaxies in z-only file "<< seq2 << endl;
+	return seq;
+};
 
-void Mass2Gal::CreateNzHisto(string ppfname, GalFlxTypDist& gfd, bool extinct, double SkyArea)
+
+/*void Mass2Gal::CreateNzHisto(string ppfname, GalFlxTypDist& gfd, bool extinct, double SkyArea)
 {
 	if(fg_nodrho)
         throw ParmError("No clustering information: cannot create N(z) Histo");
@@ -575,8 +586,8 @@ void Mass2Gal::CreateNzHisto(string ppfname, GalFlxTypDist& gfd, bool extinct, d
 	//FitsManager::Write(fos, nz);
 	
 	cout<<" Mass2Gal::CreateNzHisto() done - ng_= " << ng_ << "(?=" <<  ngsum << endl; 
-}
-
+}*/
+/*
 sa_size_t Mass2Gal::CreateTrueZFile(int idsim, string fitsname, double SkyArea)
 {
 	if(fg_nodrho)
@@ -661,9 +672,9 @@ sa_size_t Mass2Gal::CreateTrueZFile(int idsim, string fitsname, double SkyArea)
 	cout << "(?=" <<  ngsum << " ) NGal in file = " << nginfile << endl; 
 	cout <<"                                        seq = " << seq<<" (should == NGal in file)"<<endl;
 	return nginfile;
-}
+}*/
 
-sa_size_t Mass2Gal::CreateSimpleCatalog(int idsim, string fitsname, double SkyArea)
+/*sa_size_t Mass2Gal::CreateSimpleCatalog(int idsim, string fitsname, double SkyArea)
 {
 	if(fg_nodrho)
 		throw ParmError("No clustering information: cannot apply Poisson fluctuations to ngal^bar");
@@ -741,7 +752,7 @@ sa_size_t Mass2Gal::CreateSimpleCatalog(int idsim, string fitsname, double SkyAr
 				    row[4] = rr; 
 				    row[5] = rx; 
 				    row[6] = ry; 
-				    row[7] = rz;*/
+				    row[7] = rz;
 
 				    row[0] = rtet;
 				    row[1] = rphi;
@@ -766,95 +777,109 @@ sa_size_t Mass2Gal::CreateSimpleCatalog(int idsim, string fitsname, double SkyAr
 	cout << "(?=" <<  ngsum << " ) NGal in file = " << nginfile << endl; 
 	cout <<"                                        seq = " << seq<<" (should == NGal in file)"<<endl;
 	return nginfile;
-};
+};*/
 
 
-void Mass2Gal::MaxAbsMag()
-// Calculate maximum absolute magnitude that 
-// can be observed with LSST as a function of 
-// redshift
+SInterp1D Mass2Gal::MaxAbsMag()
+// Calculate maximum absolute magnitude that can be observed with LSST as a 
+// function of redshift
 // Needs SimData class to calculate k-correction
+// if doAbsMagCut_ just sets abs mag limit really really faint (=10)
 {
-
-    double lmin=5e-8, lmax=2.5e-6;
-
-    // Read in CWWK SEDs
-    string sedFile = "CWWK.list";
-	ReadSedList readSedList(sedFile);
-    readSedList.readSeds(lmin,lmax);
-    vector<SED*> sedArray=readSedList.getSedArray();
-    int nSEDs = sedArray.size();
-    
-    // Read in LSST filters
-    string lsstFilterFile = "LSST.filters";
-	ReadFilterList readLSSTfilters(lsstFilterFile);
-	readLSSTfilters.readFilters(lmin,lmax);
-	vector<Filter*> LSSTfilters=readLSSTfilters.getFilterArray();
-	int nFilters = LSSTfilters.size();
-	
-	// Read in GOODS B filter
-	string goodsBFilterFile = "GOODSB.filters";
-	ReadFilterList readBfilter(lsstFilterFile);
-	readBfilter.readFilters(lmin,lmax);
-	vector<Filter*> BFilter=readBfilter.getFilterArray();
-	
-	// Initialise SimData class
-	string outcat="tmp";
-	PhotometryCalcs photoCalcs(lmin, lmax);
-	
-	// 5-sig depth for point sources (10 years + 0.1 mag)
-	// these should be input variables
-	double udepth =27.5505+0.1;
-	double gdepth =28.7324+0.1;
-	double rdepth =28.45+0.1;
-	double idepth =27.7536+0.1;
-	double zdepth =27.0585+0.1;
-	double ydepth =25.8424+0.1;
-	vector<double> depths;
-    depths.push_back(udepth);
-    depths.push_back(gdepth);
-    depths.push_back(rdepth);
-    depths.push_back(idepth);
-    depths.push_back(zdepth);
-    depths.push_back(ydepth);
-	
-	// Loop over redshifts
+    // Loop over redshifts
 	double zmin=0.05, zmax=4;
 	int nz=500;
 	double dz=(zmax-zmin)/(nz-1);
-	
-	for (int i=0; i<nz;i++) {
-		double z=zmin+i*dz;
-		zv_.push_back(z);
-		
-		// distance modulus
-		su_.SetEmissionRedShift(z);
-		double dL = su_.LuminosityDistanceMpc();
-		double mu = 5.*log10(dL) + 25.;
-		
-		// MB = Xdepth - mu - kBX
-		// To get MAX MB want Xdepth MAX and kBX MIN 
-		// So want to find: max(Xdepth - kBX)		
-		
-		double eps=1e-10;
-		double dmsMax=eps;
-		for (int j=0; j<nSEDs; j++) {
-		    for (int k=0; k<nFilters; k++) {
-		        double dms = depths[k] - photoCalcs.Kcorr(z,(*sedArray[j]),
-		                                        (*LSSTfilters[k]),(*BFilter[0]));
-		        if (dms>dmsMax)
-		            dmsMax=dms;
-		            
-		        }   
-		    }
-		    
-		MBmax_.push_back(dmsMax - mu);
-		}
 
+    if (doAbsMagCut_) {
+        double lmin=5e-8, lmax=2.5e-6;
+
+        // Read in CWWK SEDs
+        string sedFile = "CWWK.list";
+	    ReadSedList readSedList(sedFile);
+        readSedList.readSeds(lmin,lmax);
+        vector<SED*> sedArray=readSedList.getSedArray();
+        int nSEDs = sedArray.size();
+    
+        // Read in LSST filters
+        string lsstFilterFile = "LSST.filters";
+	    ReadFilterList readLSSTfilters(lsstFilterFile);
+	    readLSSTfilters.readFilters(lmin,lmax);
+	    vector<Filter*> LSSTfilters=readLSSTfilters.getFilterArray();
+	    int nFilters = LSSTfilters.size();
+	
+	    // Read in GOODS B filter
+	    string goodsBFilterFile = "GOODSB.filters";
+	    ReadFilterList readBfilter(lsstFilterFile);
+	    readBfilter.readFilters(lmin,lmax);
+	    vector<Filter*> BFilter=readBfilter.getFilterArray();
+	
+	    // Initialise SimData class
+	    string outcat="tmp";
+	    PhotometryCalcs photoCalcs(lmin, lmax);
+	
+	    // 5-sig depth for point sources (10 years + 0.1 mag)
+	    // these should be input variables
+	    double udepth =27.5505+0.1;
+	    double gdepth =28.7324+0.1;
+	    double rdepth =28.45+0.1;
+	    double idepth =27.7536+0.1;
+	    double zdepth =27.0585+0.1;
+	    double ydepth =25.8424+0.1;
+	    vector<double> depths;
+        depths.push_back(udepth);
+        depths.push_back(gdepth);
+        depths.push_back(rdepth);
+        depths.push_back(idepth);
+        depths.push_back(zdepth);
+        depths.push_back(ydepth);
+	
+	
+        for (int i=0; i<nz;i++) {
+        
+		    double z = zmin + i*dz;
+		    zv_.push_back(z);
+		
+		    // distance modulus
+		    su_.SetEmissionRedShift(z);
+		    double dL = su_.LuminosityDistanceMpc();
+		    double mu = 5.*log10(dL) + 25.;
+		
+		    // MB = Xdepth - mu - kBX
+		    // To get MAX MB want Xdepth MAX and kBX MIN 
+		    // So want to find: max(Xdepth - kBX)		
+		
+		    double eps=1e-10;
+		    double dmsMax=eps;
+		    for (int j=0; j<nSEDs; j++) {
+		        for (int k=0; k<nFilters; k++) {
+		            double dms = depths[k] - photoCalcs.Kcorr(z,(*sedArray[j]),
+		                                        (*LSSTfilters[k]),(*BFilter[0]));
+		            if (dms>dmsMax)
+		                dmsMax=dms;
+		            
+		            }   
+		        }
+		    
+		    MBmax_.push_back(dmsMax - mu);
+		    }
+		}
+    else {
+		// If not cutting just fill with junk MB(z) function
+		for (int i=0;i<10;i++) {
+		    double z = zmin + i*dz;
+		    zv_.push_back(z);
+			MBmax_.push_back(10);
+			}
+		}
+		
+	int nint=1000;
+	SInterp1D maxAM(zv_, MBmax_, zv_[0], zv_[zv_.size()-1], nint);
+	return maxAM;
 };
 
 
-void Mass2Gal::ApplyPZConv(string pzcf)
+/*void Mass2Gal::ApplyPZConv(string pzcf)
 // Apply photometric redshift smearing to simulated 
 // galaxy catalog and random catalog
 {
@@ -940,29 +965,17 @@ void Mass2Gal::ApplyPZConv(string pzcf)
 	cout << "    Number of random galaxies left after selection and photo-z errors applied = "<< rg_left<<endl;
 
 	cout <<" END Mass2Gal::ApplyPZConv()"<<endl<<endl;
-};
+};*/
 
 
-void Mass2Gal::GetCellZBounds(sa_size_t i, sa_size_t j, sa_size_t k,
-                                        double& zl, double& zc, double& zh)
-{
-
-	double x,y,z,dc;
-	GetCellCoord(i,j,k,x,y,z);
-	
-	dc = sqrt(x*x+y*y+z*z);// comoving distance to each pixel center
-	zc=dist2Redshift(dc);
-	zh=dist2Redshift(dc+Dz_/2);
-	zl=dist2Redshift(dc-Dz_/2);
-	
-};
 
 
-void Mass2Gal::SetRandomGrid(int mean_dens)
+
+/*void Mass2Gal::SetRandomGrid(int mean_dens)
 {
 	mean_dens_ = mean_dens;
 	cout <<"    Setting mean density of unclustered distribution to "<<mean_dens_<<endl<<endl;
-};
+};*/
 
 
 TArray<r_8> Mass2Gal::ExtractSubArray(sa_size_t x1, sa_size_t x2, sa_size_t y1, 
@@ -1013,13 +1026,11 @@ TArray<r_8> Mass2Gal::ExtractSubArray(double Z, sa_size_t nx, sa_size_t ny, sa_s
 };
 
 
-void Mass2Gal::WriteLFFits(Schechter lumfunc, double schmin, double schmax, string outfile,int npt)
+/*void Mass2Gal::WriteLFFits(Schechter lumfunc, double schmin, double schmax, string outfile,int npt)
 // Writes out luminosity function to a FITS file
 // Note NOT in units of density, because *Vol
 {
 
-	if(!fg_readvals)
-		throw ParmError("ERROR!: SimLSS cube information not read in from FITS header");
 		
 	FitsInOutFile swf(outfile, FitsInOutFile::Fits_Create);	
 	SwFitsDataTable LF(swf, 2048);
@@ -1040,54 +1051,13 @@ void Mass2Gal::WriteLFFits(Schechter lumfunc, double schmin, double schmax, stri
 		row[1]=lumfunc(M)*Vol;
 		LF.AddRow(row);
 		}
-};
+};*/
 
 
-TVector<r_8> Mass2Gal::ReturnGridSpec()
-// Returns number of pixels and pixel size in a vector
-// Can use this as input into other classes
-// Useful when computing power spectrum of the grid
-// Can calculate Dk via: 2*pi/(N*cellsize)
-{
-
-	if(fg_nodrho)
-		throw ParmError("No clustering information: cannot return simulation grid specs");
-		
-	if(!fg_readvals)
-		throw ParmError("ERROR!: SimLSS cube information not read in from FITS header");
-		
-	int row=4; 
-	TVector<r_8> gridspec(row); 
-	gridspec(0)=Nx_; 
-	gridspec(1)=Ny_; 
-	gridspec(2)=Nz_; 
-	gridspec(3)=Dx_;
-	return gridspec;
-};
 
 
-void Mass2Gal::GetCellCoord(sa_size_t i, sa_size_t j, sa_size_t k, double& x, double& y, double& z)
-// i refers to 1ST dim, j refers to 2ND dim, k refers to 3RD dim
-{
-	if(!fg_readvals)
-		throw ParmError("ERROR!: SimLSS cube information not read in from FITS header");
-		
-	x=GetCellX(i);
-	y=GetCellY(j);
-	z=GetCellZ(k);
-
-	return;
-};
 
 
-void Mass2Gal::Conv2SphCoord(double x, double y, double z, double& r, double& phi, double& theta)
-// NOTE : the names theta, phi are reversed compared to the usual (ISO 31-11) convention 
-{
-	r=sqrt(x*x+y*y+z*z);
-	theta=atan2(y,x);
-	double zoverr=z/r;
-	phi=acos(zoverr);
-};
 
 
 double Mass2Gal::DrawMagType(GalFlxTypDist& gfd, double& type)
@@ -1249,7 +1219,7 @@ void Mass2Gal::GetRange(sa_size_t i, sa_size_t ni, sa_size_t& istart, sa_size_t&
 
 };
 
-void Mass2Gal::ApplySF(SelectionFunctionInterface& sf)
+/*void Mass2Gal::ApplySF(SelectionFunctionInterface& sf)
 // Apply and correct for selection function to simulated
 // galaxy catalog AND random catalog
 {
@@ -1315,9 +1285,255 @@ void Mass2Gal::ApplySF(SelectionFunctionInterface& sf)
 	cout << "    Number of random galaxies left after selection applied = "<< rg_left<<endl;
 	
 cout <<" END Mass2Gal::ApplySF()"<<endl<<endl;
-}
+}*/
 
 
+//******* FieldClusterGals Methods  ******************************************//
+
+
+double FieldClusterGals::expectedNCluster(double ns, double sigma8, double m1, double m2, double z) {
+
+    
+
+    // retrieve cosmological parameters
+    double h = su_.h();
+    double oc = su_.OmegaCDM();
+    double ob = su_.OmegaBaryon();
+    double om = su_.OmegaMatter();
+    double ol = su_.OmegaLambda();
+    double w0 = su_.DEw();
+
+    // power spectrum calculations
+	InitialPowerLaw ipl(ns);
+	TransferEH tf(h, oc, ob, T_CMB_K);
+	GrowthFN gro(om, ol, w0);
+	PkSpecCalc pkz(ipl, tf, gro, z);
+	
+	
+	// mass function calculations
+	bool typeLog = false;
+	MassFunc massFunc(su_, pkz, z, sigma8, typeLog);
+	double nc = ReturnCubeVol()*massFunc.Integrate(m1, m2, 1000);
+	cout <<"     Number of clusters in volume "<< ReturnCubeVol() <<" at z = "<< z;
+	cout <<" between "<< m1 <<" and "<< m2 <<" solar masses is "<< nc << endl;
+
+    return nc;
+};
+
+
+SInterp1D FieldClusterGals::npixelsVsDelta(int nstep) {
+
+    // recall mass_ is delta+1.
+
+    // set delta grid
+    double tmp, maxd;
+    mass_.MinMax(tmp, maxd);
+    maxd-=1.; 
+    double mind=0.6*maxd; // don't want to start at min delta since clusters are
+                          // regions of very large delta
+    double dstep = (maxd-mind)/(nstep-1.);
+    cout << "     Delta grid: "<< mind <<" to "<< maxd <<" in steps of "<< dstep;
+    cout << endl;
+    
+    // vector of delta, vector of npixel groups with value > delta
+    vector<double> deltas, npixels;
+
+    // loop over delta values, find n_pixels with value > delta
+    // if a pixel is adjacent to other pixels with values > delta only ONE
+    // pixel in the group is counted    
+    for (int id=0; id<nstep; id++) {
+       
+        double dv = mind + id*dstep;
+        //cout << "     On dv = "<< dv << endl;
+        deltas.push_back(dv);
+        
+        int cnt = 0;
+        // loop over density grid values
+        for (int i=0; i<mass_.SizeX(); i++)
+            for (int j=0; j<mass_.SizeY(); j++)
+                for (int k=0; k<mass_.SizeZ(); k++) {
+                
+                
+                    checkPixel(i, j, k, dv, cnt);
+                   
+                    /*double delta = mass_(i,j,k)-1.;
+                   
+                    if (delta>dv) {
+                        
+                        //cout <<"     delta = "<< delta << endl;
+                        // write conditions such that element is counted
+                        // ALL must be true for element to be counted
+                        bool cond1 = (i<1 || mass_(i-1,j,k)<=dv+1.);
+                        bool cond2 = ( (i<1 || j<1) || mass_(i-1,j-1,k)<=dv+1. );
+                        bool cond3 = (j<1 || mass_(i,j-1,k)<=dv+1.);
+                        bool cond4 = (k<1 || mass_(i,j,k-1)<=dv+1.);
+                        bool cond5 = ( (i<1 || k<1) || mass_(i-1,j,k-1)<=dv+1. );
+                        bool cond6 = ( (j<1 || k<1) || mass_(i,j-1,k-1)<=dv+1. );
+                        bool cond7 = ( (i<1 || j<1 || k<1) || mass_(i-1,j-1,k-1)<=dv+1. );
+                        if (cond1 && cond2 && cond3 && cond4 && cond5 && cond6 && cond7)
+                            cnt += 1;
+                        }*/
+                    }
+                    
+        npixels.push_back(double(cnt));
+        }
+        
+    // reverse order
+    vector<double> deltas2, npixels2;
+    for (int i=0; i<nstep; i++) {
+        deltas2.push_back(deltas[nstep-1-i]);
+        npixels2.push_back(npixels[nstep-1-i]);
+        //cout << deltas2[i] <<"  "<< npixels2[i] << endl;
+        }
+        
+    // put into interplation function
+    SInterp1D npix(npixels2, deltas2, npixels2[0], npixels2[nstep-1], 1000);
+    return npix;
+
+};
+
+
+bool FieldClusterGals::checkPixel(int i, int j, int k, double dv, int& cnt) {
+
+    bool isCluster = false;
+    double delta = mass_(i,j,k)-1.;
+    if (delta>dv) {
+        isCluster = true;
+                        
+        // write conditions such that element is counted
+        // ALL must be true for element to be counted
+        bool cond1 = (i<1 || mass_(i-1,j,k)<=dv+1.);
+        bool cond2 = ( (i<1 || j<1) || mass_(i-1,j-1,k)<=dv+1. );
+        bool cond3 = (j<1 || mass_(i,j-1,k)<=dv+1.);
+        bool cond4 = (k<1 || mass_(i,j,k-1)<=dv+1.);
+        bool cond5 = ( (i<1 || k<1) || mass_(i-1,j,k-1)<=dv+1. );
+        bool cond6 = ( (j<1 || k<1) || mass_(i,j-1,k-1)<=dv+1. );
+        bool cond7 = ( (i<1 || j<1 || k<1) || mass_(i-1,j-1,k-1)<=dv+1. );
+        if (cond1 && cond2 && cond3 && cond4 && cond5 && cond6 && cond7)
+            cnt += 1;
+        }
+    return isCluster;
+};
+
+void FieldClusterGals::simulateGalaxies(double conv, double bias, string outfileroot)
+{
+    // open up files to write to
+    string outfile;
+    outfile = outfileroot + "_gals.txt";
+    ofstream out_gals(outfile.c_str(), ofstream::out);
+    outfile = outfileroot + "_clusters.txt";
+    ofstream out_cls(outfile.c_str(), ofstream::out);
+    
+    //cout << mass_.SizeX() <<" "<< mass_.SizeY() <<" " << mass_.SizeZ() << endl;
+
+    int cnt = 0;
+    double maxval = -1e10;
+    double maxzcoord = -1e10;
+    // loop over cells
+    for(sa_size_t iz=0; iz<mass_.SizeX(); iz++) { // FIRST DIM IS Z-DIM
+        //cout <<" outer loop "<< ix <<" of "<<mass_.SizeX()<<endl;
+        for(sa_size_t iy=0; iy<mass_.SizeY(); iy++)
+            for(sa_size_t ix=0; ix<mass_.SizeZ(); ix++) {
+
+
+                // pixel delta value
+                double dv = (mass_(iz,iy,ix)-1);
+                
+                
+                // record what maximum delta is
+                if ( dv>maxval )
+                    maxval = dv;
+
+
+                // - determine if this pixel is a field or cluster pixel
+                // - cnt is only incremented if the cluster has not been counted yet
+                int pre_cnt = cnt;
+                bool isCluster = checkPixel(iz, iy, ix, delta_cluster_, cnt);
+                
+                
+                // check if cluster was already counted
+                bool newCluster = true;
+                if (pre_cnt==cnt)
+                    newCluster= false;
+                
+                
+                // - get total number of galaxies by poisson fluctuating (rho/rho_bar*conv)
+                uint_8 ngals;
+                if (isCluster)
+                    ngals = rg_.PoissonAhrens(bias*conv*mass_(iz,iy,ix));
+                else
+                    ngals = rg_.PoissonAhrens(conv*mass_(iz,iy,ix));
+            
+
+                // - get comoving x,y,z position of center of cell
+                double xc,yc,zc;
+                GetCellCoord(ix,iy,iz,xc,yc,zc);
+                        
+                
+                // only take properties of first cluster pixel in group
+                // this is a bit bad!   
+                if (newCluster) {
+                    
+
+                    // get cluster properties
+                    double dcl, phicl, thcl;
+                    Conv2SphCoord(xc,yc,zc,dcl,phicl,thcl); 
+
+                    //   - convert distance to a redshift
+                    double zcl = dist2Redshift(dcl);
+                    //cout << "here"<<endl;
+                    out_cls << phicl <<"  "<< thcl <<"  "<< zcl <<"  "<< dcl <<"  ";
+                    out_cls << xc  <<"  "<< yc <<"  "<< zc <<"  "<< endl;
+                    }
+
+            
+                // keep track of maximum z coordinate
+                if (zc>maxzcoord)
+                    maxzcoord = zc;
+
+
+                // loop of galaxies in pixel
+                int cnt_cgals = 0;
+                for (int ig=0; ig<ngals; ig++) {
+            
+                    // - for each gal in cell
+                    //   - get random x,y,z position in cell -> comoving distance
+                    double rx = xc + rg_.Flatpm1()*(Dx_/2.);
+				    double ry = yc + rg_.Flatpm1()*(Dy_/2.);
+				    double rz = zc + rg_.Flatpm1()*(Dz_/2.);
+
+		            //   - convert x,y,z to a angular position
+		            double dcom, phi, theta;
+			        Conv2SphCoord(rx,ry,rz,dcom,phi,theta); 
+
+                    //   - convert distance to a redshift
+                    double zs = dist2Redshift(dcom);
+                                
+                    //   - write to file: angular position, redshift, if gal is in field or cluster
+                    out_gals << phi <<"  "<< theta <<"  "<< zs <<"  "<< dcom <<"  ";
+                    out_gals << rx  <<"  "<< ry <<"  "<< rz <<"  ";
+                    if (isCluster) {
+                        out_gals << 1 << endl;
+                        cnt_cgals++;
+                        }
+                    else
+                        out_gals << 0 << endl;
+
+			        }
+			        
+			    //if (isCluster)
+			    //    out_cls << cnt_cgals << endl;
+            }
+    	}
+    
+    // close files
+    out_gals.close();
+    out_cls.close();
+    
+	cout <<"     Maximum value of drho/rho " << maxval << endl;
+	cout <<"     Number of clusters should be "<< cnt << endl;
+	cout <<"     Maximum z coord of pixel "<< maxzcoord << endl;
+};
 
 
 

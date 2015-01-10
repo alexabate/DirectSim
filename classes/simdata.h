@@ -83,7 +83,7 @@ public:
         @param filterX          filter object observed in (same as rest-frame filter) \f$X(\lambda)\f$*/
 	double Kcorr1Filter(double z, ClassFunc1D& sed, Filter& filterX);
 
-	/** Calculate galaxy color: 
+	/** Calculate galaxy color X-Y: 
 	    \f$ C_{xy} = -2.5\log10\left(
         \frac{\int f_\lambda(\lambda_o/(1+z))\lambda_oX(\lambda_o)d\lambda_o
               \int \frac{Y(\lambda_o)}{\lambda_o}d\lambda_o  }
@@ -91,7 +91,7 @@ public:
               \int f_\lambda(\lambda_o/(1+z))\lambda_oY(\lambda_o)d\lambda_o}\right) \f$
 	    @param z                redshift of object \f$z\f$
         @param sed              rest-frame SED of object \f$f_\lambda(\lambda)\f$
-        @param filterX          filter object observed in \f$X(\lambda)\f$
+        @param filterX          filter object observed in \f$X(\lambda)\f$ (should be bluer filter than Y)
         @param filterY          other filter object observed in \f$Y(\lambda)\f$  */
 	double CompColor(double z, ClassFunc1D& sed, Filter& filterX, Filter& filterY);
 	
@@ -154,9 +154,12 @@ public:
 	    @param filterX      filter band \f$X(\lambda)\f$                      */
 	double convertFluxMaggiesToABMag(double flux, Filter& filterX) {
 	    double zeroPoint = getFilterZeroPoint(filterX);
-	    //double magAB = -2.5*log10(flux) - 56.1 + zeroPoint;
-	    double magAB = -2.5*log10(flux) + zeroPoint; // ======================================================================================================
-	    return magAB; };
+
+	    if (flux<1e-50)
+	        flux = 1e-50;
+	    double magAB = -2.5*log10(flux) - 56.1 + zeroPoint;
+	    return magAB; 
+	    };
 	    
 	/** Return AB magnitude given flux in maggie-style WAVELENGTH units:
 	    \f$ F_\nu = F_\lambda*\lambda_{eff}^2
@@ -210,7 +213,8 @@ public:
 	    {   double fx = getFilterZeroPointFlux(filterX);
 	        double mx = 2.5*log10(fx);
 	        return mx; };
-	
+	// for LSST: -3.11752 -1.65737 -1.90181 -2.06726 -2.66691 -4.33277
+
 	/** Get "zeropoint" of filter, basically integrates dnu/nu filter(nu). 
 	    Returns the zeropoint in flux FREQUENCY UNITS (not magnitudes)        */
 	double getFilterZeroPointFlux(Filter& filterX);
@@ -304,21 +308,34 @@ public:
 	// SIMULATION FUNCTIONS //
 
 	/** Function to simulate a true magnitude given: z, sed-type, abs-mag, ext, 
-	    rest-frame-filter, observed-filter. Assumes Madau law IGM if 
+	    rest-frame-filter, observed-filter. Assumes **Madau law IGM** if 
 	    @param isAddMadau_ is set to true, assumes no IGM absorption if it's not
 	    @param zs               redshift
 	    @param sedtype          SED type of galaxy, in form of 1.XXX, 2.XXX, 3.XXX
 	    @param amag             absolute magnitude in filter ifRF 
 	    @param ext              extinction amount in E(B-V) magnitudes 
-	    @param ifO              observation filter
+	    @param ifO              observation filter id
 	    @param RestFrameFilter  rest-frame filter amag is defined in */
 	double GetMag(double zs, double sedtype, double amag, double ext, int ifO, 
 	                                                    Filter& restFrameFilter);
+	                                                    
+    /** Function to simulate a true magnitude given: z, abs-mag, SED, 
+	    rest-frame-filter, observed-filter. Assumes **Madau law IGM** if 
+	    @param isAddMadau_ is set to true, assumes no IGM absorption if it's not
+	    **This is different to above because takes SED id instead of a type to convert to an id AND no
+	    extinction can be added.**
+	    @param zs               redshift
+	    @param sedID            SED id
+	    @param amag             absolute magnitude in filter RestFrameFilter 
+	    @param ifO              observation filter id
+	    @param RestFrameFilter  rest-frame filter amag is defined in                  */
+	double GetMag(double zs, int sedID, double amag, int ifO, Filter& restFrameFilter);
+	                       
 	                            
 	/** Function to simulate a true magnitude given: z, sed-type, abs-mag, ext, 
 	    rest-frame-filter, observed-filter. Assumes Madau law IGM if 
 	    @param isAddMadau_ is set to true, assumes no IGM absorption if it's not.
-	    Uses k-correction calculated from files.
+	    **Uses k-correction calculated from files.**
 	    @param zs               redshift
 	    @param sedtype          SED type of galaxy, in form of 1.XXX, 2.XXX, 3.XXX
 	    @param amag             absolute magnitude in filter ifRF 
@@ -327,9 +344,10 @@ public:
 	    @param RestFrameFilter  rest-frame filter amag is defined in */
 	double GetMag(double zs, double sedtype, double amag, double ext, int ifO);
 	                            
+	                            
 	/** Function to simulate a true magnitude given: z, sed-type, abs-mag, ext, 
-	    rest-frame-filter, observed-filter. Uses the line of sight transmission
-	    of the IGM given by igmTransmission
+	    rest-frame-filter, observed-filter. Uses the **line of sight IGM transmission**
+	    given by igmTransmission
 	    @param zs               redshift
 	    @param sedtype          SED type of galaxy, in form of 1.XXX, 2.XXX, 3.XXX
 	    @param amag             absolute magnitude in filter ifRF 
@@ -340,33 +358,74 @@ public:
 	double GetMag(double zs, double sedtype, double amag, double ext,
 	    int ifO, Filter& restFrameFilter, IGMTransmission igmTransmission);
 	
-	/** Add generic flux percentage error to magnitude. Return the observed 
-	    magnitude and magnitude error in a vector
-	    @param  mag             (true) magnitude 
-	    @param  percentError    error on flux in percent of flux (eg 10% is
-	                            percentError=0.1) */
-	vector<double> addError(double mag, double percentError, int iFilter);
+	
+	/** Add GENERIC flux percentage error to magnitude. Return the observed magnitude and magnitude error in a
+	    vector
+	    @param mag             (true) magnitude 
+	    @param percentError    error on flux in percent of flux (eg 10% is percentError=0.1) 
+	    @param iFilter         index of filter (0=u, 1=g .... 5=y)            */
+	vector<double> addError(double mag, double percentError, int iFilter) {
+        
+        Filter filter((*filterArray_[iFilter]));
+        double fluxError = percentError*convertABMagToFluxMaggies(mag, filter);
+        double flux = convertABMagToFluxMaggies(mag, filter);
+        
+        vector<double> observation; // observed magnitude and magnitude error
+        observation = addFluxError(flux, fluxError, iFilter);
+
+        double obs_err = abs(mag-observation[0]);
+        observation.push_back(obs_err);
+	    return observation;
+        
+        };
+	
+	
+	/** Add LSST photometric error. Returns the observed magnitude and magnitude 
+	    error in a vector
+	    @param mag      (true) magnitude
+	    @param nYear    number of LSST operation       
+	    @param iF       index of filter (0=u, 1=g .... 5=y)                   */
+	vector<double> addLSSTError(double mag, int nYear, int iF) {
+	
+	     if (iF<0 || iF>5)
+	         throw ParmError("ERROR! filter index not in LSST range");
+         //double m5 = calcPointSource5sigmaDepth(Cm_[iF], Msky_[iF], Theta_[iF] ,tVis_, km_[iF], airMass_);
+         
+         // total number of visits after nYear years
+         int nvis = nYear*nVisYear_[iF];
+         
+         // calculate 5-sigma depth for nvis visits
+         double m5nvisit = m5single_[iF] + 1.25*log10(nYear*nVisYear_[iF]);
+         
+         // BUT to get 1-sigma errors need to subtract -2.5*log10(5) from this
+         //double m1sig = m5nvisit - 2.5*log10(5.);
+         
+         vector<double> obsmag = getObservedLSSTMagnitude(mag, m5nvisit, Gamma_[iF], nYear, iF);
+	     return obsmag;
+	     
+	     };
+		
 	
 	/** Add LSST u band error. Returns the observed magnitude and magnitude 
 	    error in a vector
 	    @param mag      (true) magnitude
 	    @param nVisits  number of visits of the telescope in this band        */
-	vector<double> addLSSTuError(double mag, int nVisits);
+	//vector<double> addLSSTuError(double mag, int nVisits);
 		
 	/** Add LSST g band error */
-	vector<double> addLSSTgError(double mag, int nVisits);
+	//vector<double> addLSSTgError(double mag, int nVisits);
 	
 	/** Add LSST r band error */
-	vector<double> addLSSTrError(double mag, int nVisits);
+	//vector<double> addLSSTrError(double mag, int nVisits);
 	
 	/** Add LSST i band error */
-	vector<double> addLSSTiError(double mag, int nVisits);
+	//vector<double> addLSSTiError(double mag, int nVisits);
 	
 	/** Add LSST z band error */
-	vector<double> addLSSTzError(double mag, int nVisits);
+	//vector<double> addLSSTzError(double mag, int nVisits);
 	
 	/** Add LSST y band error */
-	vector<double> addLSSTyError(double mag, int nVisits);	
+	//vector<double> addLSSTyError(double mag, int nVisits);	
 	
 	/** Simulate galaxy type, returns a number that corresponds to an SED in
 	    #sedArray_
@@ -420,30 +479,44 @@ public:
 	int returnSedId(double sedtype);
      
     /** Return observed LSST magnitude and magnitude error */
-    vector<double> getObservedLSSTMagnitude(double mag, double m5, double gamma, int nVis, int iFilter);
+    vector<double> getObservedLSSTMagnitude(double mag, double m5, double gamma, int nYear, int iFilter);
 	
 	/** Return observed magnitude and magnitude error after adding flux error 
 	    in the filter indexed by #iFilter
-	    @param mag          true magnitude
+	    @param mag          true flux
 	    @param fluxError    error on flux
 	    @param iFilter      index of filter  */
-	vector<double> addFluxError(double mag, double fluxError, int iFilter);
+	vector<double> addFluxError(double flux, double fluxError, int iFilter);
 	
 	/** Return the LSST random photometric error squared
 	    See equation 3.2 in LSST Science Book (divided by Nvisit)
 	    @param x        \f$x=10^{0.4(m-m5)}\f$  
-	    @param gamma    band-dependent parameter
-	    @param nVis     number of visits */
-	double returnLSSTRandomErrorSq(double x, double gamma, double nVis);
+	    @param gamma    band-dependent parameter */
+	    //@param nVis     number of visits */
+	double returnLSSTRandomErrorSq(double x, double gamma) {//, double nVis) {
+	
+	    double sigmaRandsq = (0.04 - gamma)*x + gamma*x*x;
+        // in magnitudes^2
+        return sigmaRandsq; ///nVis;
+        };
 		       
     /** Return \f$10^{0.4(m-m5)}\f$ */
 	double returnX(double mag, double m5) {
 	    double x = pow(10.,0.4*(mag-m5));
-        return x; };
+        return x; 
+        };
 	
-	/** Return the 5-sigma depth for point sources */
-	double returnPointSource5sigmaDepth(double Cm, double msky, double theta,
-	    double tvis, double km, double X);
+	/** Return the 5-sigma depth for point sources (within particular band) 
+	    @param Cm     band dependent parameter describing system sensitivity
+	    @param msky   sky brightness
+	    @param theta  zenith seeing
+	    @param nvis   number of visits
+	    @param km     atmospheric extinction
+	    @param X      airmass                                                   */
+	double calcPointSource5sigmaDepth(double Cm, double msky, double theta, int nvis, double km, double X) {
+	    double m5 = Cm + 0.50*(msky - 21) + 2.5*log10(0.7/theta) + 1.25*log10(nvis) - km*(X - 1);
+        return m5;
+        };    
 	   
     /** Set the LSST photometric error parameters */
 	void setLSSTPars();
@@ -456,6 +529,8 @@ public:
         @param zs               redshift of the SED
         @param restFrameFilter  filter absolute magnitude is defined in */
     TArray<double> returnSEDFluxesInRestFrame(double zs);//, Filter& restFrameFilter);
+    
+    vector<double> returnm5single() { return m5single_; };
 
     // not sure why these have to be public
 	SimpleUniverse& su_;            /**< class that holds the cosmological
@@ -481,17 +556,132 @@ protected:
 	// To initialize when the references are not used
 	SimpleUniverse su_default_;     /**< to initialize #su_ when it's not used*/
 	DR48RandGen rg_default_;        /**< to initialize #rg_ when it's not used*/
-	double uMsky_,gMsky_,rMsky_,iMsky_,zMsky_,yMsky_;
-	double uTheta_,gTheta_,rTheta_,iTheta_,zTheta_,yTheta_;
-	double uGamma_,gGamma_,rGamma_,iGamma_,zGamma_,yGamma_;
-	double uCm_,gCm_,rCm_,iCm_,zCm_,yCm_;
-	double ukm_,gkm_,rkm_,ikm_,zkm_,ykm_;
-	double tVis_;
-	double airMass_;
-	double sigmaSys_;
+	//double uMsky_,gMsky_,rMsky_,iMsky_,zMsky_,yMsky_;
+	//double uTheta_,gTheta_,rTheta_,iTheta_,zTheta_,yTheta_;
+	//double uGamma_,gGamma_,rGamma_,iGamma_,zGamma_,yGamma_;
+	//double uCm_,gCm_,rCm_,iCm_,zCm_,yCm_;
+	//double ukm_,gkm_,rkm_,ikm_,zkm_,ykm_;
+	vector<int> nVisYear_;    /**< number of visits per year                                     */
+	double tVis_;             /**< exposure time, 2 back-to-back 15s exposures                   */
+	double airMass_;          /**< median airmass                                                */
+	double sigmaSys_;         /**< systematic photometric error from LSST system                 */
+	vector<double> Msky_;     /**< expected median sky zenith brightness in each band            */
+	vector<double> Theta_;    /**< expected delivered median zenith seeing (arcsec) in each band */
+	vector<double> Gamma_;    /**< band dependent parameter                                      */
+	vector<double> Cm_;       /**< band dependent parameter describing system sensitivity        */
+	vector<double> km_;       /**< adopted atmospheric extinction in each band                   */
+	vector<double> m5single_; /**< SINGLE VISIT 5-sigma depth for point sources                  */
 	
 	
 	
+};
+
+
+/** @class SEDLibColors
+  *
+  * Calculate colors of all SEDs in a library for a given filter set
+  *
+  */
+class SEDLibColors : public PhotometryCalcs {
+public:
+    /** Constructor. The filter set must be ordered by monotonic increase in filter wavelength from blue to red
+        @param sedarray   array of pointers to each SED in library
+        @param filtarray  array of pointers to each filter in filter set*/
+    SEDLibColors(vector<SED*> sedarray,  vector<Filter*> filtarray):
+        sedarray_(sedarray), filtarray_(filtarray) , nsed_(sedarray.size()) , nfilt_(filtarray.size()) {
+        
+        cout <<"     SED library contains "<< nsed_ <<" SEDs"<<endl;
+        cout <<"     Filter set has "<< nfilt_ <<" filters "<<endl;
+        cout << endl;
+        
+        // initialize color array
+        int ndim = 2;
+        sa_size_t mydim[ndim];
+        mydim[0] = nsed_;
+        mydim[1] = nfilt_-1;
+        colors_.SetSize(ndim, mydim);
+        
+        // call some method that calculates the colors
+        for (int i=0; i<nsed_; i++) {
+            for (int j=0; j<nfilt_-1; j++) {
+                colors_(i,j) = calcColors(i,j);
+                //cout << colors_(i,j) <<"  ";
+                }
+            //cout << endl;
+            }
+        
+        };
+    
+    /** Return color for sed indexed by sedid and filters indexed by filtid and filtid+1. Filter index filtid
+        must point to the bluer filter and filtid+1 to the redder filter
+        @param sedid   index of SED to calculate color for
+        @param filtid  index of redder filter */
+    double calcColors(int sedid, int filtid) {
+        double z=0.;
+        double col = CompColor(z, (*sedarray_[sedid]), (*filtarray_[filtid]), (*filtarray_[filtid+1]));
+        return col;
+        };
+    
+    
+    /** Return index of SED with closest colors to those input */
+    int bestSED(vector<double> colors) {
+        
+        // first check size of input colors
+        if (colors.size() != nfilt_-1)
+            throw ParmError("ERROR! number of colors supplied does not match filter set");
+        
+        // initialize minimum test and current minimum logged
+        double min_color_diff = 1e10;
+        int closest_sed = -1; // non sensical
+        
+        // loop over each SED
+        for (int i=0; i<nsed_; i++) {
+        
+            // calculate the sum of differences squared between input colors and SED colors 
+            double sumsq_color_diffs=0;
+            for (int j=0; j<nfilt_-1; j++)
+                sumsq_color_diffs += ((colors[j] - colors_(i,j))*(colors[j] - colors_(i,j)));
+                
+            // test to see if this is the minimum value seen, if so re log
+            if (sumsq_color_diffs < min_color_diff) {
+                min_color_diff = sumsq_color_diffs; // set new minimum
+                closest_sed = i; // set new closest SED
+                }
+            }
+        
+        if (closest_sed<0 || closest_sed>nsed_+1)
+            throw ParmError("ERROR! failed to find SED with closest colors");
+        
+        return closest_sed;
+            
+    };
+    
+    /** For checking */
+    TArray<double> returnColorArray() { return colors_; };
+    
+        
+    /** For checking */
+    void writeColorArray(string fname) {
+    
+        ofstream outp(fname.c_str(), ofstream::out);
+        for (int i=0; i<nsed_; i++) {
+            for (int j=0; j<nfilt_-1; j++) {
+                outp << colors_(i,j) <<"  ";
+                }
+            outp << endl;
+            }
+        outp.close();
+        
+        };
+
+
+protected:
+    vector<SED*> sedarray_;      /**< list of SED templates                                    */
+    vector<Filter*> filtarray_;  /**< list of filters                                          */
+    int nsed_;                   /**< number of SED templates                                  */
+    int nfilt_;                  /**< number of filters                                        */
+    TArray<double> colors_;      /**< color of SED for each filter pair, size nsed_*(nfilt_-1) */
+
 };
 
 

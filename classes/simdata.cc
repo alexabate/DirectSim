@@ -33,7 +33,9 @@ double PhotometryCalcs::Kcorr(double z, ClassFunc1D& sed, Filter& filterX,
 	FilterIntegrator trpzfx(fprodx, lmin_, lmax_);	
 		
 	kxy=-2.5*log10(pow((1+z),-1)*(trpzx.Value()/trpzfx.Value())*
-	                                    (trpzfy.Value()/trpzy.Value())); 
+	                                    (trpzfy.Value()/trpzy.Value()));
+	//if (z<0.0001)
+	//    cout << z <<"  "<< kxy <<endl;
 	return kxy;
 };
 
@@ -306,9 +308,15 @@ double SimData::GetMag(double zs, double sedtype, double amag, double ext,
         throw ParmError("ERROR! Not set up to read k-correction from a file");
 
 	// calculate distance modulus
-	su_.SetEmissionRedShift(zs);
-	double mu=5*log10(su_.LuminosityDistanceMpc())+25;
-	
+	// @warning galaxy magnitudes for redshifts z<<0.01 don't have much meaning
+	double mu;
+	if (zs<1e-5) 
+	    mu = 25.;
+	else {
+	    su_.SetEmissionRedShift(zs);
+	    mu=5.*log10(su_.LuminosityDistanceMpc())+25;
+	    }
+	    
 	// retrieve SED id of galaxy
 	int sedID = returnSedId(sedtype);// Check this is doing the correct job
 
@@ -324,6 +332,75 @@ double SimData::GetMag(double zs, double sedtype, double amag, double ext,
     // copy contents of filterArray_[iFilter] into a new Filter object
     Filter filter((*filterArray_[iFilterObs]));
     
+    double kcorr = calcKcorr(sed, filter, restFrameFilter, zs, ext, law);
+    // @warning WHY IS THE BELOW COMMENTED OUT!!! Because it was moved to calcKcorr method
+    /*if (isAddMadau_) {
+        // add Madau absorption
+        SEDMadau sedMadau(sed, zs);
+    
+        // redden SED
+        SEDGOODSRedfix sedReddened(sedMadau,zs,ext,law);
+		
+        // k correction from REST FRAME filter to OBS FRAME filter
+	    kcorr = Kcorr(zs,sedReddened,filter,restFrameFilter);    
+	    }
+	else{ 
+	    // redden SED
+        SEDGOODSRedfix sedReddened(sed,zs,ext,law);
+		
+        // k correction from REST FRAME filter to OBS FRAME filter
+	    kcorr = Kcorr(zs,sedReddened,filter,restFrameFilter); 
+        }*/
+    tm.Split();
+    //cout <<"Time to do k-corr part = "<< tm.PartialElapsedTimems() <<" ms"<<endl;
+    
+    tm.Split();
+	// magnitude
+	double mag =  amag + mu + kcorr;
+	
+	int isInf = my_isinf(kcorr);
+    if (isInf != 0) // if kcorrection is infinite because filter has
+        mag = 99;   // shifted out of where galaxy has flux values set 
+                    // magnitude to 99 (undetected)	
+                    
+    int isMagInf = my_isinf(mag);
+    if (isMagInf != 0) {
+        cout <<"     Warning magnitude is infinite, z = "<< zs <<", k = "<< kcorr <<", amag = "<< amag;
+        cout <<", mu = "<< mu <<endl;
+        }
+        
+	return mag;
+};
+
+// Simulate a "true" magnitude with or without Madau IGM absorption
+// USING SED ID INSTEAD OF SED TYPE VALUE
+double SimData::GetMag(double zs, int sedID, double amag, int iFilterObs, Filter& restFrameFilter) {
+
+    Timer tm("timer",false);
+
+    if (isReadKcorr_)
+        throw ParmError("ERROR! Not set up to read k-correction from a file");
+
+	// calculate distance modulus
+	// @warning galaxy magnitudes for redshifts z<<0.01 don't have much meaning
+	double mu;
+	if (zs<1e-5) 
+	    mu = 25.;
+	else {
+	    su_.SetEmissionRedShift(zs);
+	    mu=5.*log10(su_.LuminosityDistanceMpc())+25;
+	    }
+	    
+    
+    tm.Split();
+    // copy contents of sedArray_[sedID] into new SED object
+    SED sed(*(sedArray_[sedID]));
+    
+    // copy contents of filterArray_[iFilter] into a new Filter object
+    Filter filter((*filterArray_[iFilterObs]));
+    
+    double ext=0.;
+    int law = 0;
     double kcorr = calcKcorr(sed, filter, restFrameFilter, zs, ext, law);
     /*if (isAddMadau_) {
         // add Madau absorption
@@ -355,9 +432,11 @@ double SimData::GetMag(double zs, double sedtype, double amag, double ext,
                     // magnitude to 99 (undetected)	
                     
     int isMagInf = my_isinf(mag);
-    if (isMagInf != 0)
-        cout <<"     Warning magnitude is infinite"<<endl;
-
+    if (isMagInf != 0) {
+        cout <<"     Warning magnitude is infinite, z = "<< zs <<", k = "<< kcorr <<", amag = "<< amag;
+        cout <<", mu = "<< mu <<endl;
+        }
+        
 	return mag;
 };
 
@@ -452,7 +531,7 @@ double SimData::GetMag(double zs, double sedtype, double amag, double ext,
 };
 
 
-// add percentage magnitude error
+/*// add percentage magnitude error
 vector<double> SimData::addError(double mag, double percentError, int iFilter)
 {
     Filter filter((*filterArray_[iFilter]));
@@ -460,16 +539,18 @@ vector<double> SimData::addError(double mag, double percentError, int iFilter)
     vector<double> observation; // observed magnitude and magnitude error
     observation = addFluxError(mag, fluxError, iFilter);
 	return observation;
-};
+};*/
 
-
+/*
 // add LSST u band error
 vector<double> SimData::addLSSTuError(double mag, int nVisits)
 {   
     int iFilter = 0;
-    double m5 = returnPointSource5sigmaDepth(uCm_,uMsky_,uTheta_,tVis_,
+    double m5 = calcPointSource5sigmaDepth(uCm_,uMsky_,uTheta_,tVis_,
                                                             ukm_,airMass_);
+
     vector<double> obsmag = getObservedLSSTMagnitude(mag, m5, uGamma_, nVisits, iFilter);
+    
 	return obsmag;
 };
 
@@ -478,7 +559,7 @@ vector<double> SimData::addLSSTuError(double mag, int nVisits)
 vector<double> SimData::addLSSTgError(double mag, int nVisits)
 {   
     int iFilter = 1;
-    double m5 = returnPointSource5sigmaDepth(gCm_,gMsky_,gTheta_,tVis_,
+    double m5 = calcPointSource5sigmaDepth(gCm_,gMsky_,gTheta_,tVis_,
                                                             gkm_,airMass_);
     vector<double> obsmag = getObservedLSSTMagnitude(mag, m5, gGamma_, nVisits, iFilter);
 	return obsmag;
@@ -489,7 +570,7 @@ vector<double> SimData::addLSSTgError(double mag, int nVisits)
 vector<double> SimData::addLSSTrError(double mag, int nVisits)
 {   
     int iFilter = 2;
-    double m5 = returnPointSource5sigmaDepth(rCm_,rMsky_,rTheta_,tVis_,
+    double m5 = calcPointSource5sigmaDepth(rCm_,rMsky_,rTheta_,tVis_,
                                                             rkm_,airMass_);
     vector<double> obsmag = getObservedLSSTMagnitude(mag, m5, rGamma_, nVisits, iFilter);
 	return obsmag;
@@ -500,7 +581,7 @@ vector<double> SimData::addLSSTrError(double mag, int nVisits)
 vector<double> SimData::addLSSTiError(double mag, int nVisits)
 {   
     int iFilter = 3;
-    double m5 = returnPointSource5sigmaDepth(iCm_,iMsky_,iTheta_,tVis_,
+    double m5 = calcPointSource5sigmaDepth(iCm_,iMsky_,iTheta_,tVis_,
                                                             ikm_,airMass_);
     vector<double> obsmag = getObservedLSSTMagnitude(mag, m5, iGamma_, nVisits, iFilter);
 	return obsmag;
@@ -511,7 +592,7 @@ vector<double> SimData::addLSSTiError(double mag, int nVisits)
 vector<double> SimData::addLSSTzError(double mag, int nVisits)
 {   
     int iFilter = 4;
-    double m5 = returnPointSource5sigmaDepth(zCm_,zMsky_,zTheta_,tVis_,
+    double m5 = calcPointSource5sigmaDepth(zCm_,zMsky_,zTheta_,tVis_,
                                                             zkm_,airMass_);
     vector<double> obsmag = getObservedLSSTMagnitude(mag, m5, zGamma_, nVisits, iFilter);
 	return obsmag;
@@ -522,11 +603,11 @@ vector<double> SimData::addLSSTzError(double mag, int nVisits)
 vector<double> SimData::addLSSTyError(double mag, int nVisits)
 {   
     int iFilter = 5;
-    double m5 = returnPointSource5sigmaDepth(yCm_,yMsky_,yTheta_,tVis_,
+    double m5 = calcPointSource5sigmaDepth(yCm_,yMsky_,yTheta_,tVis_,
                                                             ykm_,airMass_);
     vector<double> obsmag = getObservedLSSTMagnitude(mag, m5, yGamma_, nVisits, iFilter);
 	return obsmag;
-};
+};*/
 
 
 // simulate an SED
@@ -706,16 +787,32 @@ int SimData::returnSedId(double sedtype)
 };
 
 
-vector<double> SimData::addFluxError(double mag, double fluxError, int iFilter)
+vector<double> SimData::addFluxError(double flux, double fluxError, int iFilter)
 {
+    
     Filter filter((*filterArray_[iFilter]));
-	double flux = convertABMagToFluxMaggies(mag, filter); // flux in FREQ units
-	double fluxobs = flux+fluxError*rg_.Gaussian();       // flux in FREQ units
+    
+    // convert magnitude to flux
+	//double flux = convertABMagToFluxMaggies(mag, filter); // flux in FREQ units
+	//cout <<", flux="<< flux;
 	
+	// scatter flux according to flux error size
+	double fluxobs = flux + fluxError*rg_.Gaussian();       // flux in FREQ units
+	//if (fluxobs<0)
+	//    cout <<"     WARNING! negative flux "<< fluxobs << endl;
+	
+	// convert flux back to magnitude
 	double obsmag = convertFluxMaggiesToABMag(fluxobs, filter);
-	double fE = fluxError/flux;
-	double magError = convertFluxErrorToMagError(fE);// should be fluxError/flux?????
+	if (my_isnan(obsmag))
+	    cout <<"obs mag is nan, fluxobs = "<< fluxobs << endl;
+	//cout <<", obsmag="<< obsmag << endl;
 	
+	// convert flux error back to magnitude error
+	// don't actually need to do this because the flux error was probably calculated *from* the mag error
+	double fE = fluxError/flux;
+	double magError = convertFluxErrorToMagError(fE);
+	
+	// package ready to return
 	vector<double> observation;
 	observation.push_back(obsmag);
 	observation.push_back(magError);
@@ -724,77 +821,137 @@ vector<double> SimData::addFluxError(double mag, double fluxError, int iFilter)
 };
 
 
-vector<double> SimData::getObservedLSSTMagnitude(double mag, double m5, double gamma, int nVis, int iFilter)
+vector<double> SimData::getObservedLSSTMagnitude(double mag, double m5, double gamma, int nYear, int iFilter)
 {
     Filter filter((*filterArray_[iFilter]));
 
     // get random component of photometric error
     double x = returnX(mag, m5);
-    double sigSq = returnLSSTRandomErrorSq(x,gamma,nVis);
+    double sigSq = returnLSSTRandomErrorSq(x, gamma); // eqn 3.2 in Science Book (not /nVis)
     
     // total photometric error (in magnitudes)
-    double sigmaM = sqrt(sigSq + sigmaSys_*sigmaSys_);
-    
+    double sigmaM = sqrt(sigSq + sigmaSys_*sigmaSys_); // eqn 3.1 in Science Book
+
     // convert photometric error to flux units
     double flux = convertABMagToFluxMaggies(mag, filter);
 	double fluxError = convertMagErrorToFluxError(sigmaM, flux); 
-	
+
 	// add the error
-    
     vector<double> observation;
-    observation = addFluxError(mag, fluxError, iFilter);
+    observation = addFluxError(flux, fluxError, iFilter);
+    
+    // don't do this here - post-process elsewhere ????
+    // if very fainter than full visit depth m5 count as non-detection 
+    // (mag=99, error on mag=1-sigma detection limit, full visit depth)
+    double m5nvisit = m5single_[iFilter] + 1.25*log10(nYear*nVisYear_[iFilter]);
+    double m1sig = m5nvisit + 2.5*log10(5.);
+    
+    if (observation[0]>m1sig) {
+        observation[0]=99.;
+        observation[1]=m1sig;
+        }
+    
+    // also return the 1-sigma limiting mag
+    observation.push_back(m1sig);
     
 	return observation;
 };
 
 
-double SimData::returnLSSTRandomErrorSq(double x, double gamma, double nVis)
+/*double SimData::returnLSSTRandomErrorSq(double x, double gamma, double nVis)
 {
 
     double sigmaRandsq = (0.04 - gamma)*x + gamma*x*x;
     // in magnitudes^2
     return sigmaRandsq/nVis;
 
-};
+};*/
 
 
-double SimData::returnPointSource5sigmaDepth(double Cm, double msky,
+/*double SimData::calcPointSource5sigmaDepth(double Cm, double msky,
                                 double theta, double tvis, double km, double X)
 {
 
     double m5 = Cm + 0.50*(msky - 21) + 2.5*log10(0.7/theta) +
                                         1.25*log10(tvis/30) - km*(X - 1);
     return m5;                              
-};
+};*/
 
 
 void SimData::setLSSTPars()
 {
+    // Number of visits per year (Table 1, Ivezic et al 2008)
+    nVisYear_.push_back(6);
+    nVisYear_.push_back(8);
+    nVisYear_.push_back(18);
+    nVisYear_.push_back(18);
+    nVisYear_.push_back(16);
+    nVisYear_.push_back(16);
+
+    // Numbers below are from Table 3.2 in the Science Book
+
     // expected median sky zenith brightness at Cerro Pachon, assuming mean solar cycle
     // and three-day old Moon (mag/arcsec^2)
-    uMsky_ = 21.8; gMsky_ = 22.0; rMsky_ = 21.3; iMsky_ = 20.0; zMsky_ = 19.1; 
-    yMsky_ = 17.5;
+    Msky_.push_back(21.8);  // 22.9
+    Msky_.push_back(22.0);  // 22.3
+    Msky_.push_back(21.3);  // 21.2
+    Msky_.push_back(20.0);  // 20.5
+    Msky_.push_back(19.1);  // 19.6
+    Msky_.push_back(17.5);  // 18.6
+    //uMsky_ = 21.8; gMsky_ = 22.0; rMsky_ = 21.3; iMsky_ = 20.0; zMsky_ = 19.1; 
+    //yMsky_ = 17.5;
     
     // expected delivered median zenith seeing (arcsec). For larger airmass X seeing
     // is proportional to X^0.6
-	uTheta_ = 0.77; gTheta_ = 0.73; rTheta_ = 0.70; iTheta_ = 0.67; zTheta_ = 0.65; 
-	yTheta_ = 0.63;
+    Theta_.push_back(0.77); 
+    Theta_.push_back(0.73); 
+    Theta_.push_back(0.70); 
+    Theta_.push_back(0.67); 
+    Theta_.push_back(0.65); 
+	Theta_.push_back(0.63);
+	//uTheta_ = 0.77; gTheta_ = 0.73; rTheta_ = 0.70; iTheta_ = 0.67; zTheta_ = 0.65; 
+	//yTheta_ = 0.63;
 	
 	// band dependent parameter
-	uGamma_ = 0.037; gGamma_ = 0.038; rGamma_ = 0.039; iGamma_ = 0.039; zGamma_ = 0.040;
-	yGamma_ = 0.040;
+	Gamma_.push_back(0.037); 
+	Gamma_.push_back(0.038); 
+	Gamma_.push_back(0.039); 
+	Gamma_.push_back(0.039); 
+	Gamma_.push_back(0.040);
+	Gamma_.push_back(0.040);
+	//uGamma_ = 0.037; gGamma_ = 0.038; rGamma_ = 0.039; iGamma_ = 0.039; zGamma_ = 0.040;
+	//yGamma_ = 0.040;
 	
 	// band dependent parameter
-	uCm_ = 23.60; gCm_ = 24.57; rCm_ = 24.57; iCm_ = 24.47; zCm_ = 24.19; yCm_ = 23.74;
+	Cm_.push_back(23.60); // 22.92
+	Cm_.push_back(24.57); // 24.29
+	Cm_.push_back(24.57); // 24.33
+	Cm_.push_back(24.47); // 24.20
+	Cm_.push_back(24.19); // 24.07
+	Cm_.push_back(23.74); // 23.69
+	//uCm_ = 23.60; gCm_ = 24.57; rCm_ = 24.57; iCm_ = 24.47; zCm_ = 24.19; yCm_ = 23.74;
 	
 	// adopted atmospheric extinction
-	ukm_ = 0.48; gkm_ = 0.21; rkm_ = 0.1; ikm_ = 0.07; zkm_ = 0.06; ykm_ = 0.06;
+	km_.push_back(0.48); // 0.451
+	km_.push_back(0.21); // 0.163
+	km_.push_back(0.1);  // 0.087
+	km_.push_back(0.07); // 0.065
+	km_.push_back(0.06); // 0.043
+	km_.push_back(0.06); // 0.138
+	//ukm_ = 0.48; gkm_ = 0.21; rkm_ = 0.1; ikm_ = 0.07; zkm_ = 0.06; ykm_ = 0.06;
 	
 	// exposure time, 2 back-to-back 15s exposures
-	tVis_ = 2*15;
+	tVis_ = 2.*15.;
 	
 	// median air mass
 	airMass_ = 1.2;
+	
+	// pre-calculate SINGLE VISIT m5 here
+	int nvis = 1;
+	for (int i=0; i<Cm_.size(); i++) {
+	    double m5 = calcPointSource5sigmaDepth(Cm_[i], Msky_[i], Theta_[i], nvis, km_[i], airMass_);
+	    m5single_.push_back(m5);
+	    }
 
     // systematic error
     sigmaSys_ = 0.0025;

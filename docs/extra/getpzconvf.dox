@@ -1,0 +1,36 @@
+/*!
+\page getpzconvf Compute the photo-z convolution function 
+
+<CODE> getpzconvf </CODE>
+
+Compute the photo-z convolution function given the photo-z - true-z distribution
+within a given redshift range given in a *_subinfo.txt file (produced by the     
+program <CODE>subfromfull</CODE>)                                   
+
+Use option -O to supply the observed catalog(s) to read in (up to 2).
+
+Use option -Z to supply *_subinfo.txt file containing the redshift range within
+which to compute the photo-z convolution function.
+
+Use option -z to supply the names of the columns to read the photo-z and true-z
+from, in that order, separated by commas.
+
+Use option -o to specify the name of the file the photo-z convolution function 
+will be written to
+                                  
+Usage example:                  
+
+<CODE> $ getpzconvf -O observed_catalog.fits -z sub11_subinfo.txt
+-o pzconvfunc.txt -z zp,zs </CODE> 
+
+
+<CODE>Usage: getpzconvf [...options...] 
+opt |       argument      | description
+----|---------------------|---------------------------------------------
+-O  | obs_cat_file        | FITS file containing observed catalog(s) (up to 2 separated by commas) <BR>
+-o  | out_file            | file to write photo-z convolution function to       <BR> 
+-Z  | z_range_file        | *_subinfo.txt file to read in (redshift range)      <BR>         
+-z  |obs_z_col,true_z_col | columns to read photo-z and true z from             <BR> 
+</CODE> 
+
+*/

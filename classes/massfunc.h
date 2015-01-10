@@ -48,7 +48,7 @@ protected:
 };
 
 
-/** MassFunc classe
+/** MassFunc class
   *  
   * Class for calculating the (dark matter) mass function of universe 
   * @todo Update to take different power spectrum class PkAltNorm
@@ -73,29 +73,30 @@ public:
 
     /** Return mass function value at mass m 
         @param m    mass in solar masses?                                     */
-	virtual double operator() (double m) {  
+	virtual double operator() (double m) const {  
 				if (TypeLog_)
-					return (rhobar0()/m)*fST(m)*abs(dlnsigdlnm(m,lmstep_))*log(10);
+					return (rhobar0()/m)*fST(m)*fabs(dlnsigdlnm(m,lmstep_))*log(10);
 				else
-					return (rhobar0()/(m*m))*fST(m)*abs(dlnsigdlnm(m,lmstep_))*log(10);    };
+					return (rhobar0()/(m*m))*fST(m)*fabs(dlnsigdlnm(m,lmstep_))*log(10);
+				};
 
 	/** Return variance in sphere of radius @param R
 	    @param R    radius of sphere in Mpc?                                  */		
-	double FindVar(double R);
+	double FindVar(double R) const;
 
 	/** Sheth-Torman function 
 	    @param m    mass in solar masses?                                     */
-	double fST(double mv);
+	double fST(double mv) const;
 
 	/** Mass variance as a function of mass
 	    @param mv   mass in solar masses?                                     */
-	double sigsqM(double mv);
+	double sigsqM(double mv) const;
 
 	/** Return \f$ d\log\sigma / d\logm $/f: log of mass variance differentiated
 	    with respect to the log of the mass
 	    @param mv       mass in soloar masses?
 	    @param lmstep   step in log mass                                      */
-	double dlnsigdlnm(double mv, double lmstep);
+	double dlnsigdlnm(double mv, double lmstep) const;
 
 	/** Set the step in the log of the mass           
 	    @param lmstep   step size in log of the mass                          */
@@ -122,7 +123,7 @@ public:
 		 }
 
 	/** Return mean matter density today (z=0)                                */
-	inline double rhobar0() { return rho_crit()*Om_; }
+	inline double rhobar0() const { return rho_crit()*Om_; };
 
 	/** Write out the power spectrum (for debugging)
 	    @param outfile  file name to output power spectrum to                 */
@@ -155,7 +156,7 @@ public:
 	static inline double TCMB() { return T_CMB_K; }
 	
 protected:
-	SimpleUniverse& su_;	    /**< Holds cosmological parameters/calculations   */
+	SimpleUniverse& su_;	/**< Holds cosmological parameters/calculations   */
 	PkSpecCalc& pk_;	    /**< Holds power spectrum                         */
 	double zref_;		    /**< redshift of mass function                    */
 	bool TypeLog_; 		    /**< if true return dn/dlogm rather than dn/dm    */

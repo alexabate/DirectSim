@@ -24,7 +24,8 @@ Cat2Grid::Cat2Grid(SwFitsDataTable& dt, SimpleUniverse& su, RandomGenerator& rg,
 	
 	DVList dvl;
 	dvl = dt.Info();
-	mean_overdensity_ = dvl["MeanOverDensity"];
+	dvl.Print();
+	mean_overdensity_ = dvl["MEANOD"];
 	cout << "    Mean over-density of fudged SimLSS grid = "<< mean_overdensity_ <<endl;
 	
 	DoDebug_ = false; // flag to do debug
@@ -716,7 +717,7 @@ void Cat2Grid::GalGrid(double SkyArea)
 {
 	cout <<endl<<"    Cat2Grid::GalGrid()"<<endl; 
 	Timer tm("GalGrid");
-	// Initialise random generator so specified seed
+	// Initialise random generator to specified seed
 	long seed=1;
 	rg_.SetSeed(seed);
 
@@ -927,9 +928,12 @@ void Cat2Grid::AddToCell(double x, double y, double z,double phi)
 		ngals_(indexx,indexy,indexz)++;
 		if (sfcompute_) { // NOTE weight does not have to be 1/SF
 			wngals_(indexx,indexy,indexz)+=1/phi;
-			ngw_+=1/phi; }
-		else		// AND if cat has no SF, wngals_=ngals_
+			ngw_+=1/phi; 
+			}
+		else {// AND if cat has no SF, wngals_=ngals_
 			wngals_(indexx,indexy,indexz)++;
+			ngw_++; // want to count this?
+			};
 		ng_++;
 		}
 	else
@@ -954,18 +958,21 @@ void Cat2Grid::RandomGrid(double nc, bool SaveArr)
 	cout <<endl<<"    Cat2Grid::RandomGrid()"<<endl;
 	Timer tm("RandomGrid");
 	
+	// Selection function status
 	cout <<"    Random catalog mean density = "<< nc <<endl;
 	if (!sfcompute_)
 		cout <<"    Selection function should be CONSTANT with z, check this ..."<<endl;
 	else
 		cout <<"    Check selection function .... "<<endl;
-	cout <<"    Only filling pixels with phi <= "<< SkyArea_ <<endl;
 	{
 	int nz=5;
 	double dz=(zsmax_-zsmin_)/(nz-1);
 	for (int i=0;i<nz;i++)
 		cout <<"    z="<< zsmin_+dz*i <<", phi="<< (*selfuncp_)(zsmin_+dz*i) <<endl;
 	}
+	
+	
+	cout <<"    Only filling pixels with phi <= "<< SkyArea_ <<endl;
 		
 	//	throw ParmError("ERROR! selection function has NOT been computed");
 		

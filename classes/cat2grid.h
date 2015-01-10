@@ -242,9 +242,13 @@ public:
 		double normm=(double)n_obs_pixels_/ng_;
 		ngals_ *= normm;
 		double normw = (double)n_obs_pixels_/ngw_;
+		//cout << wngals_ << endl << endl;
 		wngals_*= normw;
-		cout <<"     Normalising n-gals array by "<< normm <<endl;
-		cout <<"     Normalising weighted n-gals array by "<< normw <<endl; };
+		//cout << wngals_ << endl << endl;
+		cout <<"     Normalising n-gals array by "<< normm << endl; 
+		cout <<"     Normalising weighted n-gals array by "<< normw <<endl; 
+		cout <<"     (number of observed pixels / number of gals in array)"<< endl;
+		};
 	
 	/** Normalise galaxy random grid                                          */
 	void NormRArray(){ 		
@@ -312,7 +316,7 @@ public:
 		  fos_.WriteKey("DZ",cellsize_," Mpc");
 		  fos_.WriteKey("ZREF",zref_," reference redshift");	
 		  fos_.WriteKey("ThRAD",SkyArea_," radius of circular sky area");
-		  fos_.WriteKey("MeanOverDensity",mean_overdensity_," mean dens SimLSS delta-fudge");
+		  fos_.WriteKey("MeanOD",mean_overdensity_," mean dens SimLSS delta-fudge");
 		  fos_.WriteKey("InCat",IncatName," original catalog");
 		  fos_.WriteKey("NGALCAT",ngall_," N gals in InCat");
 		  fos_.WriteKey("NOBSPIX",n_obs_pixels_," original catalog");

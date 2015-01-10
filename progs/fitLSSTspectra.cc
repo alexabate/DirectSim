@@ -1,6 +1,4 @@
-// -*- LSST-C++ -*-
-#include "machdefs.h"
-#include "sopnamsp.h"
+
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -9,6 +7,8 @@
 
 // sophya libraries
 //#include "histinit.h"
+#include "machdefs.h"
+#include "sopnamsp.h"
 #include "fiosinit.h"
 #include "mydefrg.h"
 
@@ -22,12 +22,6 @@
 #include "simdata.h"
 
 
-#define PI 3.141592
-/*
-
-
-
-*/
 void usage(void);
 void usage(void) {
 	cout << endl<<" Usage: fitLSSTspectra [...options...]" << endl<<endl;
@@ -147,7 +141,7 @@ int main(int narg, char* arg[]) {
         int iElement;
         findMinimumPosition(fitValues, iElement);
         bestFitSpectra.push_back(iElement);
-        cout <<", best fit CWWK spectrum: "<<iElement <<endl;
+        cout <<", best fit CWWK spectrum: "<< iElement <<endl;
         }
     outp.close();
     cout << endl;   

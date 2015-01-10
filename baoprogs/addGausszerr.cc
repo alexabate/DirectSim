@@ -109,7 +109,6 @@ int main(int narg, char *arg[]) {
 	SophyaInit();
 	FitsIOServerInit();
   
-	cout << " ==== setting defaults ===="<<endl;
 	string InCat, OutCat;
 	double PZerr = 0.03;
 	bool ADD2Z = false, RadialZ = false;
@@ -119,7 +118,6 @@ int main(int narg, char *arg[]) {
 	string ZSCol = "zs"; // by default SPECTRO redshift column labelled "zs" is read in
 
 	//--- decoding command line arguments 
-	cout << " ==== decoding command line arguments ===="<<endl;
 	char c;
 	while((c = getopt(narg,arg,"hrzC:O:E:Z:c:")) != -1) {
 	    switch (c) {
