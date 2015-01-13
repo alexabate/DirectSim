@@ -334,7 +334,7 @@ int main(int narg, char* arg[]) {
                 (*debug_out[0]) << mags[j] <<"  ";
             for (int j=0; j<lsst_filters.size(); j++) 
                 (*debug_out[0]) << 0.0 <<"  ";  
-            (*debug_out[0]) << z << endl;
+            (*debug_out[0]) << z << "  " << float(bf) << endl;
             }
             
             

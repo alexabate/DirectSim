@@ -225,7 +225,7 @@ protected:
   *          SED(lambda/(1+z))*Filter(lambda)*IGMTrans(lambda)*lambda
   *
   */
-class SEDzFilterProdIGM : public GenericFunc
+class SEDzFilterProdIGM : public ClassFunc1D
 {
 public:
     /** Constructor 
@@ -233,7 +233,7 @@ public:
         @param g    filter
         @param t    IGM transmission (Observer Frame)
         @param z    redshift of SED                                           */
-    SEDzFilterProdIGM(GenericFunc& f, GenericFunc& g, GenericFunc& t, double z=0.)
+    SEDzFilterProdIGM(ClassFunc1D& f, ClassFunc1D& g, ClassFunc1D& t, double z=0.)
     : sed_(f) , filt_(g) , trans_(t) , z_(z) {  };
     
     /** Returns redshifted SED multiplied by the filter transmission, IGM transmission
@@ -246,9 +246,9 @@ public:
         }  
 
 protected:
-  GenericFunc& sed_; 
-  GenericFunc& filt_; 
-  GenericFunc& trans_;
+  ClassFunc1D& sed_; 
+  ClassFunc1D& filt_; 
+  ClassFunc1D& trans_;
   double z_;
 };
 
