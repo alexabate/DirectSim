@@ -623,7 +623,9 @@ public:
         };
     
     
-    /** Return index of SED with closest colors to those input */
+    /** Return index of SED with closest colors to those input. The SEDs are zero indexed and correspond
+        to the index of the SED in sedarray_
+        @param colors    vector of colors of a galaxy, must have size() = nfilt_-1 */
     int bestSED(vector<double> colors) {
         
         // first check size of input colors
@@ -649,7 +651,7 @@ public:
                 }
             }
         
-        if (closest_sed<0 || closest_sed>nsed_+1)
+        if (closest_sed<0 || closest_sed>=nsed_)
             throw ParmError("ERROR! failed to find SED with closest colors");
         
         return closest_sed;

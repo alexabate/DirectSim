@@ -5,6 +5,7 @@
 #include <string>
 #include <math.h>
 
+
 #include <typeinfo>
 #include "timing.h"
 
@@ -303,7 +304,9 @@ int main(int narg, char* arg[]) {
         colors.push_back(I-Z);
         
         //tmsm.Split();
-        int bf = sedLibColors.bestSED(colors);
+        int bf = sedLibColors.bestSED(colors); // this is zero indexed
+        // index corresponds to index of SED in sedArray (zero=first entry)
+        
         //tmsm.Split();
         //sed_time += tmsm.PartialElapsedTimems();
         

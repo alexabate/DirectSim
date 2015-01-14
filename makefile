@@ -635,17 +635,18 @@ $(OBJ)/simulateLSSTobsFromTruth.o : $(PROGS)/simulateLSSTobsFromTruth.cc $(LIBH)
 	
 ###################### INCOMPLETE PROGRAMS ####################################
 
-
+# Calculate magnitudes for IGM lines of sight
 $(EXE)/lsstSbIgmColors : $(OBJ)/lsstSbIgmColors.o $(LIBO)
 	mkdir -p $(EXE)
 	mkdir -p $(ROOTOUT)
 	mkdir -p $(TESTS)
-	$(CXXLINK) -o $(EXE)/lsstSbIgmColors $(OBJ)/lsstSbIgmColors.o \
-	$(SOPHYAEXTSLBLIST) $(MYLIB) $(ROOTLIB) $(LIBO)
-
+	$(CXXLINK) -o $(EXE)/lsstSbIgmColors $(OBJ)/lsstSbIgmColors.o $(LIBO) \
+	$(SOPHYAEXTSLBLIST) $(MYLIB) $(ROOTLIB)  
+	
 $(OBJ)/lsstSbIgmColors.o : $(PROGS)/lsstSbIgmColors.cc $(LIBH)
 	mkdir -p $(OBJ)
 	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/lsstSbIgmColors.o $(PROGS)/lsstSbIgmColors.cc 
+
 
 # ADD GAUSSIAN Z ERROR TO CATALOG
 $(EXE)/addGausszerr : $(OBJ)/addGausszerr.o $(LIBO)

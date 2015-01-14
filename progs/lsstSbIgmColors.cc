@@ -10,8 +10,15 @@
 #include "timing.h"
 
 #include "array.h"
+#include "hisprof.h"
+#include "histerr.h"
+#include "histinit.h"
 #include "fiosinit.h"
+#include "fitsioserver.h"
+#include "fftwserver.h"
 #include "mydefrg.h"
+#include "resusage.h"
+#include "timestamp.h"
 
 
 #include "constcosmo.h"
@@ -19,11 +26,36 @@
 #include "simdata.h"
 #include "sedfilter.h"
 
+// AA: updated old Sophya version's GenericFunc to ClassFunc1D
+
+// @todo's below
+// AA: put the below function into the igm.h, igm.cc source files
 vector<string> returnFileList(string fname);
-double computeColorIGM(double z, GenericFunc& sed, Filter& filterX, Filter& filterY, GenericFunc& transmission, double lmin, double lmax);
-//double restFrameFluxIGM(GenericFunc &sed, Filter& filter, double zs, GenericFunc& transmission, double lmin, double lmax);
-double restFrameFluxIGM(GenericFunc& sed, Filter& filter, double zs, GenericFunc& transmission, double lmin, double lmax);
+// AA: add these two functions as methods in PhotometryCalcs class
+double computeColorIGM(double z, ClassFunc1D& sed, Filter& filterX, Filter& filterY, ClassFunc1D& transmission, double lmin, double lmax);
+//double restFrameFluxIGM(ClassFunc1D &sed, Filter& filter, double zs, ClassFunc1D& transmission, double lmin, double lmax);
+double restFrameFluxIGM(ClassFunc1D& sed, Filter& filter, double zs, ClassFunc1D& transmission, double lmin, double lmax);
+// AA: then just can use the getFilterZeroPointFlux method in PhotometryCalcs instead of this
 double getFilterZeroPointFlux(Filter& filter, double lmin, double lmax);
+
+
+// AA: made a usage function
+void usage(void);
+void usage(void) {
+	cout << endl<<" Usage: lsstSbIgmColors [...options...]" << endl<<endl;
+	
+    cout <<"  Calculates observed magnitudes for a galaxy at the redshift supplied (if not supplied  "<<endl;
+	cout <<"  default is z=2.45) with and with absorption by a series of IGM lines of sight. For     "<<endl;
+	cout <<"  galaxies with IGM absorption, magnitudes are calculated with and without LSST          "<<endl;
+	cout <<"  photometric errors added.                                                              "<<endl;
+	cout << endl;
+	
+	cout << " -o: OUTLOC: write files to location OUTLOC                                              "<<endl;
+	cout << " -l: FILTLOC,SEDLOC,TRANSLOC: set locations of filters, SEDs and IGM transmissions       "<<endl;
+	cout << " -z: ZSOURCE: redshift of source galaxy                                                  "<<endl; 
+	cout << " -n: NLINES: number of IGM lines of sight to process                                     "<<endl;
+	cout << endl;
+    };
 
 
 int main(int narg, char* arg[])
@@ -37,6 +69,56 @@ int main(int narg, char* arg[])
     FitsIOServerInit();
     InitTim();
     cout<<endl<<endl;
+    
+    //--- decoding command line arguments 
+    string outloc;
+    string FILTLOC="./filters/";
+    string SEDLOC="./SEDs/";
+    string TRANSLOC="./transmission/";
+    string locs;
+    int nz = 400;    //number of lines of sight 
+    double z = 2.45; //constant redshift 
+
+	char c;
+    while((c = getopt(narg,arg,"ho:l:z:n:")) != -1) {
+	    switch (c)  {
+	        case 'o' :
+	            outloc = optarg;
+	            break;
+	        case 'l' : {
+	            locs = optarg;
+	            string delim=",";
+	            vector<string> results;
+	            stringSplit(locs, delim, results);
+	            FILTLOC=results[0];
+	            SEDLOC=results[1];
+	            TRANSLOC=results[2];
+	            }
+	            break;
+	        case 'z' :
+	            sscanf(optarg,"%lf",&z);
+	            break;
+	        case 'n' :
+	            sscanf(optarg,"%d",&nz);
+	            break;
+	        case 'h' :
+		        default :
+		    usage(); return -1;
+		    }
+	    }
+	// AA: @note could add option of SED list to read in (set sedFile)
+	// AA: @note could add option of number of years of LSST observation (set nYear)
+	// AA: @note could add option to set different i band mag (set imag_fixed)
+	    
+    //-- end command line arguments
+    cout <<"     Writing data to files located at "<< outloc <<endl;
+    cout <<"     Filters located at "<< FILTLOC << endl;
+    cout <<"     SEDs located at "<< SEDLOC << endl;
+    cout <<"     Transmissions located at "<< TRANSLOC <<endl;
+    cout <<"     Redshift of source galaxies "<< z <<endl;
+    cout <<"     Calculating using "<< nz <<" IGM lines of sight"<<endl;
+    cout << endl;
+    //-- end command line arguments
   
   int rc = 1;  
   try {  // exception handling try bloc at top level
@@ -51,26 +133,50 @@ int main(int narg, char* arg[])
     //double lmin=3000.e-10, lmax=11000.e-10;
     double lmin = 5e-8, lmax = 2.5e-6;
 	
+	
     // Set environment variables
-    putenv("FILTLOC=/home/lidenscheng/MK_DirectSim/filters/");
-
-    putenv("SEDLOC=/home/lidenscheng/MK_DirectSim/SEDs/");
-//    putenv("SEDLOC=/home/lidenscheng/bpz-1.99.3/SED/LSST/");
-
-    putenv("TRANSLOC=/home/lidenscheng/MK_DirectSim/transmission/");
-//    putenv("TRANSLOC=/home/lidenscheng/MK_DirectSim/meanIGMTransmissions/");
+    // AA: removed hard coding so others can use
+    string tmp1,tmp2,tmp3;
+    char *c1,*c2,*c3;
+    
+    tmp1 = "FILTLOC=" + FILTLOC; 
+    c1 = &tmp1[0];
+    putenv(c1);
+    
+    tmp2 = "SEDLOC=" + SEDLOC; 
+    c2 = &tmp2[0];
+    putenv(c2);
+    
+    tmp3 = "TRANSLOC=" + TRANSLOC; 
+    c3 = &tmp3[0];
+    putenv(c3);
+    //putenv("FILTLOC=/home/lidenscheng/MK_DirectSim/filters/");
+    //putenv("SEDLOC=/home/lidenscheng/MK_DirectSim/SEDs/");
+    //putenv("SEDLOC=/home/lidenscheng/bpz-1.99.3/SED/LSST/");
+    //putenv("TRANSLOC=/home/lidenscheng/MK_DirectSim/transmission/");
+    //putenv("TRANSLOC=/home/lidenscheng/MK_DirectSim/meanIGMTransmissions/");
+	
 	
     // Set output files
+    // AA: removed hard coding, made vector of strings to prevent code copy
+    // AA: not sure why magnitudes and errors were in different files?
+    // AA: can further improve this by reading first part of filename from SED list read in
+    stringstream ss;
+    ss << z;
+    vector<string> outfiles;
+    outfiles.push_back(outloc + "SB3_B2004a_" + ss.str() + "z_Mags.txt");
+    outfiles.push_back(outloc + "SB2_B2004a_" + ss.str() + "z_Mags.txt");
+    outfiles.push_back(outloc + "ssp_25Myr_z008_" + ss.str() + "z_Mags.txt");
+    outfiles.push_back(outloc + "ssp_5Myr_z008_" + ss.str() + "z_Mags.txt");
+    //string outfile =  outloc + "SB3_B2004a_z008_2.45z_Mags.txt";
+    //string outfile3 = outloc + "SB2_B2004a_z008_2.45z_Mags.txt";
+    //string outfile5 = outloc + "ssp_25Myr_z008_2.45z_Mags.txt";
+    //string outfile7 = outloc + "ssp_5Myr_z008_2.45z_Mags.txt";
 
-    string outfile = "/home/lidenscheng/MK_DirectSim/testfiles/StarburstLOS10Yr/SB3_B2004a_z008_2.45z_Mags.txt";
-    string outfile3 = "/home/lidenscheng/MK_DirectSim/testfiles/StarburstLOS10Yr/SB2_B2004a_z008_2.45z_Mags.txt";
-    string outfile5 = "/home/lidenscheng/MK_DirectSim/testfiles/StarburstLOS10Yr/ssp_25Myr_z008_2.45z_Mags.txt";
-    string outfile7 = "/home/lidenscheng/MK_DirectSim/testfiles/StarburstLOS10Yr/ssp_5Myr_z008_2.45z_Mags.txt";
-
-    string outfile2= "/home/lidenscheng/MK_DirectSim/testfiles/StarburstLOS10Yr/SB3_B2004a_z008_2.45z_Errors.txt";
-    string outfile4= "/home/lidenscheng/MK_DirectSim/testfiles/StarburstLOS10Yr/SB2_B2004a_z008_2.45z_Errors.txt";
-    string outfile6= "/home/lidenscheng/MK_DirectSim/testfiles/StarburstLOS10Yr/ssp_25Myr_z008_2.45z_Errors.txt";
-    string outfile8= "/home/lidenscheng/MK_DirectSim/testfiles/StarburstLOS10Yr/ssp_5Myr_z008_2.45z_Errors.txt";
+    //string outfile2= outloc + "SB3_B2004a_z008_2.45z_Errors.txt";
+    //string outfile4= outloc + "SB2_B2004a_z008_2.45z_Errors.txt";
+    //string outfile6= outloc + "ssp_25Myr_z008_2.45z_Errors.txt";
+    //string outfile8= outloc + "ssp_5Myr_z008_2.45z_Errors.txt";
 
 //    string redOutfile = "/home/lidenscheng/MK_DirectSim/testfiles/lsstColorsExtinction.txt";
 
@@ -79,13 +185,13 @@ int main(int narg, char* arg[])
     int nz=16;
     double dz=(zmax-zmin)/(nz-1);
 */
-
-      int nz=400; //number of lines of sight 
-      double z=2.45; //constant redshift 
+      // AA: removed hard coding
+      //int nz=400; //number of lines of sight 
+      //double z=2.45; //constant redshift 
 
     // Which SED to examine (0-3 for SB3_B2004a, SB2_B2004a, ssp_25Myr_z008, ssp_5Myr_z008)
 
-    int iSb = 0;
+//    int iSb = 0;
 //      int iSb; 
 //      int nSb= 6; 
 
@@ -97,9 +203,9 @@ int main(int narg, char* arg[])
     string filterFile = "LSST.filters";
     ReadFilterList lsstFilters(filterFile);
     lsstFilters.readFilters(lmin,lmax);
-    vector<Filter*> filterArray=lsstFilters.getFilterArray();
-    int nFilters=lsstFilters.getNTot();
-    cout <<"     "<<nFilters<<" LSST filters read in "<<endl;
+    vector<Filter*> filterArray = lsstFilters.getFilterArray();
+    int nFilters = lsstFilters.getNTot();
+    cout <<"     "<< nFilters <<" LSST filters read in "<<endl;
 
     // LSST filter indices
     int uLSST = 0;
@@ -125,11 +231,29 @@ int main(int narg, char* arg[])
     int nsed=cwwSEDs.getNSed();
     cout <<"     Number of original SEDs = "<<nsed<<endl;
     cout << endl;
+    
+    
+    
+    /*****************************************************************
+    *     Read in mean transmission files or LOS transmission files  *
+    ******************************************************************/
+
+    string transFile = "Transmission_" + ss.str() + "z.list";
+    vector<string> transFileList = returnFileList(transFile);
+    vector<SInterp1D> transIgm;
+
+    for(int i=0; i<transFileList.size()-1; i++) {
+        SInterp1D trans;
+        trans.ReadXYFromFile(transFileList[i], lmin, lmax, 1024, 0, false);
+        transIgm.push_back(trans);
+        }
 
 
+// AA: vv THIS SECTION CALCS NOT ACTUALLY USED
     /*************************************
     *     Calculate Flux (No IGM)        *
     *************************************/
+    int iSb = 0;
 
     PhotometryCalcs photometryCalcs(lmin,lmax);
 
@@ -194,20 +318,7 @@ int main(int narg, char* arg[])
 
 
 
-    /*************************************
-    *     Read in mean transmission files or LOS transmission files  *
-    *************************************/
 
-    string transFile = "Transmission_2.45z.list";
-//    string transFile = "Transmission.list";
-    vector<string> transFileList= returnFileList(transFile);
-    vector<SInterp1D> transIgm;
-
-    for(int i=0; i<transFileList.size()-1; i++) {
-        SInterp1D trans;
-        trans.ReadXYFromFile(transFileList[i], lmin, lmax, 1024, 0, false);
-        transIgm.push_back(trans);
-    }
 
 
 
@@ -277,6 +388,7 @@ int main(int narg, char* arg[])
         yMagR(i) = photometryCalcs.convertFluxMaggiesToABMag(yFluxR(i), 
                                 (*filterArray[yLSST]));
     }
+// AA: ^^THIS SECTION CALCS NOT ACTUALLY USED ----- END
 
 
     /*************************************
@@ -289,114 +401,145 @@ int main(int narg, char* arg[])
     TVector<r_8> Cug(nz), Cgr(nz), Cri(nz), Ciz(nz), Czy(nz), Cyu(nz);
     TVector<r_8> CugR(nz), CgrR(nz), CriR(nz), CizR(nz), CzyR(nz), CyuR(nz);
 
-    int nYear = 10;
+    int nYear = 10; // could as as prog arg
 //    int nYear = 1;
     
+    // AA: No longer needs these numbers (they are coded within SimData class)
     // Number of visits per year (Table 1, Ivezic et al 2008)
-    int uVisitsPerYear = 6;
-    int gVisitsPerYear = 8;
-    int rVisitsPerYear = 18;
-    int iVisitsPerYear = 18;
-    int zVisitsPerYear = 16;
-    int yVisitsPerYear = 16;
+    //int uVisitsPerYear = 6;
+    //int gVisitsPerYear = 8;
+    //int rVisitsPerYear = 18;
+    //int iVisitsPerYear = 18;
+    //int zVisitsPerYear = 16;
+    //int yVisitsPerYear = 16;
 
     // total number of visits
-    int uVisits = uVisitsPerYear*nYear;
-    int gVisits = gVisitsPerYear*nYear;
-    int rVisits = rVisitsPerYear*nYear;
-    int iVisits = iVisitsPerYear*nYear;
-    int zVisits = zVisitsPerYear*nYear;
-    int yVisits = yVisitsPerYear*nYear;
+    //int uVisits = uVisitsPerYear*nYear;
+    //int gVisits = gVisitsPerYear*nYear;
+    //int rVisits = rVisitsPerYear*nYear;
+    //int iVisits = iVisitsPerYear*nYear;
+    //int zVisits = zVisitsPerYear*nYear;
+    //int yVisits = yVisitsPerYear*nYear;
 
     SimpleUniverse su;
     RandomGenerator rg;
+    
+    // AA: code m_i=24. so we know what it is
+    double imag_fixed = 24.; // can make this prog arg
 
     // Initialize class that simulates magnitude errors
     SimData simData(sedArray, filterArray, su, rg);
 
-    iSb=0; 
 
-    ifstream inp, inp2;
-    ofstream outp, outp2;
-    inp.open(outfile.c_str(), ifstream::in);
-    inp2.open(outfile2.c_str(), ifstream::in);
-    inp.close();
-    inp2.close();
-    if(inp.fail() && inp2.fail()) {
+    // AA: add loop over SEDs to save code copying
+    for (int iSb=0; iSb<sedArray.size(); iSb++) {
+    
+        //iSb=0; 
 
-        inp.clear(ios::failbit);
-        inp2.clear(ios::failbit);
-        cout << "Writing to file ..." << outfile.c_str() << endl;
-        cout << "Writing to file ..." << outfile2.c_str() << endl;
-        outp.open(outfile.c_str(), ofstream::out);
-        outp2.open(outfile2.c_str(), ofstream::out);
+    //ifstream inp, inp2;
+    //ofstream outp, outp2;
+    //inp.open(outfile.c_str(), ifstream::in);
+    //inp2.open(outfile2.c_str(), ifstream::in);
+    //inp.close();
+    //inp2.close();
+    //if(inp.fail() && inp2.fail()) {
 
-//Faking magnitudes (no IGM and IGM) by using colors. Manually set m_i=24. 
+    //    inp.clear(ios::failbit);
+    //    inp2.clear(ios::failbit);
+    //    cout << "Writing to file ..." << outfile.c_str() << endl;
+    //    cout << "Writing to file ..." << outfile2.c_str() << endl;
+    //     outp.open(outfile.c_str(), ofstream::out);
+    //    outp2.open(outfile2.c_str(), ofstream::out);
+    
+    
+        ifstream inp;
+        ofstream outp;
+        inp.open(outfiles[iSb].c_str(), ifstream::in);
+        inp.close();
+        if(inp.fail()) {
+            inp.clear(ios::failbit);
+            cout << "Writing to file ..." << outfiles[iSb].c_str() << endl;
+            outp.open(outfiles[iSb].c_str(), ofstream::out);
+
+            // Faking magnitudes (no IGM and IGM) by using colors. Manually set m_i=24. 
 		
-	    for (int i=0;i<nz;i++) {		
+	        for (int i=0; i<nz; i++) {		
 
 //            double z=zmin+i*dz;
 
-		// mag in filter u - mag in filter g 
-		Cug(i)=photometryCalcs.CompColor(z,(*sedArray[iSb]),
-								(*filterArray[uLSST]),(*filterArray[gLSST]));
+		        // mag in filter u - mag in filter g 
+		        Cug(i) = photometryCalcs.CompColor(z,(*sedArray[iSb]),
+								(*filterArray[uLSST]), (*filterArray[gLSST]));
 		
-		// mag in filter g - mag in filter r 
-		Cgr(i)=photometryCalcs.CompColor(z,(*sedArray[iSb]),
-								(*filterArray[gLSST]),(*filterArray[rLSST]));
-		// mag in filter r - mag in filter i 
-		Cri(i)=photometryCalcs.CompColor(z,(*sedArray[iSb]),
-								(*filterArray[rLSST]),(*filterArray[iLSST]));
-		// mag in filter i - mag in filter z 
-		Ciz(i)=photometryCalcs.CompColor(z,(*sedArray[iSb]),
-								(*filterArray[iLSST]),(*filterArray[zLSST]));
-		// mag in filter z - mag in filter y 
-		Czy(i)=photometryCalcs.CompColor(z,(*sedArray[iSb]),
-								(*filterArray[zLSST]),(*filterArray[yLSST]));
+		        // mag in filter g - mag in filter r 
+		        Cgr(i) = photometryCalcs.CompColor(z,(*sedArray[iSb]),
+								(*filterArray[gLSST]), (*filterArray[rLSST]));
+		
+		        // mag in filter r - mag in filter i 
+		        Cri(i)=photometryCalcs.CompColor(z,(*sedArray[iSb]),
+								(*filterArray[rLSST]), (*filterArray[iLSST]));
+								
+		        // mag in filter i - mag in filter z 
+		        Ciz(i) = photometryCalcs.CompColor(z,(*sedArray[iSb]),
+								(*filterArray[iLSST]), (*filterArray[zLSST]));
+		
+		        // mag in filter z - mag in filter y 
+		        Czy(i) = photometryCalcs.CompColor(z,(*sedArray[iSb]),
+								(*filterArray[zLSST]), (*filterArray[yLSST]));
 
-		// mag in filter y - mag in filter z 
-		Cyu(i)=photometryCalcs.CompColor(z,(*sedArray[iSb]),
-								(*filterArray[yLSST]),(*filterArray[uLSST]));
-	m_r= Cri(i)+24.0;
-	m_i= 24.0;
-	m_z= 24.0-Ciz(i);
-	m_y= m_z-Czy(i);
-	m_g= Cgr(i)+m_r;
-	m_u= Cug(i)+m_g; 
+		        // mag in filter y - mag in filter z 
+		        Cyu(i) = photometryCalcs.CompColor(z,(*sedArray[iSb]),
+								(*filterArray[yLSST]), (*filterArray[uLSST]));
+								
+			    // no IGM mags
+	            m_r = Cri(i) + imag_fixed;
+	            m_i = imag_fixed;
+	            m_z = imag_fixed - Ciz(i);
+	            m_y = m_z - Czy(i);
+	            m_g = Cgr(i) + m_r;
+	            m_u = Cug(i)+m_g; 
 
 
-        // Colors with IGM absorption 
-        CugR(i)=computeColorIGM(z, (*sedArray[iSb]), (*filterArray[uLSST]), (*filterArray[gLSST]), transIgm[i], lmin, lmax); 
-        CgrR(i)=computeColorIGM(z, (*sedArray[iSb]), (*filterArray[gLSST]), (*filterArray[rLSST]), transIgm[i], lmin, lmax); 
-        CriR(i)=computeColorIGM(z, (*sedArray[iSb]), (*filterArray[rLSST]), (*filterArray[iLSST]), transIgm[i], lmin, lmax); 
-        CizR(i)=computeColorIGM(z, (*sedArray[iSb]), (*filterArray[iLSST]), (*filterArray[zLSST]), transIgm[i], lmin, lmax); 
-        CzyR(i)=computeColorIGM(z, (*sedArray[iSb]), (*filterArray[zLSST]), (*filterArray[yLSST]), transIgm[i], lmin, lmax); 
+                // Colors with IGM absorption 
+               CugR(i) = computeColorIGM(z, (*sedArray[iSb]), (*filterArray[uLSST]), (*filterArray[gLSST]), transIgm[i], lmin, lmax); 
+               CgrR(i) = computeColorIGM(z, (*sedArray[iSb]), (*filterArray[gLSST]), (*filterArray[rLSST]), transIgm[i], lmin, lmax); 
+               CriR(i) = computeColorIGM(z, (*sedArray[iSb]), (*filterArray[rLSST]), (*filterArray[iLSST]), transIgm[i], lmin, lmax); 
+               CizR(i) = computeColorIGM(z, (*sedArray[iSb]), (*filterArray[iLSST]), (*filterArray[zLSST]), transIgm[i], lmin, lmax); 
+               CzyR(i) = computeColorIGM(z, (*sedArray[iSb]), (*filterArray[zLSST]), (*filterArray[yLSST]), transIgm[i], lmin, lmax); 
 
-	m_rR= CriR(i)+24.0;
-	m_iR= 24.0;
-	m_zR= 24.0-CizR(i);
-	m_yR= m_zR-CzyR(i);
-	m_gR= CgrR(i)+m_rR;
-	m_uR= CugR(i)+m_gR;
+               // w/IGM mags
+	           m_rR = CriR(i) + imag_fixed;
+	           m_iR = imag_fixed;
+	           m_zR = imag_fixed - CizR(i);
+	           m_yR = m_zR - CzyR(i);
+	           m_gR = CgrR(i) + m_rR;
+	           m_uR = CugR(i) + m_gR;
 
-	error_U= simData.addLSSTuError(m_uR, uVisits); 
-	error_G= simData.addLSSTgError(m_gR, gVisits); 
-	error_R= simData.addLSSTrError(m_rR, rVisits); 
-	error_I= simData.addLSSTiError(m_iR, iVisits); 
-	error_Z= simData.addLSSTzError(m_zR, zVisits); 
-	error_Y= simData.addLSSTyError(m_yR, yVisits); 
+              // AA: updated to new method that adds LSST errors
+              // AA: @ note photometric errors only added to IGM absorbed magnitudes
+	          error_U = simData.addLSSTError(m_uR, nYear, uLSST); 
+	          error_G = simData.addLSSTError(m_gR, nYear, gLSST); 
+	          error_R = simData.addLSSTError(m_rR, nYear, rLSST); 
+	          error_I = simData.addLSSTError(m_iR, nYear, iLSST); 
+	          error_Z = simData.addLSSTError(m_zR, nYear, zLSST); 
+	          error_Y = simData.addLSSTError(m_yR, nYear, yLSST); 
 
 //           	outp << z 
 //                << "    " << m_u << "    " << m_g<< "    " << m_r << "    " 
 //		 << 24.0 << "    " << m_z << "    " << m_y << "	" << 0.0 << endl;
 
-           	outp << i+1 
-                 << "    " << m_uR << "    " << m_gR << "    " << m_rR << "    " 
-		 << 24.0 << "    " << m_zR << "    " << m_yR << "	" << 0.0 << endl;
+            // write to the file: igm line of sight index, mags_noerror_noigm, mags_noerror_wigm, mags_werror_wigm, errors
+            // (redshift is in the filename)
 
-           	outp2 << i+1 
-                 << "    " << error_U[1] << "    " << error_G[1] << "    " << error_R[1] << "    " 
-		 << error_I[1] << "    " << error_Z[1] << "    " << error_Y[1] << endl;
+           	outp << i+1 <<"  "; // IGM line of sight index
+           	outp << m_u <<"  "<< m_g <<"  "<< m_r <<"  "<< m_i << "  "<< m_z <<"  "<< m_y <<"  "; // no error no IGM (same each row) 
+           	outp << m_uR <<"  "<< m_gR <<"  "<< m_rR <<"  "<< m_iR <<"  "<< m_zR <<"  "<< m_yR <<"  "; // no error w/IGM
+           	outp << error_U[0] <<"  "<< error_U[0] <<"  "<< error_U[0] <<"  "<< error_U[0] <<"  "<< error_U[0] <<"  "<< error_U[0] <<"  "; // w/error w/IGM
+           	outp << error_U[1] <<"  "<< error_U[1] <<"  "<< error_U[1] <<"  "<< error_U[1] <<"  "<< error_U[1] <<"  "<< error_U[1] <<"  "; // errors
+            outp << endl;
+//           	outp2 << i+1 
+//                 << "    " << error_U[1] << "    " << error_G[1] << "    " << error_R[1] << "    " 
+//		 << error_I[1] << "    " << error_Z[1] << "    " << error_Y[1] << endl;
 
 //only calculate and print u-g, g-r colors for 400 LOS at some particular z 
 //              outp << i+1 << "  " << Cug(i) << "	" << Cgr(i) << endl;
@@ -406,21 +549,20 @@ int main(int narg, char* arg[])
 //              outp << z << "  " << Cug(i) << "	" << Cgr(i) << endl; 
 //              outp << z << "  " << CugR(i) << " 	" << CgrR(i) << endl;  
 
-}
-
+            }
 
         outp.close();
-        outp2.close();
+        //outp2.close();
 	    }
 
-    else{
-        cout << "Error...file " << outfile.c_str() << " exists" << endl;
-        cout << "Error...file " << outfile2.c_str() << " exists" << endl;
-	}
+    else {
+        cout << "Error...file " << outfiles[iSb].c_str() << " exists" << endl;
+        //cout << "Error...file " << outfile2.c_str() << " exists" << endl;
+	    }
+    }
 
 
-
-    iSb=1; 
+/*    iSb=1; 
 
     ifstream inp3, inp4;
     ofstream outp3, outp4;
@@ -455,12 +597,13 @@ int main(int narg, char* arg[])
 	m_gR= CgrR(i)+m_rR;
 	m_uR= CugR(i)+m_gR;
 
-	error_U= simData.addLSSTuError(m_uR, uVisits); 
-	error_G= simData.addLSSTgError(m_gR, gVisits); 
-	error_R= simData.addLSSTrError(m_rR, rVisits); 
-	error_I= simData.addLSSTiError(m_iR, iVisits); 
-	error_Z= simData.addLSSTzError(m_zR, zVisits); 
-	error_Y= simData.addLSSTyError(m_yR, yVisits); 
+    // AA: updated to new method that adds LSST errors
+	error_U= simData.addLSSTError(m_uR, nYear, uLSST); 
+	error_G= simData.addLSSTError(m_gR, nYear, gLSST); 
+	error_R= simData.addLSSTError(m_rR, nYear, rLSST); 
+	error_I= simData.addLSSTError(m_iR, nYear, iLSST); 
+	error_Z= simData.addLSSTError(m_zR, nYear, zLSST); 
+	error_Y= simData.addLSSTError(m_yR, nYear, yLSST); 
 
            	outp3 << i+1 
                  << "    " << m_uR << "    " << m_gR << "    " << m_rR << "    " 
@@ -518,12 +661,13 @@ int main(int narg, char* arg[])
 	m_gR= CgrR(i)+m_rR;
 	m_uR= CugR(i)+m_gR;
 
-	error_U= simData.addLSSTuError(m_uR, uVisits); 
-	error_G= simData.addLSSTgError(m_gR, gVisits); 
-	error_R= simData.addLSSTrError(m_rR, rVisits); 
-	error_I= simData.addLSSTiError(m_iR, iVisits); 
-	error_Z= simData.addLSSTzError(m_zR, zVisits); 
-	error_Y= simData.addLSSTyError(m_yR, yVisits); 
+    // AA: updated to new method that adds LSST errors
+	error_U= simData.addLSSTError(m_uR, nYear, uLSST); 
+	error_G= simData.addLSSTError(m_gR, nYear, gLSST); 
+	error_R= simData.addLSSTError(m_rR, nYear, rLSST); 
+	error_I= simData.addLSSTError(m_iR, nYear, iLSST); 
+	error_Z= simData.addLSSTError(m_zR, nYear, zLSST); 
+	error_Y= simData.addLSSTError(m_yR, nYear, yLSST); 
 
            	outp5 << i+1 
                  << "    " << m_uR << "    " << m_gR << "    " << m_rR << "    " 
@@ -581,12 +725,12 @@ int main(int narg, char* arg[])
 	m_gR= CgrR(i)+m_rR;
 	m_uR= CugR(i)+m_gR;
 
-	error_U= simData.addLSSTuError(m_uR, uVisits); 
-	error_G= simData.addLSSTgError(m_gR, gVisits); 
-	error_R= simData.addLSSTrError(m_rR, rVisits); 
-	error_I= simData.addLSSTiError(m_iR, iVisits); 
-	error_Z= simData.addLSSTzError(m_zR, zVisits); 
-	error_Y= simData.addLSSTyError(m_yR, yVisits); 
+	error_U= simData.addLSSTError(m_uR, nYear, uLSST); 
+	error_G= simData.addLSSTError(m_gR, nYear, gLSST); 
+	error_R= simData.addLSSTError(m_rR, nYear, rLSST); 
+	error_I= simData.addLSSTError(m_iR, nYear, iLSST); 
+	error_Z= simData.addLSSTError(m_zR, nYear, zLSST); 
+	error_Y= simData.addLSSTError(m_yR, nYear, yLSST); 
 
            	outp7 << i+1 
                  << "    " << m_uR << "    " << m_gR << "    " << m_rR << "    " 
@@ -609,7 +753,7 @@ int main(int narg, char* arg[])
 	}
 
 
-
+*/
 //        outp.close();
 
 
@@ -652,7 +796,7 @@ vector<string> returnFileList(string fname) {
     char * pt = getenv("TRANSLOC");
     string fpath = "";
     if(pt==NULL)
-        cout << "ERROR - TRANSLOC NOT DEFINED!" << endl;
+        throw ParmError("ERROR TRANSMISSON LOCATION ENVIRONMENT VARIABLE -TRANSLOC- NOT DEFINED");
     else
         fpath = pt+fname;
 
@@ -675,7 +819,7 @@ vector<string> returnFileList(string fname) {
 *   Computer Galaxy Color with IGM Transmission   *
 **************************************************/
 
-double computeColorIGM(double z, GenericFunc& sed, Filter& filterX, Filter& filterY, GenericFunc& transmission, double lmin, double lmax) {
+double computeColorIGM(double z, ClassFunc1D& sed, Filter& filterX, Filter& filterY, ClassFunc1D& transmission, double lmin, double lmax) {
 
     SEDzFilterProdIGM SEDFX(sed, filterX, transmission, z);
     SEDzFilterProdIGM SEDFY(sed, filterY, transmission, z);
@@ -701,9 +845,9 @@ double computeColorIGM(double z, GenericFunc& sed, Filter& filterX, Filter& filt
 *   Compute Galaxy Magntude with IGM Transmission  *
 ***************************************************/
 
-//double restFrameFluxIGM(GenericFunc &sed, Filter& filter, double zs, GenericFunc& transmission, double lmin, double lmax) {
+//double restFrameFluxIGM(ClassFunc1D &sed, Filter& filter, double zs, ClassFunc1D& transmission, double lmin, double lmax) {
 
-double restFrameFluxIGM(GenericFunc& sed, Filter& filter, double zs, GenericFunc& transmission, double lmin, double lmax) {
+double restFrameFluxIGM(ClassFunc1D& sed, Filter& filter, double zs, ClassFunc1D& transmission, double lmin, double lmax) {
 
     SEDzFilterProdIGM sedXfilter(sed, filter, transmission, zs);
     FilterIntegrator intSED(sedXfilter, lmin, lmax);
@@ -726,3 +870,5 @@ double getFilterZeroPointFlux(Filter& filter, double lmin, double lmax) {
   
   return zp;
 }
+
+

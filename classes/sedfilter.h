@@ -240,10 +240,10 @@ public:
         and wavelength, \f$ SED(\lambda/(1+z))*Filter(\lambda)*IGMtrans(\lambda)*\lambda \f$ where 
         \lambda is the observed wavelength    
         @param lambda   observed wavelength                                   */
-    virtual double operator()(double lambda) {
+    virtual double operator()(double lambda) const {
         double lambdaE = lambda/(1+z_);
         return (sed_(lambdaE)*filt_(lambda)*trans_(lambda)*lambda);
-        }  
+        };
 
 protected:
   ClassFunc1D& sed_; 
