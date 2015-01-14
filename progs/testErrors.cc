@@ -68,20 +68,20 @@ int main(int narg, char* arg[])
 	    
 	int nYear = 10;
 	// Number of visits per year (Table 1, Ivezic et al 2008)
-    int uVisitsPerYear = 6;
+    /*int uVisitsPerYear = 6;
     int gVisitsPerYear = 8;
     int rVisitsPerYear = 18;
     int iVisitsPerYear = 18;
     int zVisitsPerYear = 16;
-    int yVisitsPerYear = 16;
+    int yVisitsPerYear = 16;*/
     
 	// total number of visits
-	int uVisits = uVisitsPerYear*nYear;
+	/*int uVisits = uVisitsPerYear*nYear;
     int gVisits = gVisitsPerYear*nYear;
     int rVisits = rVisitsPerYear*nYear;
     int iVisits = iVisitsPerYear*nYear;
     int zVisits = zVisitsPerYear*nYear;
-    int yVisits = yVisitsPerYear*nYear;
+    int yVisits = yVisitsPerYear*nYear;*/
 	
     cout << "     Number of ellipticals = "<< nElliptical <<", number of spirals = ";
     cout << nSpiral << endl;
@@ -171,12 +171,12 @@ int main(int narg, char* arg[])
 
         double mag = mMin + i*dm;
 		
-		vector<double> uObservation = simgal.addLSSTuError(mag,uVisits);
-        vector<double> gObservation = simgal.addLSSTgError(mag,gVisits);
-        vector<double> rObservation = simgal.addLSSTrError(mag,rVisits);
-        vector<double> iObservation = simgal.addLSSTiError(mag,iVisits);
-        vector<double> zObservation = simgal.addLSSTzError(mag,zVisits);
-        vector<double> yObservation = simgal.addLSSTyError(mag,yVisits);
+		vector<double> uObservation = simgal.addLSSTError(mag, nYear, 0);
+        vector<double> gObservation = simgal.addLSSTError(mag, nYear, 1);
+        vector<double> rObservation = simgal.addLSSTError(mag, nYear, 2);
+        vector<double> iObservation = simgal.addLSSTError(mag, nYear, 3);
+        vector<double> zObservation = simgal.addLSSTError(mag, nYear, 4);
+        vector<double> yObservation = simgal.addLSSTError(mag, nYear, 5);
 		
         // Write the data to the FITS file
 		rowin[0]=mag;

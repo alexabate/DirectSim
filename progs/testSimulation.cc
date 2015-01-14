@@ -89,7 +89,7 @@ int main(int narg, char* arg[])
 	    
 	int nYear = 10;
 	// Number of visits per year (Table 1, Ivezic et al 2008)
-    int uVisitsPerYear = 6;
+    /*int uVisitsPerYear = 6;
     int gVisitsPerYear = 8;
     int rVisitsPerYear = 18;
     int iVisitsPerYear = 18;
@@ -102,7 +102,7 @@ int main(int narg, char* arg[])
     int rVisits = rVisitsPerYear*nYear;
     int iVisits = iVisitsPerYear*nYear;
     int zVisits = zVisitsPerYear*nYear;
-    int yVisits = yVisitsPerYear*nYear;
+    int yVisits = yVisitsPerYear*nYear;*/
 	
     cout << "     Reading SEDs from file "<< endl;
     cout << "     Number of ellipticals = "<< nElliptical <<", number of spirals = ";
@@ -290,19 +290,19 @@ int main(int narg, char* arg[])
 		double zMagThNoExt=simgal.GetMag(zs,type,am,0.,iZ,(*goodsBFilter[0]));
 		double yMagThNoExt=simgal.GetMag(zs,type,am,0.,iY,(*goodsBFilter[0]));
 		
-		vector<double> uObservation = simgal.addError(uMagThNoExt,fluxError,0);
-		vector<double> gObservation = simgal.addError(gMagThNoExt,fluxError,1);
-		vector<double> rObservation = simgal.addError(rMagThNoExt,fluxError,2);
-		vector<double> iObservation = simgal.addError(iMagThNoExt,fluxError,3);
-		vector<double> zObservation = simgal.addError(zMagThNoExt,fluxError,4);
-		vector<double> yObservation = simgal.addError(yMagThNoExt,fluxError,4);
+		vector<double> uObservation = simgal.addError(uMagThNoExt,fluxError, iU);
+		vector<double> gObservation = simgal.addError(gMagThNoExt,fluxError, iG);
+		vector<double> rObservation = simgal.addError(rMagThNoExt,fluxError, iR);
+		vector<double> iObservation = simgal.addError(iMagThNoExt,fluxError, iI);
+		vector<double> zObservation = simgal.addError(zMagThNoExt,fluxError, iZ);
+		vector<double> yObservation = simgal.addError(yMagThNoExt,fluxError, iY);
 		
-		vector<double> uObservation2 = simgal.addLSSTuError(uMagThNoExt,uVisits);
-        vector<double> gObservation2 = simgal.addLSSTgError(gMagThNoExt,gVisits);
-        vector<double> rObservation2 = simgal.addLSSTrError(rMagThNoExt,rVisits);
-        vector<double> iObservation2 = simgal.addLSSTiError(iMagThNoExt,iVisits);
-        vector<double> zObservation2 = simgal.addLSSTzError(zMagThNoExt,zVisits);
-        vector<double> yObservation2 = simgal.addLSSTyError(yMagThNoExt,yVisits);
+		vector<double> uObservation2 = simgal.addLSSTError(uMagThNoExt, nYear, iU);
+        vector<double> gObservation2 = simgal.addLSSTError(gMagThNoExt, nYear, iG);
+        vector<double> rObservation2 = simgal.addLSSTError(rMagThNoExt, nYear, iR);
+        vector<double> iObservation2 = simgal.addLSSTError(iMagThNoExt, nYear, iI);
+        vector<double> zObservation2 = simgal.addLSSTError(zMagThNoExt, nYear, iZ);
+        vector<double> yObservation2 = simgal.addLSSTError(yMagThNoExt, nYear, iY);
 		
         // Write the data to the FITS file
 		rowin[0]=zs;

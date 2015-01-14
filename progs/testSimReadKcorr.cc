@@ -53,12 +53,12 @@ int main(int narg, char* arg[]) {
     bool isRedden = true;
     
     // Number of visits per year (Table 1, Ivezic et al 2008)
-    int uVisitsPerYear = 6;
+    /*int uVisitsPerYear = 6;
     int gVisitsPerYear = 8;
     int rVisitsPerYear = 18;
     int iVisitsPerYear = 18;
     int zVisitsPerYear = 16;
-    int yVisitsPerYear = 16;
+    int yVisitsPerYear = 16;*/
     
     // Not currently optional, but could be
 	string sedLib="CWWK";    // SED set to use
@@ -105,12 +105,12 @@ int main(int narg, char* arg[]) {
         }
         
     // total number of visits
-	int uVisits = uVisitsPerYear*nYear;
+	/*int uVisits = uVisitsPerYear*nYear;
     int gVisits = gVisitsPerYear*nYear;
     int rVisits = rVisitsPerYear*nYear;
     int iVisits = iVisitsPerYear*nYear;
     int zVisits = zVisitsPerYear*nYear;
-    int yVisits = yVisitsPerYear*nYear;
+    int yVisits = yVisitsPerYear*nYear;*/
 
     //-- end command line arguments
     cout <<"     Reading from base simulation "<< infile <<endl;
@@ -232,12 +232,12 @@ int main(int narg, char* arg[]) {
 		// The final observations
 		// The 1st element is the value of the observed magnitude
 		// The 2nd element is the magnitude error
-		vector<double> uObservation = simgal.addLSSTuError(uMagTh,uVisits);
-		vector<double> gObservation = simgal.addLSSTgError(gMagTh,gVisits);
-		vector<double> rObservation = simgal.addLSSTrError(rMagTh,rVisits);
-		vector<double> iObservation = simgal.addLSSTiError(iMagTh,iVisits);
-		vector<double> zObservation = simgal.addLSSTzError(zMagTh,zVisits);
-        vector<double> yObservation = simgal.addLSSTyError(yMagTh,yVisits);
+		vector<double> uObservation = simgal.addLSSTError(uMagTh, nYear, iU);
+		vector<double> gObservation = simgal.addLSSTError(gMagTh, nYear, iG);
+		vector<double> rObservation = simgal.addLSSTError(rMagTh, nYear, iR);
+		vector<double> iObservation = simgal.addLSSTError(iMagTh, nYear, iI);
+		vector<double> zObservation = simgal.addLSSTError(zMagTh, nYear, iZ);
+        vector<double> yObservation = simgal.addLSSTError(yMagTh, nYear, iY);
 
         // Write the data to the FITS file
 		rowin[0]=zs;

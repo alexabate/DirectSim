@@ -58,12 +58,12 @@ int main(int narg, char* arg[]) {
     int nYear = 10;
     
     // Number of visits per year (Table 1, Ivezic et al 2008)
-    int uVisitsPerYear = 6;
+    /*int uVisitsPerYear = 6;
     int gVisitsPerYear = 8;
     int rVisitsPerYear = 18;
     int iVisitsPerYear = 18;
     int zVisitsPerYear = 16;
-    int yVisitsPerYear = 16;
+    int yVisitsPerYear = 16;*/
   
 	//--- decoding command line arguments 
 	cout << " ==== decoding command line arguments ===="<<endl;
@@ -97,12 +97,12 @@ int main(int narg, char* arg[]) {
 	string outfileText = outfile + ".txt";
 	    
 	// total number of visits
-	int uVisits = uVisitsPerYear*nYear;
+	/*int uVisits = uVisitsPerYear*nYear;
     int gVisits = gVisitsPerYear*nYear;
     int rVisits = rVisitsPerYear*nYear;
     int iVisits = iVisitsPerYear*nYear;
     int zVisits = zVisitsPerYear*nYear;
-    int yVisits = yVisitsPerYear*nYear;
+    int yVisits = yVisitsPerYear*nYear;*/
     
     //-- end command line arguments
     cout <<"     Reading in "<< nGalaxy <<" galaxies from catalog "<< infile <<endl;
@@ -193,12 +193,12 @@ int main(int narg, char* arg[]) {
 		//cout << zs <<"  ";
 		
 		
-		vector<double> uObs = simData.addLSSTuError(mags[0], uVisits);
-		vector<double> gObs = simData.addLSSTgError(mags[1], gVisits);
-		vector<double> rObs = simData.addLSSTrError(mags[2], rVisits);
-		vector<double> iObs = simData.addLSSTiError(mags[3], iVisits);
-		vector<double> zObs = simData.addLSSTzError(mags[4], zVisits);
-		vector<double> yObs = simData.addLSSTyError(mags[5], yVisits);
+		vector<double> uObs = simData.addLSSTError(mags[0], nYear, 0);
+		vector<double> gObs = simData.addLSSTError(mags[1], nYear, 1);
+		vector<double> rObs = simData.addLSSTError(mags[2], nYear, 2);
+		vector<double> iObs = simData.addLSSTError(mags[3], nYear, 3);
+		vector<double> zObs = simData.addLSSTError(mags[4], nYear, 4);
+		vector<double> yObs = simData.addLSSTError(mags[5], nYear, 5);
 		
 		if (my_isnan(uObs[0])) {
 		    uObs[0] = 99;

@@ -29,15 +29,11 @@
 #include <cmath>
 //#include "iomanip.h"
 #include "TRandom.h"
-#define PI 3.141592
-/*
 
-
-
-*/
 void usage(void);
 void usage(void) {
-	cout << endl<<" Usage: addIGMToSED [...options...]" << endl<<endl;
+	cout << endl<<" Usage: addIGMToSED [...options...]" << endl <<endl;
+	
     cout << " -o: OUTFILEROOT: write files to filename beginning OUTROOT (saved to output/)"<<endl;
     cout << "                  [DEFAULT=addIGMToSED]"<<endl;
     cout << " -i: INFILEROOT: read line of sight transmissions from filename beginning INFILEROOT"<<endl;
@@ -46,10 +42,12 @@ void usage(void) {
 	cout << "              galaxy SED [DEFAULT=3.5]"<<endl;
 	cout << " -s: SEDNUM: sed number in library to add IGM absorption to [DEFAULT=7]"<<endl;
 	cout << endl;
+	
 	cout << " Reads in [NLINES] line of sight flux fraction transmission per "<< endl;
 	cout << " observed wavelength and applies it to the SED [SEDNUM] in the library"<<endl;
 	cout << " taken to be at redshift [ZSOURCE] "<< endl;
-	cout << endl; 
+	cout << endl;
+	
 	cout << " Outputs to files beginning [OUTFILEROOT] for each line of sight "<<endl;
 	cout << " a file with the following columns:"<< endl;
     cout << " obsWaveLength, emissionWaveLength, fluxFractionTransmitted, "<<endl;
