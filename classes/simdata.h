@@ -576,6 +576,137 @@ protected:
 	
 };
 
+/** @class BpzCorrectMags
+  *
+  * Correct magnitudes so flux ratios match BPZ flux ratios exactly
+  *
+  */
+class BpzCorrectMags {
+public:
+    /** Constructor
+        @param abFileLoc    location of BPZ .AB files
+        @param filterNames  string vector containing the filenames (without extensions) of the filters      */
+    BpzCorrectMags(string abFileLoc,  vector<string> filterNames)
+    : abFileLoc_(abFileLoc) , filterNames_(filterNames) {
+        nFilt_ = filterNames_.size();
+        };
+    
+    
+    /** Correct magnitudes, returns magnitudes corrected to match BPZ flux ratios exactly 
+        @param mags          magnitude in each filter
+        @param sedFileName   filename of galaxy SED (without extension)
+        @param z             redshift of galaxy                                                             */
+    vector<double> correct(vector<double> mags, string sedFileName, double z) {
+    
+        if (mags.size()!=nFilt_)
+            throw ParmError("ERROR! number of magnitudes does not match number of filters");
+    
+        vector<double> fluxes = convertToFlux(mags);
+        //cout <<"Fluxes: ";
+        //for (int i=0; i<fluxes.size(); i++)
+        //    cout << fluxes[i] <<"  ";
+        //cout << endl;
+        
+        vector<double> bpzFluxes = getBpzFluxes(sedFileName, z);
+        //cout <<"BPZ Fluxes: ";
+        //for (int i=0; i<bpzFluxes.size(); i++)
+        //    cout << bpzFluxes[i] <<"  ";
+        //cout << endl;
+        
+        vector<double> conversions = computeConversion(fluxes, bpzFluxes);
+        //cout <<"Conversions: ";
+        //for (int i=0; i<conversions.size(); i++)
+        //    cout << conversions[i] <<"  ";
+        //cout << endl;
+        
+        return calcNewMags(conversions, fluxes);
+         
+        };
+        
+    /** Check magnitudes
+        @param mags          (supposedly corrected) magnitude in each filter
+        @param sedFileName   filename of galaxy SED (without extension)
+        @param z             redshift of galaxy                                                             */
+    void check(vector<double> mags, string sedFileName, double z) {
+    
+        vector<double> fluxes = convertToFlux(mags);
+        vector<double> bpzFluxes = getBpzFluxes(sedFileName, z);
+
+        cout <<"     Check bpz flux color divided by simulated flux color is equal to 1 in all filters:";
+        for (int i=0; i<nFilt_-1; i++) {
+            double bpzFluxColor = bpzFluxes[i]/bpzFluxes[i+1];
+            double fluxColor = fluxes[i]/fluxes[i+1];
+            cout << bpzFluxColor/fluxColor <<"  ";
+            }
+        cout << endl;
+        }
+    
+    
+    
+protected:
+
+    /** Convert magnitudes to flux via \f$ f=10^{-0.4m} \f$
+        @param mags    magnitude in each filter                                                             */
+    vector<double> convertToFlux(vector<double> mags) {
+        vector<double> fluxes;
+        for (int i=0; i<nFilt_; i++)
+            fluxes.push_back(pow(10.,-0.4*mags[i]));
+        return fluxes;
+        };
+        
+    /** Get the BPZ fluxes of galaxy SED at redshift z
+        @param sedFileName   filename of galaxy SED (without extension)
+        @param z             redshift of galaxy                                                             */
+    vector<double> getBpzFluxes(string sedFileName, double z) {
+    
+        vector<double> bpzFluxes;
+        for (int i=0; i<nFilt_; i++) {
+            string filename = abFileLoc_ + sedFileName + filterNames_[i] + ".AB";
+            SInterp1D fz;
+            fz.ReadXYFromFile(filename, 0., 12., 1024, 0, false); // 0<z<12 is BPZ flux file range
+            bpzFluxes.push_back(fz(z));
+            }
+        return bpzFluxes;
+        
+        };
+        
+    /** Compute conversion values to make fluxes match BPZ flux ratios exactly 
+        @param fluxes     flux in each filter
+        @param bpzFluxes  BPZ flux in each filter                                                           */
+    vector<double> computeConversion(vector<double> fluxes, vector<double> bpzFluxes) {
+        vector<double> conversions;
+        conversions.push_back(1.); // arbitrarily set conversion of first filter flux to 1.
+        
+        //cout <<"Flux colors (bpz, mine, ratio, conver): ";
+        for (int i=0; i<nFilt_-1; i++) {
+            double bpzFluxColor = bpzFluxes[i]/bpzFluxes[i+1];
+            double fluxColor = fluxes[i]/fluxes[i+1];
+            //cout << bpzFluxColor <<","<< fluxColor <<"  ";
+            double ratio = bpzFluxColor/fluxColor;
+            //cout << ratio <<"  "<< conversions[i]*ratio <<"  ";
+            conversions.push_back( conversions[i]*(1./ratio) );
+            }
+        //cout << endl;
+        return conversions;
+        };
+        
+    /** Return the corrected magnitudes
+        @param conversions  conversion values to make fluxes match BPZ flux ratios exactly
+        @param fluxes       flux in each filter                                                             */
+    vector<double> calcNewMags(vector<double> conversions, vector<double> fluxes) {
+        vector<double> newmags;
+        for (int i=0; i<nFilt_; i++)
+            newmags.push_back(-2.5*log10(conversions[i]*fluxes[i]));
+        return newmags;
+    
+        };
+
+protected:
+    string abFileLoc_;            /**< location of BPZ .AB files                     */
+    vector<string> filterNames_;  /**< filenames (without extensions) of the filters */
+    int nFilt_;                   /**< number of filters                             */
+
+};
 
 /** @class SEDLibColors
   *

@@ -297,8 +297,8 @@ size_t SInterp1D::ReadXYFromFile(string const& filename,double xmin,double xmax,
         }
     inputFile.close();
     size_t nLines = cnt - nComments;
-    cout << " SInterp1D::ReadXYFromFile()/Info: " << nLines;
-    cout << " (x,y) pairs read from file " << filename << endl;  
+    //cout << " SInterp1D::ReadXYFromFile()/Info: " << nLines;
+    //cout << " (x,y) pairs read from file " << filename << endl;  
     DefinePoints(xsv, ysv, xmin, xmax, npt);
 	
     return nLines;

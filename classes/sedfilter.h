@@ -499,6 +499,17 @@ public:
     /** Return a vector of the SED filenames */
     vector<string> returnSedFilenames(){ return sedFiles_; };
     
+    /** Return a vector of the SED filenames without their extension (leaves dot though)                    */
+    vector<string> returnSedFilenamesNoExt() { 
+        vector<string> noext;
+        for (int i=0; i<sedFiles_.size(); i++) {
+            string fne = sedFiles_[i];
+            string fn = fne.substr(0, fne.size()-3);
+            noext.push_back(fn); 
+            }
+        return noext; };
+    
+    
     /** Return SED reddening values */
     vector<double> returnReddening() { return reds_; };
                    
@@ -510,7 +521,7 @@ private:
     int ntot_;                  /**<  total number of SEDs after interpolation /
                                       and/or reddening                        */
     vector<SED*> sedArray_;     /**<  pointer to ntot_ SED objects            */
-    vector<string> sedFiles_;   /**<  vector of each SED file name            */
+    vector<string> sedFiles_;   /**<  vector of each SED file name (no path)  */
     bool isInterp_;             /**<  if SEDs are added to by interpolation   */
     bool isRedden_;             /**<  if SEDs are added to by reddening       */
     vector<double> reds_;       /**<  E(B-V) reddening value for each SED     */

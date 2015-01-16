@@ -144,6 +144,9 @@ photoZdist : $(EXE)/photoZdist
 priorFitter : $(EXE)/priorFitter
 	@echo 'makefile : priorFitter made'
 	
+produceCatalogForBPZ : $(EXE)/produceCatalogForBPZ
+	@echo 'makefile : produceCatalogForBPZ made'
+	
 projectTemplates : $(EXE)/projectTemplates
 	@echo 'makefile : projectTemplates made'
 	
@@ -495,7 +498,19 @@ $(EXE)/priorFitter : $(OBJ)/priorFitter.o $(LIBO)
 
 $(OBJ)/priorFitter.o : $(PROGS)/priorFitter.cc $(LIBH)  
 	mkdir -p $(OBJ)
-	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/priorFitter.o $(PROGS)/priorFitter.cc 
+	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/priorFitter.o $(PROGS)/priorFitter.cc
+	
+# PRODUCE BPZ CATALOG
+$(EXE)/produceCatalogForBPZ : $(OBJ)/produceCatalogForBPZ.o $(LIBO) 
+	mkdir -p $(EXE)
+	mkdir -p $(ROOTOUT)
+	$(CXXLINK) -o $(EXE)/produceCatalogForBPZ $(OBJ)/produceCatalogForBPZ.o $(LIBO) \
+	$(SOPHYAEXTSLBLIST) $(MYLIB) $(ROOTLIB)
+
+$(OBJ)/produceCatalogForBPZ.o : $(PROGS)/produceCatalogForBPZ.cc $(LIBH)  
+	mkdir -p $(OBJ)
+	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/produceCatalogForBPZ.o \
+	$(PROGS)/produceCatalogForBPZ.cc 
 	
 # PROJECT TEMPLATES
 $(EXE)/projectTemplates : $(OBJ)/projectTemplates.o $(LIBO) 
