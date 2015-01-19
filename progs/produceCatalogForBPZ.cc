@@ -275,7 +275,7 @@ int main(int narg, char* arg[]) {
             outp << uObservation[1] <<"  "<< gObservation[1] <<"  "<< rObservation[1] <<"  ";
             outp << iObservation[1] <<"  "<< zObservation[1] <<"  "<< yObservation[1] <<"  ";
             // z
-            outp << z << endl;
+            outp << z <<"  "<< bf <<"  "<< U <<"  "<< G <<"  "<< R <<"  "<< I <<"  "<< Z <<endl;
             }
             
         
