@@ -25,6 +25,7 @@
 #include "cosmocalcs.h"
 #include "simdata.h"
 #include "sedfilter.h"
+//#include "schechter.h"
 
 // AA: updated old Sophya version's GenericFunc to ClassFunc1D
 
@@ -71,13 +72,19 @@ int main(int narg, char* arg[])
     cout<<endl<<endl;
     
     //--- decoding command line arguments 
-    string outloc;
+
+//    string outloc= "/home/lidenscheng/MK_DirectSim/testfiles/StarburstLOS1Yr/";
+//    string FILTLOC= "/home/lidenscheng/MK_DirectSim/filters/";
+//    string SEDLOC= "/home/lidenscheng/MK_DirectSim/SEDs/";
+//    string TRANSLOC= "/home/lidenscheng/MK_DirectSim/transmission/";
+
+    string outloc; 
     string FILTLOC="./filters/";
     string SEDLOC="./SEDs/";
     string TRANSLOC="./transmission/";
     string locs;
     int nz = 400;    //number of lines of sight 
-    double z = 2.45; //constant redshift 
+    double z = 2.9; //constant redshift 
 
 	char c;
     while((c = getopt(narg,arg,"ho:l:z:n:")) != -1) {
@@ -401,8 +408,8 @@ int main(int narg, char* arg[])
     TVector<r_8> Cug(nz), Cgr(nz), Cri(nz), Ciz(nz), Czy(nz), Cyu(nz);
     TVector<r_8> CugR(nz), CgrR(nz), CriR(nz), CizR(nz), CzyR(nz), CyuR(nz);
 
-    int nYear = 10; // could as as prog arg
-//    int nYear = 1;
+//    int nYear = 10; // could as as prog arg
+    int nYear = 1;
     
     // AA: No longer needs these numbers (they are coded within SimData class)
     // Number of visits per year (Table 1, Ivezic et al 2008)
@@ -534,8 +541,8 @@ int main(int narg, char* arg[])
            	outp << i+1 <<"  "; // IGM line of sight index
            	outp << m_u <<"  "<< m_g <<"  "<< m_r <<"  "<< m_i << "  "<< m_z <<"  "<< m_y <<"  "; // no error no IGM (same each row) 
            	outp << m_uR <<"  "<< m_gR <<"  "<< m_rR <<"  "<< m_iR <<"  "<< m_zR <<"  "<< m_yR <<"  "; // no error w/IGM
-           	outp << error_U[0] <<"  "<< error_U[0] <<"  "<< error_U[0] <<"  "<< error_U[0] <<"  "<< error_U[0] <<"  "<< error_U[0] <<"  "; // w/error w/IGM
-           	outp << error_U[1] <<"  "<< error_U[1] <<"  "<< error_U[1] <<"  "<< error_U[1] <<"  "<< error_U[1] <<"  "<< error_U[1] <<"  "; // errors
+           	outp << error_U[0] <<"  "<< error_G[0] <<"  "<< error_R[0] <<"  "<< error_I[0] <<"  "<< error_Z[0] <<"  "<< error_Y[0] <<"  "; // w/error w/IGM
+           	outp << error_U[1] <<"  "<< error_G[1] <<"  "<< error_R[1] <<"  "<< error_I[1] <<"  "<< error_Z[1] <<"  "<< error_Y[1] <<"  "; // errors
             outp << endl;
 //           	outp2 << i+1 
 //                 << "    " << error_U[1] << "    " << error_G[1] << "    " << error_R[1] << "    " 
