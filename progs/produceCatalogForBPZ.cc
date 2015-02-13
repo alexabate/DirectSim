@@ -288,21 +288,23 @@ int main(int narg, char* arg[]) {
         rowin[5] = magsCorrected[3];
         rowin[6] = magsCorrected[4];
         rowin[7] = magsCorrected[5];
-        rowin[8] = gObservation[0];
-        rowin[9] = rObservation[0];
-        rowin[10] = iObservation[0];
-        rowin[11] = zObservation[0];
-        rowin[12] = yObservation[0];
-        rowin[13] = uObservation[1];
-        rowin[14] = gObservation[1];
-        rowin[15] = rObservation[1];
-        rowin[16] = iObservation[1];
-        rowin[17] = zObservation[1];
-        rowin[18] = U;
-        rowin[19] = G;
-        rowin[20] = R;
-        rowin[21] = I;
-        rowin[22] = Z;
+        rowin[8] = uObservation[0];
+        rowin[9] = gObservation[0];
+        rowin[10] = rObservation[0];
+        rowin[11] = iObservation[0];
+        rowin[12] = zObservation[0];
+        rowin[13] = yObservation[0];
+        rowin[14] = uObservation[1];
+        rowin[15] = gObservation[1];
+        rowin[16] = rObservation[1];
+        rowin[17] = iObservation[1];
+        rowin[18] = zObservation[1];
+        rowin[19] = yObservation[0];
+        rowin[20] = U;
+        rowin[21] = G;
+        rowin[22] = R;
+        rowin[23] = I;
+        rowin[24] = Z;
         gals.AddRow(rowin);
 
         
