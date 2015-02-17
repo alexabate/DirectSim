@@ -126,7 +126,7 @@ int main(int narg, char* arg[]) {
 	ReadSedList readSedList(sedfile);
 	
 	// Read out SEDs into array
-    readSedList.readSeds(lmin,lmax);
+    readSedList.readSeds(lmin, lmax, npt);
     int nsedOrig = readSedList.getNSed();
     cout <<"     Number of original SEDs = "<< nsedOrig <<endl;
 	cout << endl;

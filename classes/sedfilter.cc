@@ -242,7 +242,7 @@ void ReadSedList::countSeds(string sedFileFullPath)
 };
 
 
-void ReadSedList::readSeds(double lmin, double lmax)
+void ReadSedList::readSeds(double lmin, double lmax, int npt)
 {
     
     // open up file of list of SEDs
@@ -267,9 +267,8 @@ void ReadSedList::readSeds(double lmin, double lmax)
 	    cout <<"     Reading in all the SED files ... "<<endl;
 
 	for (int i=0; i<nsed_; i++) {
-	
 		sedArray_.push_back(new SED()); // assigned memory for SED pointer
-		sedArray_[i]->readSED(fileNames[i], lmin, lmax);
+		sedArray_[i]->readSED(fileNames[i], lmin, lmax, npt);
 		reds_.push_back(0.);
 		}
 };

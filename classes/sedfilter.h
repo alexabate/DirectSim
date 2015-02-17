@@ -452,9 +452,10 @@ public:
     
     /** Main program, reads SEDs from file and arranges them in a vector of
         pointers pointing to each SED object 
-        @param lmin minimum wavelength of SED in meters
-        @param lmax maximum wavelength of SED in meters */
-    void readSeds(double lmin=5e-8, double lmax=2.5e-6);
+        @param lmin    minimum wavelength of SED in meters
+        @param lmax    maximum wavelength of SED in meters 
+        @param npt     number of interpolation points for SED func                                          */
+    void readSeds(double lmin=5e-8, double lmax=2.5e-6, int npt=10000);
     
     /** If interpolating between the SEDs call this method straight after
         readSeds()
