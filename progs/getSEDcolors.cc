@@ -29,16 +29,27 @@ void usage(void);
 void usage(void) {
 	cout << endl<<" Usage: getSEDcolors [...options...]" << endl<<endl;
 	
-    cout <<"  Given a SED set and filter set calculates the rest-frame colors of all the SEDs         "<<endl;
+    cout <<"  Given a SED set and filter set calculates the rest-frame colors (or mags) of all the SEDs"<<endl;
+    cout << endl;
+    cout <<"  You might want to output magnitudes instead of colors if filter list supplied is a list  "<<endl;
+    cout <<"  of filters from different filter sets (e.g. SDSS, LSST and CFHT). In this case a         "<<endl;
+    cout <<"  'normalising' magnitude in one of the filters must be supplied, along with the index of  "<<endl;
+    cout <<"  this 'normalising' filter. (filter indices are zero indexed).                            "<<endl;
     cout << endl;
 	
-	cout <<"  Example usage:                                                                          "<<endl;
+	cout <<"  Example usage (to output colors):                                                       "<<endl;
 	cout <<"  getSEDcolors -o output -t CWWKSB.list -f SDSS.filters                                   "<<endl;
 	cout << endl;
 	
-	cout << " -o: OUTFILE: write SED colors to file                                                   "<<endl;
+	cout <<"  Example usage (to output mags normalized to 22 in i band which is on line 4 (index 3) of"<<endl; 
+	cout <<"  the list in random.filters):                                                            "<<endl;
+	cout <<"  getSEDcolors -o output -t CWWKSB.list -f random.filters -m 22,3                         "<<endl;
+	cout << endl;
+	
+	cout << " -o: OUTFILE: write SED colors (or mags if -m option used) to this file                  "<<endl;
 	cout << " -t: SEDLIB: file containing list of SED files                                           "<<endl;
 	cout << " -f: FILTERS: file containing list of filters                                            "<<endl; 
+	cout << " -m: MAGNORM,FILTNORM: output mags normalised to MAGNORM in filter FILTNORM              "<<endl;
 	cout << endl;
     };
 
@@ -58,9 +69,12 @@ int main(int narg, char* arg[]) {
     string outroot;
     string sedfile = "CWWKSB.list";
     string filtfile = "SDSS.filters";
+    bool outColors = true;
+    double magNorm;
+    int iFiltNorm;
 
 	char c;
-    while((c = getopt(narg,arg,"ho:t:f:")) != -1) {
+    while((c = getopt(narg,arg,"ho:t:f:m:")) != -1) {
 	    switch (c)  {
 	        case 'o' :
 	            outroot = optarg;
@@ -71,6 +85,10 @@ int main(int narg, char* arg[]) {
 	        case 'f' :
 	            filtfile = optarg;
 	            break;
+	        case 'm' :
+	            outColors = false;
+	            sscanf(optarg,"%lf,%d",&magNorm,&iFiltNorm);
+	            break;
 	        case 'h' :
 		        default :
 		    usage(); return -1;
@@ -78,9 +96,16 @@ int main(int narg, char* arg[]) {
 	    }
 
     //-- end command line arguments
-    cout <<"     Writing SED's and SED colors to file "<< outroot <<endl;
+    cout <<"     Writing SED's and SED";
+    if (outColors)
+        cout <<" colors to file "<< outroot <<endl;
+    else {
+        cout <<" mags to file "<< outroot <<", normalized to "<< magNorm <<" in filter indexed by ";
+        cout << iFiltNorm <<endl;
+        }
     cout <<"     Using SED library "<< sedfile << endl;
     cout <<"     Using filter set "<< filtfile << endl;
+    
     cout << endl;
     //-- end command line arguments
   
@@ -96,7 +121,7 @@ int main(int narg, char* arg[]) {
 	// GALAXY SED TEMPLATES
 	
 	// wavelength range of the SEDs/filters
-	double lmin=5e-8, lmax=2.5e-6;
+	double lmin=1e-8, lmax=2.5e-6;
 	
 	ReadSedList readSedList(sedfile);
 	
@@ -126,12 +151,19 @@ int main(int narg, char* arg[]) {
     cout << endl;
 	
 	
-	// GENERATE SED COLORS
+	// GENERATE SED MAGS or COLORS
+	outfile = outroot + "_restframedata.txt";
 	
-	// for fitting SEDs to colors
+	
 	SEDLibColors sedLibColors(sedArray, filters);
-	outfile = outroot + "_colors.txt";
-	sedLibColors.writeColorArray(outfile);
+	if (outColors) {
+	    // for fitting SEDs to colors
+	    sedLibColors.writeColorArray(outfile);
+	    }
+	else {
+	    // for fitting SEDs to mags
+	    sedLibColors.writeMagsArray(outfile, magNorm, iFiltNorm);
+	    }
 	
 	
 	  

@@ -717,7 +717,7 @@ class SEDLibColors : public PhotometryCalcs {
 public:
     /** Constructor. The filter set must be ordered by monotonic increase in filter wavelength from blue to red
         @param sedarray   array of pointers to each SED in library
-        @param filtarray  array of pointers to each filter in filter set*/
+        @param filtarray  array of pointers to each filter in filter set */
     SEDLibColors(vector<SED*> sedarray,  vector<Filter*> filtarray):
         sedarray_(sedarray), filtarray_(filtarray) , nsed_(sedarray.size()) , nfilt_(filtarray.size()) {
         
@@ -751,6 +751,42 @@ public:
         double z=0.;
         double col = CompColor(z, (*sedarray_[sedid]), (*filtarray_[filtid]), (*filtarray_[filtid+1]));
         return col;
+        };
+        
+        
+    /** Return the rest-frame magnitude in each filter instead, useful if filter list contains more than
+        one filter set.
+        @param magnorm      magnitude in filter ifiltnorm
+        @param ifiltnorm    ifiltnorm, magnitude set to be some value in this filter                        */
+    TArray<double> getMags(double magnorm = 22., int ifiltnorm = 3) {
+    
+        // initialize magnitudes array
+        TArray<double> mags;
+        int ndim = 2;
+        sa_size_t mydim[ndim];
+        mydim[0] = nsed_;
+        mydim[1] = nfilt_;
+        mags.SetSize(ndim, mydim);
+        
+        // initialize filter with normalization magnitude
+        for (int ised=0; ised<nsed_; ised++)
+            mags(ised, ifiltnorm) = magnorm;
+    
+        double jmax = nfilt_ - ifiltnorm;
+        for (int ised=0; ised<nsed_; ised++) {
+        
+            // fill from ifiltnorm upwards
+            for (int j=1; j<jmax; j++) {
+                mags(ised, ifiltnorm + j) = mags(ised, ifiltnorm + j - 1) - colors_(ised, ifiltnorm + j - 1);
+                }
+ 
+            // fill from ifiltnorm downwards
+            for (int j=1; j<(ifiltnorm+1); j++) {
+                mags(ised, ifiltnorm - j) = colors_(ised, ifiltnorm - j) + mags(ised, ifiltnorm - j + 1);
+                }
+            }   
+        return mags;
+         
         };
     
     
@@ -793,13 +829,33 @@ public:
     TArray<double> returnColorArray() { return colors_; };
     
         
-    /** For checking */
+    /** Output color array (each SED in row, each filter_i - filter_i+1 in column) to a file
+        @param fname     name of file to output color array to                                              */
     void writeColorArray(string fname) {
     
         ofstream outp(fname.c_str(), ofstream::out);
         for (int i=0; i<nsed_; i++) {
             for (int j=0; j<nfilt_-1; j++) {
                 outp << colors_(i,j) <<"  ";
+                }
+            outp << endl;
+            }
+        outp.close();
+        
+        };
+        
+    /** Output magnitude array (each SED in row, each filter in column) to a file
+        @param fname     name of file to output magnitude array to  
+        @param magnorm      magnitude in filter ifiltnorm
+        @param ifiltnorm    ifiltnorm, magnitude set to be some value in this filter                        */
+    void writeMagsArray(string fname, double magnorm = 22., int ifiltnorm = 3) {
+    
+        TArray<double> mags = getMags(magnorm, ifiltnorm);
+    
+        ofstream outp(fname.c_str(), ofstream::out);
+        for (int i=0; i<nsed_; i++) {
+            for (int j=0; j<nfilt_; j++) {
+                outp << mags(i,j) <<"  ";
                 }
             outp << endl;
             }
