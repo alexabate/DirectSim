@@ -72,9 +72,12 @@ int main(int narg, char* arg[]) {
     bool outColors = true;
     double magNorm;
     int iFiltNorm;
+	// wavelength range of the SEDs/filters
+	double lmin=1e-8, lmax=2.5e-6; // need to be careful with this given what filters are read in!
+	int npt = 1000; // interpolation resolution of SEDs (need more if many fine features)
 
 	char c;
-    while((c = getopt(narg,arg,"ho:t:f:m:")) != -1) {
+    while((c = getopt(narg,arg,"ho:t:f:m:w:")) != -1) {
 	    switch (c)  {
 	        case 'o' :
 	            outroot = optarg;
@@ -88,6 +91,9 @@ int main(int narg, char* arg[]) {
 	        case 'm' :
 	            outColors = false;
 	            sscanf(optarg,"%lf,%d",&magNorm,&iFiltNorm);
+	            break;
+	        case 'w' :
+	            sscanf(optarg,"%lf,%lf,%d",&lmin,&lmax,&npt);
 	            break;
 	        case 'h' :
 		        default :
@@ -117,12 +123,8 @@ int main(int narg, char* arg[]) {
 	InitTim();
 	string outfile;
 
-		
+
 	// GALAXY SED TEMPLATES
-	
-	// wavelength range of the SEDs/filters
-	double lmin=1e-8, lmax=2.5e-6;
-	
 	ReadSedList readSedList(sedfile);
 	
 	// Read out SEDs into array
