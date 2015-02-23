@@ -792,12 +792,14 @@ SInterp1D Mass2Gal::MaxAbsMag()
 	double dz=(zmax-zmin)/(nz-1);
 
     if (doAbsMagCut_) {
+        // @warning these should not be hard coded!
         double lmin=5e-8, lmax=2.5e-6;
+        int npt = 10000;
 
         // Read in CWWK SEDs
         string sedFile = "CWWK.list";
 	    ReadSedList readSedList(sedFile);
-        readSedList.readSeds(lmin,lmax);
+        readSedList.readSeds(lmin, lmax, npt);
         vector<SED*> sedArray=readSedList.getSedArray();
         int nSEDs = sedArray.size();
     

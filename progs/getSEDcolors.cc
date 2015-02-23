@@ -50,6 +50,7 @@ void usage(void) {
 	cout << " -t: SEDLIB: file containing list of SED files                                           "<<endl;
 	cout << " -f: FILTERS: file containing list of filters                                            "<<endl; 
 	cout << " -m: MAGNORM,FILTNORM: output mags normalised to MAGNORM in filter FILTNORM              "<<endl;
+	cout << " -w: LMIN,LMAX,NL: wavelength resolution of the SEDs                                     "<<endl;
 	cout << endl;
     };
 
@@ -109,7 +110,8 @@ int main(int narg, char* arg[]) {
         cout <<" mags to file "<< outroot <<", normalized to "<< magNorm <<" in filter indexed by ";
         cout << iFiltNorm <<endl;
         }
-    cout <<"     Using SED library "<< sedfile << endl;
+    cout <<"     Using SED library "<< sedfile <<" with wavelength range (in m) "<< lmin <<" to "<< lmax;
+    cout <<" and resolution "<< npt << endl;
     cout <<"     Using filter set "<< filtfile << endl;
     
     cout << endl;
@@ -140,7 +142,7 @@ int main(int narg, char* arg[]) {
     
     // write out SEDs 
     outfile = outroot + "_SEDlib.txt";
-    readSedList.writeSpectra(outfile);
+    readSedList.writeSpectra(outfile, lmin, lmax, npt);
     
     
     // FILTERS
@@ -156,8 +158,8 @@ int main(int narg, char* arg[]) {
 	// GENERATE SED MAGS or COLORS
 	outfile = outroot + "_restframedata.txt";
 	
-	
-	SEDLibColors sedLibColors(sedArray, filters);
+	Timer tm("timer",false);
+	SEDLibColors sedLibColors(sedArray, filters, lmin, lmax, npt);
 	if (outColors) {
 	    // for fitting SEDs to colors
 	    sedLibColors.writeColorArray(outfile);
@@ -166,7 +168,8 @@ int main(int narg, char* arg[]) {
 	    // for fitting SEDs to mags
 	    sedLibColors.writeMagsArray(outfile, magNorm, iFiltNorm);
 	    }
-	
+	tm.Split();
+    cout <<"     Color computations took "<< tm.PartialElapsedTimems() <<" ms "<< endl;
 	
 	  
   }  // End of try bloc 

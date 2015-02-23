@@ -27,10 +27,10 @@ double PhotometryCalcs::Kcorr(double z, ClassFunc1D& sed, Filter& filterX,
 	FilterProd  fprodx(filterX);             
 	
     // To integrate the above
-	FilterIntegrator trpzx(szfx, lmin_, lmax_);	
-	FilterIntegrator trpzfy(fprody, lmin_, lmax_);	
-	FilterIntegrator trpzy(szfB0, lmin_, lmax_);
-	FilterIntegrator trpzfx(fprodx, lmin_, lmax_);	
+	FilterIntegrator trpzx(szfx, lmin_, lmax_, npt_);	
+	FilterIntegrator trpzfy(fprody, lmin_, lmax_, npt_);	
+	FilterIntegrator trpzy(szfB0, lmin_, lmax_, npt_);
+	FilterIntegrator trpzfx(fprodx, lmin_, lmax_, npt_);	
 		
 	kxy=-2.5*log10(pow((1+z),-1)*(trpzx.Value()/trpzfx.Value())*
 	                                    (trpzfy.Value()/trpzy.Value()));
@@ -55,8 +55,8 @@ double PhotometryCalcs::Kcorr1Filter(double z, ClassFunc1D& sed, Filter& filterX
 	SEDzFilterProd szfx0(sed, filterX, 0);  
 
     // integrate the above
-	FilterIntegrator trpzx(szfx, lmin_, lmax_);	
-	FilterIntegrator trpzx0(szfx0, lmin_, lmax_);	
+	FilterIntegrator trpzx(szfx, lmin_, lmax_, npt_);	
+	FilterIntegrator trpzx0(szfx0, lmin_, lmax_, npt_);	
 		
 	kxx=-2.5*log10( pow((1+z),-1)*(trpzx.Value()/trpzx0.Value()) ); 
 	return kxx;
@@ -73,16 +73,17 @@ double PhotometryCalcs::CompColor(double z, ClassFunc1D& sed, Filter& filterX, F
 	SEDzFilterProd SEDFX(sed, filterX, z); 
 	SEDzFilterProd SEDFY(sed, filterY, z); 
 	// integrate SED across each filter 
-	FilterIntegrator intsedX(SEDFX, lmin_, lmax_);
-	FilterIntegrator intsedY(SEDFY, lmin_, lmax_);
+	FilterIntegrator intsedX(SEDFX, lmin_, lmax_, npt_);
+	FilterIntegrator intsedY(SEDFY, lmin_, lmax_, npt_);
 
 	// To get correct color zeropoints: should use getFilterZeroPoint() here
 	//FilterProd returns (filtX/lambda)
 	FilterProd  FX(filterX); 
 	FilterProd  FY(filterY); 
-	FilterIntegrator intFX(FX, lmin_, lmax_);
-	FilterIntegrator intFY(FY, lmin_, lmax_);
+	FilterIntegrator intFX(FX, lmin_, lmax_, npt_);
+	FilterIntegrator intFY(FY, lmin_, lmax_, npt_);
 	double zpCxy = -2.5*log10(intFY.Value()/intFX.Value());
+	//cout << intsedY.Value() <<"  "<< intsedX.Value() <<"  "<<-2.5*log10(intsedX.Value()/intsedY.Value()) <<"  "<<zpCxy << endl;
 
 	// Color
 	double Cxy = -2.5*log10(intsedX.Value()/intsedY.Value())+zpCxy;
@@ -114,7 +115,7 @@ double PhotometryCalcs::restFrameFlux(ClassFunc1D& sed, Filter& filter, double z
     SEDzFilterProd sedXlambdaXfilter(sed, filter, zs);
 
     //integrate
-    FilterIntegrator integrandSED(sedXlambdaXfilter, lmin_, lmax_);
+    FilterIntegrator integrandSED(sedXlambdaXfilter, lmin_, lmax_, npt_);
 
     double zpFluxFilter = getFilterZeroPointFlux(filter);
 
@@ -134,7 +135,7 @@ double PhotometryCalcs::getFilterZeroPointFlux(Filter& filterX)
 
     //FilterProd returns (filtX/lambda)
     FilterProd  FX(filterX);
-    FilterIntegrator intFX(FX, lmin_, lmax_);
+    FilterIntegrator intFX(FX, lmin_, lmax_, npt_);
     double zp = intFX.Value();
     return zp;
 };
@@ -153,8 +154,8 @@ double PhotometryCalcs::effectiveFilterWavelength(ClassFunc1D& filter)
     // filter multiplied by lambda
     FilterXLambda  filterXLambda(filter);
     
-    FilterIntegrator intFilterXLambda(filterXLambda,lmin,lmax);
-    FilterIntegrator intFilter(filter,lmin,lmax);
+    FilterIntegrator intFilterXLambda(filterXLambda, lmin, lmax, npt_);
+    FilterIntegrator intFilter(filter, lmin, lmax, npt_);
     
     x = intFilterXLambda.Value();
     y = intFilter.Value();

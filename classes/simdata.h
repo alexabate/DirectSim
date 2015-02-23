@@ -50,12 +50,12 @@ class PhotometryCalcs {
 public:
     
     /** Constructor  */
-    PhotometryCalcs(double lmin = 5e-8, double lmax = 2.5e-6) { 
-        setLminmax(lmin, lmax); };
+    PhotometryCalcs(double lmin = 5e-8, double lmax = 2.5e-6, int npt=10000) { 
+        setLminmax(lmin, lmax, npt); };
         
-    /** Set the wavelength range to do the integrals over */
-    void setLminmax(double lmin, double lmax)
-        { lmin_ = lmin; lmax_ = lmax; };
+    /** Set the wavelength range and resolution to do the integrals over */
+    void setLminmax(double lmin, double lmax, int npt)
+        { lmin_ = lmin; lmax_ = lmax; npt_ = npt; };
         
         
     // Photometry calculations //
@@ -127,7 +127,7 @@ public:
 	double convertABMagToFlux(double mag, double zs, double dL, ClassFunc1D& sed, Filter& filterX) {
         double magPart = pow(10,-0.4*mag);
         SEDzFilterProd sedXlambdaXfilter(sed, filterX, 0);// returns sed*lambda*filter
-        FilterIntegrator integrandSED(sedXlambdaXfilter, lmin_, lmax_);
+        FilterIntegrator integrandSED(sedXlambdaXfilter, lmin_, lmax_, npt_);
         double fluxPart = integrandSED.Value();
         double zeroPointX = getFilterZeroPointFlux(filterX);
         double fnu = magPart*dL*dL*(1.+zs)*(fluxPart/zeroPointX);
@@ -258,8 +258,9 @@ public:
             };
     
 protected:
-    double lmin_;
-    double lmax_;
+    double lmin_;  /**< minimum wavelength of range to do integrals over */
+    double lmax_;  /**< minimum wavelength of range to do integrals over */
+    int npt_;      /**< resolution of integration grid                   */
     //SimpleUniverse su_;
 };
 
@@ -717,13 +718,18 @@ class SEDLibColors : public PhotometryCalcs {
 public:
     /** Constructor. The filter set must be ordered by monotonic increase in filter wavelength from blue to red
         @param sedarray   array of pointers to each SED in library
-        @param filtarray  array of pointers to each filter in filter set */
-    SEDLibColors(vector<SED*> sedarray,  vector<Filter*> filtarray):
+        @param filtarray  array of pointers to each filter in filter set 
+        @param lmin    minimum wavelength of SED in meters
+        @param lmax    maximum wavelength of SED in meters 
+        @param npt     number of interpolation points for SED func                                          */
+    SEDLibColors(vector<SED*> sedarray,  vector<Filter*> filtarray, double lmin=5e-8, double lmax=2.5e-6, int npt=10000):
         sedarray_(sedarray), filtarray_(filtarray) , nsed_(sedarray.size()) , nfilt_(filtarray.size()) {
         
         cout <<"     SED library contains "<< nsed_ <<" SEDs"<<endl;
         cout <<"     Filter set has "<< nfilt_ <<" filters "<<endl;
         cout << endl;
+        
+        setLminmax(lmin, lmax, npt);
         
         // initialize color array
         int ndim = 2;
@@ -972,13 +978,14 @@ class TemplateChiSquare : public PhotometryCalcs {
 public:
 
 /** Calculate chi-square distribution as a function SED type and nuisance
-    @param sedArray     array holding pointers to SED objects 
-	    @param filterArray  array holding pointers to Filter objects
-	    @param su           object holding cosmological parameters and calculations
-	    @param lmin         minimum wavelength in meters
-	    @param lmax         maximum wavelength in meters                      */
-        TemplateChiSquare(vector<SED*> sedArray, vector<Filter*> filterArray, 
-            SimpleUniverse& su, double lmin=5e-8, double lmax=2.5e-6)
+        @param sedArray     array holding pointers to SED objects 
+        @param filterArray  array holding pointers to Filter objects
+        @param su           object holding cosmological parameters and calculations
+        @param lmin         minimum wavelength in meters
+        @param lmax         maximum wavelength in meters                      
+        @param npt          resolution of SEDs                                                              */
+        TemplateChiSquare(vector<SED*> sedArray, vector<Filter*> filterArray, SimpleUniverse& su, 
+            double lmin=5e-8, double lmax=2.5e-6, int npt=10000)
             : sedArray_(sedArray) , filterArray_(filterArray) , su_(su) {
         
             nsed_ = sedArray_.size();
@@ -988,7 +995,7 @@ public:
             cout <<"     "<< nsed_ <<" templates added"<<endl;
             
             setAGrid(0.1,100.,100);
-            setLminmax(lmin,lmax);
+            setLminmax(lmin,lmax,npt);
 
             if (nsed_>=1000)
                 throw ParmError("ERROR! Too many SEDs");
