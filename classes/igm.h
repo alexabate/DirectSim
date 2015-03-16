@@ -28,7 +28,7 @@
 #include "classfunc.h"
 #include "sopnamsp.h"
 #include "mydefrg.h"
-//#include "pexceptions.h"
+#include "pexceptions.h"
 
 // CatSim
 #include "constcosmo.h"
@@ -47,55 +47,118 @@
 class AtomicCalcs
 {
 public:
-    /** Constructor */
-    AtomicCalcs();
+    /** Constructor (sets constants) */
+    AtomicCalcs() { setGammas(); setOscillatorStrength(); setConstants(); };
+
 
     /** Return the Lyman Series wavelength in meters
-        @param    n is the starting energy level for a Lyman transition (down to m=1)
-                  (minimum n is 2)                                              */
-    double returnWavelengthLymanSeries(int n);
+        @param    n is the starting energy level for a Lyman transition (down to n=1) (so minimum n is 2)   */
+    double returnWavelengthLymanSeries(int n) {
+        if (n<2) throw ParmError("ERROR! Lyman transition cannot start at n<2");
+        return WAVE_LYMANLIM_METERS/(1.-1./(n*n));
+        };
+        
     
     /** Return the Lyman Series wavelength in Angstroms
-        @param    n is the starting energy level for a Lyman transition (down to m=1)
-                  (minimum n is 2)                                              */
-    double returnWavelengthAngstrLymanSeries(int n);
+        @param    n is the starting energy level for a Lyman transition (down to n=1) (so minimum n is 2)   */
+    double returnWavelengthAngstrLymanSeries(int n)  {
+        if (n<2) throw ParmError("ERROR! Lyman transition cannot start at n<2");
+        return WAVE_LYMANLIM_ANGSTR/(1.-1./(n*n));
+        };
+        
     
-    /** Return the Lyman Series wavelength in frequency
-        @param  n is the starting energy level for a Lyman transition (down to m=1)
-                (minimum n is 2)                                              */
-    double returnFrequencyLymanSeries(int n);
+    /** Return the Lyman Series wavelength in frequency (in s^-1)
+        @param  n is the starting energy level for a Lyman transition (down to n=1) (so minimum n is 2)     */
+    double returnFrequencyLymanSeries(int n) {
+        if (n<2) throw ParmError("ERROR! Lyman transition cannot start at n<2");
+        double wl = returnWavelengthLymanSeries(n);
+        return SPEED_OF_LIGHT_MS/wl;
+        };
+
 
     /** Return Doppler width in meters with line center wavelength corresponding
         to Lyman series n \f$ \Delta\lambda=\lambda_i\frac{b}{c} \f$
-        @param nLine            starting energy level of the Lyman line transition
-        @param dopplerParKMS    doppler parameter in km/s                     */
-    double returnDopplerWidthWL(int nLine, double dopplerParamKMS);
+        @param n             starting energy level of the Lyman line transition
+        @param dopplerPar    doppler parameter in km/s                                                      */
+    double returnDopplerWidthWL(int n, double dopplerPar) {
+        double ratio = dopplerPar/SPEED_OF_LIGHT_KMS; // b/c
+        return returnWavelengthLymanSeries(n)*ratio;  // lambda_i*(b/c)
+        };
+
 
     /** Return Doppler width in s^-1 with line center frequency corresponding to 
         Lyman series n \f$ \Delta\nu=\nu_i\frac{b}{c} \f$
         @param n              starting energy level of the Lyman line transition
-        @param dopplerParKMS  doppler parameter in km/s                       */
-    double returnDopplerWidthFreq(int nLine, double dopplerParamKMS);
+        @param dopplerPar     doppler parameter in km/s                                                     */
+    double returnDopplerWidthFreq(int n, double dopplerPar) {
+        double ratio = dopplerPar/SPEED_OF_LIGHT_KMS; // b/c
+        return returnFrequencyLymanSeries(n)*ratio;   // freq_i*(b/c)
+        };
+
 
     /** Return the (unitless) wavelength difference relative to resonant wavelength
-       in Doppler units
-       @param lambda     wavelength in meters                                 */
-    double returnX(double lambda, int nLine, double dopplerPar);
+        in Doppler units
+        @param lambda        wavelength in meters                                 
+        @param dopplerPar    doppler parameter in km/s                                                      */
+    double returnX(double lambda, int n, double dopplerPar) {
+        double dl = (lambda - returnWavelengthLymanSeries(n));
+        double dw = returnDopplerWidthWL(n, dopplerPar); 
+        return dl/dw; // wavelength difference relative to resonant wavelength
+        };
 
-    /** Return the damping constant for the Lyman line beginning at nLine     */
-    double returnGamma(int nLine);
 
-    /** Return the Oscillator Strength for the Lyman line beginning at nLine  */
-    double returnOscillatorStrength(int nLine);
+    /** Return the damping constant for the Lyman line beginning at n     
+        @param n             starting energy level of the Lyman line transition                             */
+    double returnGamma(int n) {
+        if (n<2 || n>=gammaSeries_.size()+2) {
+            cout <<"ERROR! n = "<< n << endl;
+            throw ParmError("ERROR! Cannot return gammaSeries for this Lyman line number");
+            }
+        int iSeries = n-2;
+        return gammaSeries_[iSeries];
+        };
 
-    /** Return (unitless) damping parameter a */            
-    double returnDampingParameter(int nLine, double dopplerPar);
 
-    void printEverything(int nLine, double dopplerPar);
+    /** Return the Oscillator Strength for the Lyman line beginning at n  
+        @param n             starting energy level of the Lyman line transition                             */
+    double returnOscillatorStrength(int n) {
+        if (n<2 || n>=fSeries_.size()+2) {
+            cout <<"ERROR! n = "<< n << endl;
+            throw ParmError("ERROR! Cannot return oscillator strength for this Lyman line number");
+            }
+        int iSeries = n-2;
+        return fSeries_[iSeries];
+        };
 
+
+    /** Return (unitless) damping parameter a 
+        @param n             starting energy level of the Lyman line transition 
+        @param dopplerPar    doppler parameter in km/s                                                      */          
+    double returnDampingParameter(int n, double dopplerPar) {
+        double li = returnWavelengthLymanSeries(n);
+        double gammai = returnGamma(n);
+        double ld = returnDopplerWidthWL(n, dopplerPar);
+
+        double numer = li*li*gammai;
+        double denom = 4*PI*SPEED_OF_LIGHT_MS*ld;
+
+        return numer/denom;
+        };
+
+
+    /** Print all calculations for given n and dopplerPar
+        @param n             starting energy level of the Lyman line transition 
+        @param dopplerPar    doppler parameter in km/s                                                      */
+    void printEverything(int n, double dopplerPar);
+    
+    
+    /** Return the maximum energy level allowed for a Lyman line transition calculation                     */
+    int returnnLineMax() { return nLineMaxMax_; };
+
+protected:
     void setGammas();
     void setOscillatorStrength();
-    void setConsants();
+    void setConstants();
 
 protected:
     std::vector<double> gammaSeries_;   /**< damping constant of the Lyman series in s^-1 */
@@ -438,39 +501,6 @@ protected:
     vector<double> columnDensities_;
     bool isOpticalDepth_;
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 /** Madau class

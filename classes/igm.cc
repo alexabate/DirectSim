@@ -2,16 +2,6 @@
 //#include <string>
 //#include <cmath>
 
-/*  */
-
-/******* AtomicCalcs **********************************************************/
-
-AtomicCalcs::AtomicCalcs()
-{
-    setGammas();
-    setOscillatorStrength();
-    setConsants();
-};
 
 /******* AtomicCalcs methods **************************************************/
 
@@ -24,7 +14,7 @@ void AtomicCalcs::setGammas()
     gammaSeries_.push_back(4.204e7);// 5
     gammaSeries_.push_back(2.450e7);// 6
     
-    // Backed out of a file containg values of the damping parameter a assuming 
+    // Backed out of a file containing values of the damping parameter 'a' assuming 
     // b=36km/s from Tepper-Garcia.  See Fig 1 in Tepper-Garcia 2006
     gammaSeries_.push_back(1.236e7);// 7
     gammaSeries_.push_back(8.252e6);// 8
@@ -33,7 +23,23 @@ void AtomicCalcs::setGammas()
     gammaSeries_.push_back(3.159e6);// 11
     
     gammaSeries_.push_back(2.431e6);// 12
-    gammaSeries_.push_back(1.91e6); 
+    gammaSeries_.push_back(1.91e6); // 13
+    
+    // the following gammas for line transitions 14->1 up to 20->1 went missing sometime between AA's commit
+    // on 22 Aug 2013 and MK's commit on 17 Dec 2013
+    // from then up to now (16 Mar 2015 any calcs for line transitions >=14, <21 would be wrong)
+    // This involves: VoigtProfile, OpticalDepth, LineOfSightTrans, Madau, LAFMeiksin classes
+    gammaSeries_.push_back(1.528e6);// 14
+    gammaSeries_.push_back(1.242e6);// 15
+    gammaSeries_.push_back(1.024e6);// 16
+    
+    gammaSeries_.push_back(8.532e5);// 17
+    gammaSeries_.push_back(7.185e5);// 18
+    gammaSeries_.push_back(6.109e5);// 19 
+    gammaSeries_.push_back(5.235e5);// 20
+    // end was missing
+    
+
     gammaSeries_.push_back(4.522e5);// 21 
     
     gammaSeries_.push_back(3.932e5);// 22
@@ -56,7 +62,7 @@ void AtomicCalcs::setGammas()
 
 void AtomicCalcs::setOscillatorStrength()
 {
-        // Absorption oscillator strength of ith Lyman line (unitless)
+    // Absorption oscillator strength of ith Lyman line (unitless)
     // Taken from Wiese et al 1966
     fSeries_.push_back(0.4162); 
     fSeries_.push_back(7.910e-2);  
@@ -110,75 +116,16 @@ void AtomicCalcs::setOscillatorStrength()
     return;
 };
 
-void AtomicCalcs::setConsants()
+void AtomicCalcs::setConstants()
 {
     sigmaLymanLimitCM2_ = 6.30e-18;              //In cm^2
     freqLymanLimitInvSec_ = SPEED_OF_LIGHT_MS/WAVE_LYMANLIM_METERS;
     nLymanAlpha_ = 2;
-    nLineMaxMax_ = 31;
+    nLineMaxMax_ = 32;
 
     return;
 };
 
-double AtomicCalcs::returnWavelengthLymanSeries(int n)
-{
-    return WAVE_LYMANLIM_METERS/(1.-1./(n*n));
-};
-
-double AtomicCalcs::returnWavelengthAngstrLymanSeries(int n)
-{
-    return WAVE_LYMANLIM_ANGSTR/(1.-1./(n*n));
-};
-
-double AtomicCalcs::returnFrequencyLymanSeries(int n)
-{
-    double wl = returnWavelengthLymanSeries(n);
-    return SPEED_OF_LIGHT_MS/wl;
-};
-
-double AtomicCalcs::returnDopplerWidthWL(int nLine, double dopplerParamKMS)
-{
-    double ratio = dopplerParamKMS/SPEED_OF_LIGHT_KMS;
-    return returnWavelengthLymanSeries(nLine)*ratio;
-};
-
-double AtomicCalcs::returnDopplerWidthFreq(int nLine, double dopplerParamKMS)
-{
-    double ratio = dopplerParamKMS/SPEED_OF_LIGHT_KMS;
-    return returnFrequencyLymanSeries(nLine)*ratio;
-};
-
-double AtomicCalcs::returnX(double lambda, int nLine, double dopplerParam)
-{
-    double dl = (lambda - returnWavelengthLymanSeries(nLine));
-    double dw = returnDopplerWidthWL(nLine, dopplerParam);
-
-    return dl/dw;
-};
-
-double AtomicCalcs::returnGamma(int nLine)
-{
-    int iSeries = nLine-2;
-    return gammaSeries_[iSeries];
-};
-
-double AtomicCalcs::returnOscillatorStrength(int nLine)
-{
-    int iSeries = nLine-2;
-    return fSeries_[iSeries];
-};
-
-double AtomicCalcs::returnDampingParameter(int nLine, double dopplerParamKMS)
-{
-    double li = returnWavelengthLymanSeries(nLine);
-    double gammai = returnGamma(nLine);
-    double ld = returnDopplerWidthWL(nLine, dopplerParamKMS);
-
-    double numer = li*li*gammai;
-    double denom = 4*PI*SPEED_OF_LIGHT_MS*ld;
-
-    return numer/denom;
-};
 
 void AtomicCalcs::printEverything(int nLine, double dopplerPar)
 {
