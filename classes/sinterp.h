@@ -60,8 +60,8 @@ public :
         @param xmin  min x value to do interpolation from
         @param xmax  max x value to do interpolation from
         @param npt   number of points to use in interpolation                 */
-    SInterp1D(vector<double>& xs, vector<double>& ys, 
-                                 double xmin=1., double xmax=-1., size_t npt=0); 
+    SInterp1D(vector<double>& xs, vector<double>& ys, double xmin=1., double xmax=-1., size_t npt=0); 
+                        
                         
     // comment this constructor out if compiling withouht SOPHYA         
     /** Constructor: pairs of (x,y) points, no need to be regularly spaced in x,
@@ -73,8 +73,7 @@ public :
         @param xmin  min x value to do interpolation from
         @param xmax  max x value to do interpolation from
         @param npt   number of points to use in interpolation                 */ 
-    SInterp1D(TVector<r_8>& xs, TVector<r_8>& ys, 
-                                 double xmin=1., double xmax=-1., size_t npt=0); 
+    SInterp1D(TVector<r_8>& xs, TVector<r_8>& ys, double xmin=1., double xmax=-1., size_t npt=0); 
 
     /** Destructor */
     virtual ~SInterp1D() { };
@@ -87,6 +86,9 @@ public :
   
     /** Return dx step of interpolation table                                 */
     double DeltaX()  { return dx_; };
+    
+    /** Return number of points in interpolation table                        */
+    size_t Npoints() { return npoints_; }; 
   
     /** Returns x value for index i in interpolation table                    */
     inline double X(long i) const { return xmin_ + i*dx_; };
@@ -118,8 +120,7 @@ public :
         @param xmax  max x value of interpolation table
         @param npt   number of points to use in interpolation (or npt<1 for no
                      table)                                                   */
-    void DefinePoints(vector<double>& xs, vector<double>& ys, 
-                                 double xmin=1., double xmax=-1., size_t npt=0); 
+    void DefinePoints(vector<double>& xs, vector<double>& ys, double xmin=1., double xmax=-1., size_t npt=0); 
 
     /** Read Y's (one per line) (for regularly spaced X's) from a file and call 
         DefinePoints(xmin, xmax, yreg) 

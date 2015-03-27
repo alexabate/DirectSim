@@ -55,7 +55,15 @@ double SInterp1D::YInterp(double x) const
 {
     if (npoints_>0) { // use regularly spaced points (computed in DefinePoints)
         
-        long i = (long)((x-xmin_)/dx_); // find closest index to given x value
+        // find closest index to given x value where x[i]<x
+        long i = (long)((x-xmin_)/dx_);  // cast as long is equivalent to floor
+        
+        bool wCase = false;
+        if (xmax_<2.5e-6 && x>=2.43336e-6 && x<2.4336e-6) {
+            cout <<"printing i for weird x: "<< i <<" x = "<< x << endl;
+            wCase = true;
+            }
+    
     
         // if index is negative (i.e. x < xmin-dx)
         if (i<0) {
@@ -68,16 +76,24 @@ double SInterp1D::YInterp(double x) const
                 return 0;
             }
             
+        
+        // remember yreg_ has size npoints+1 so last index of yreg_ is i=npoints_
+        // but! can't use yreg[i+1] in the below so still have to "extrapolate"
         // if index outside yreg_ (x>xmax_)
 		if (i>=(int)npoints_) {
-		
+		    //if (i==npoints_+1)
+		    //    cout << yreg_.size() << "  "<< X(i-1) <<"  "<< X(i) <<"  "<< xmax_ << endl;
+		    
             if(!setzero_) // if not automatically setting zero ...
-                return ( yreg_[npoints_]+(x-xmax_)*(yreg_[npoints_]-yreg_[npoints_-1])/dx_ );
+                return ( yreg_[npoints_-1] + (x-X(npoints_-1))*(yreg_[npoints_]-yreg_[npoints_-1])/dx_ );
+                // BUG! AA fixed (27Mar15)
+                //return ( yreg_[npoints_]+(x-xmax_)*(yreg_[npoints_]-yreg_[npoints_-1])/dx_ );
+                
             else if (setzero_) // if automatically set to zero
                 return 0;
             }
 
-        // otherwise, if within range
+        // otherwise, if within range (remember x>X(i))
         return (yreg_[i]+(x-X(i))*(yreg_[i+1]-yreg_[i])/dx_);
 	
 		}
@@ -125,19 +141,18 @@ void SInterp1D::DefinePoints(double xmin, double xmax, vector<double>& yreg)
     // not sure xmin and xmax are ever checked?
     xmin_ = xmin; 
     xmax_ = xmax;
-    npoints_ = yreg.size()-1; // because x max is not included
+    npoints_ = yreg.size()-1; // because x max is not included in yreg
     dx_ = (xmax_-xmin_)/(double)npoints_;
     yreg_ = yreg;
 };
 
 
 // Define interpolation table with x,y pairs
-void SInterp1D::DefinePoints(vector<double>& xs, vector<double>& ys, 
-                                           double xmin, double xmax, size_t npt)
+void SInterp1D::DefinePoints(vector<double>& xs, vector<double>& ys, double xmin, double xmax, size_t npt)
 {
 
-    // check sizes
-    if ((xs.size() != ys.size())||(xs.size()<2)) {
+    // check sizes: number of x values match number of y values?
+    if ((xs.size() != ys.size()) || (xs.size()<2)) {
         string emsg = "SInterp1D::DefinePoints() Bad parameters ";
         emsg+="(xs.size() != ys.size())||(xs.size()<2) ";
         throw range_error(emsg);
@@ -155,7 +170,7 @@ void SInterp1D::DefinePoints(vector<double>& xs, vector<double>& ys,
 		
     xs_ = xs;
     ys_ = ys;
-    ksmx_ = xs_.size()-1;
+    ksmx_ = xs_.size()-1; // id of largest x value
     npoints_ = npt; // npt could be equal to zero
 	
     // check xmin,xmax,npt make sense
@@ -166,6 +181,7 @@ void SInterp1D::DefinePoints(vector<double>& xs, vector<double>& ys,
     else {
         xmin_ = xmin; 
         xmax_ = xmax;
+        // set xmin and xmax equal to smallest/largest x in file if they lie outside
         if (xmin_<xs_[0])
             xmin_ = xs_[0];
         if (xmax_>xs_[ksmx_])
@@ -180,22 +196,36 @@ void SInterp1D::DefinePoints(vector<double>& xs, vector<double>& ys,
         
     // interpolation table variables
     dx_ = (xmax_-xmin_)/(double)npoints_;
+    // spacing, defined such that: xmax_ = xmin_ + npt*dx_
+    
+    // make yreg_ the correct size
     yreg_.resize(npoints_+1); // npoints+1 y vals from regularly spaced x
+    // this is npoints+1 so that it includes xmax_
+
+    
+    
+    // AA: fixed bug 27Mar15
+    // don't do this: if xmax!=x[ksmx_] won't be right!
+    //yreg_[0] = ys_[0]; // set first element
+    //yreg_[npoints_] = ys_[ksmx_]; // set last element
+    
 
     // Compute the the y values for regularly spaced x xmin <= x <= xmax 
     // and keep values in the yreg vector
     // yreg defined between input y vector's limits
-    yreg_[0] = ys_[0]; // set first element
-    yreg_[npoints_] = ys_[ksmx_];
-    size_t k=1; // k=1 because already set k=0
-    for (size_t i=0; i<npoints_; i++) {
+    
+    size_t k=0;
+    for (size_t i=0; i<=npoints_; i++) {
     
         double x = X(i); // X is a function that returns xmin_ + i*dx_
+                         // first x returned will be xmin_, last x returned will be xmax_-dx_
         
-        while (x>xs_[k]) k++; // to get to the first index where xs_[k]>x
+        // to get to the first index where xs_[k]>x
+        while (x>xs_[k]) k++; 
 		
         if (k>=xs_.size()) { 
             // will happen if xmax given is greater than max of xs_
+            // should not happen because of protection above
             string emsg="SInterp1D::DefinePoints()  out of range k -> BUG in code ";
             throw out_of_range(emsg);
             //k = ksmx_;
@@ -217,6 +247,15 @@ void SInterp1D::DefinePoints(vector<double>& xs, vector<double>& ys,
 		//cout << " DBG* i=" << i << " X(i)=" << X(i) << " yreg_[i]= " << yreg_[i] 
 		//     << " k=" << k << " xs[k]=" << xs_[k] << endl;
 		}
+		
+    // as a check, print out last four elements of yreg_
+    /*cout <<"size of yreg = "<< yreg_.size() <<", npoints_ = "<< npoints_ << endl;
+    cout <<"xmin_ = "<< xmin_ <<", X(0) = "<< X(0) <<", xmax_ = "<< xmax <<", dx = "<< dx_ << endl;
+    cout <<"printing last four elements of yreg_:"<< endl;
+    for (int i=yreg_.size()-4; i<yreg_.size(); i++)
+        cout <<" i = "<< i <<", X(i) = "<< X(i) <<", yreg[i] = "<< yreg_[i]<< endl;
+    cout << endl;*/
+		
     return;
 };
 
@@ -258,9 +297,19 @@ size_t SInterp1D::ReadYFromFile(string const& filename, double xmin,
 
 
 // Read x,y pairs from a file
-size_t SInterp1D::ReadXYFromFile(string const& filename,double xmin,double xmax, 
-		size_t npt, int nComments, bool setzero)
+size_t SInterp1D::ReadXYFromFile(string const& filename, double xmin, double xmax, size_t npt, int nComments, 
+                                 bool setzero)
 {
+   // what is the relationship between xmin, xmax and the minimum x and maximum x read from the file?
+   // - xmin and xmax don't change what is read from file: everything is read from the file
+   // - if xmin is less than the lowest x value read from file, it is set to lowest value read from file
+   // - if xmax is larger than largest x value read from file, it is set to largest value read from file
+   // - if xmin>xmax then xmin = x[0] and xmax = x[last] read from file
+   // - xmax, xmin and npt set the spacing dx_, because x values read from file may not be evenly spaced
+   // - the interpolation table will start at xmin and go to xmax and have npt points in between
+   //   (i.e. the xmin and xmax that are provided as arguments above)
+   // - if the x values in the file are evenly spaced, increasing npt precalculates more interpolation points
+
     //so outside xsv[0] and xsv[xsv.size()-1] is forced to be set to zero
     setzero_ = setzero; 
 
@@ -272,6 +321,7 @@ size_t SInterp1D::ReadXYFromFile(string const& filename,double xmin,double xmax,
         throw runtime_error(emsg);
         }
 		
+    // read the comment lines
     for (int i=0; i<nComments; i++) {
         string line;
         getline(inputFile,line);
@@ -281,7 +331,7 @@ size_t SInterp1D::ReadXYFromFile(string const& filename,double xmin,double xmax,
     size_t cnt=0; // count number of lines
 	//cout << "nComments = "<< nComments << ", cnt = "<< cnt <<endl;
     double cola, colb;
-	while(!inputFile.eof()) {  
+	while (!inputFile.eof()) {  
         inputFile.clear();
         inputFile >> cola >> colb; // read each line into cola and colb
         //cout <<" cola = "<< cola <<", colb = "<< colb << endl;
