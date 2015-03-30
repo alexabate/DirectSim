@@ -73,18 +73,24 @@ int main(int narg, char* arg[])
     
     //--- decoding command line arguments 
 
-//    string outloc= "/home/lidenscheng/MK_DirectSim/testfiles/StarburstLOS1Yr/";
-//    string FILTLOC= "/home/lidenscheng/MK_DirectSim/filters/";
-//    string SEDLOC= "/home/lidenscheng/MK_DirectSim/SEDs/";
-//    string TRANSLOC= "/home/lidenscheng/MK_DirectSim/transmission/";
+//for general use 
+//    string outloc; 
+//    string FILTLOC="./filters/";
+//    string SEDLOC="./SEDs/";
+//    string TRANSLOC="./transmission/";
 
-    string outloc; 
-    string FILTLOC="./filters/";
-    string SEDLOC="./SEDs/";
-    string TRANSLOC="./transmission/";
+//hard coded in the subdirectories as I'm working through this 
+    string outloc= "/home/lidenscheng/MK_DirectSim/testfiles/StarburstLOS1Yr/";
+//    string outloc= "/home/lidenscheng/MK_DirectSim/testfiles/StarburstLOS10Yr/";
+    string FILTLOC= "/home/lidenscheng/MK_DirectSim/filters/";
+//    string SEDLOC= "/home/lidenscheng/MK_DirectSim/SEDs/";
+    string SEDLOC= "/home/lidenscheng/DirectSim/SEDs/"; 
+    string TRANSLOC= "/home/lidenscheng/MK_DirectSim/transmission/";
+//    string TRANSLOC= "/home/lidenscheng/MK_DirectSim/meanIGMTransmissions/";
+
     string locs;
     int nz = 400;    //number of lines of sight 
-    double z = 2.9; //constant redshift 
+    double z = 1.8; //constant redshift 
 
 	char c;
     while((c = getopt(narg,arg,"ho:l:z:n:")) != -1) {
@@ -157,50 +163,25 @@ int main(int narg, char* arg[])
     tmp3 = "TRANSLOC=" + TRANSLOC; 
     c3 = &tmp3[0];
     putenv(c3);
-    //putenv("FILTLOC=/home/lidenscheng/MK_DirectSim/filters/");
-    //putenv("SEDLOC=/home/lidenscheng/MK_DirectSim/SEDs/");
-    //putenv("SEDLOC=/home/lidenscheng/bpz-1.99.3/SED/LSST/");
-    //putenv("TRANSLOC=/home/lidenscheng/MK_DirectSim/transmission/");
-    //putenv("TRANSLOC=/home/lidenscheng/MK_DirectSim/meanIGMTransmissions/");
-	
 	
     // Set output files
     // AA: removed hard coding, made vector of strings to prevent code copy
-    // AA: not sure why magnitudes and errors were in different files?
     // AA: can further improve this by reading first part of filename from SED list read in
     stringstream ss;
     ss << z;
     vector<string> outfiles;
+
     outfiles.push_back(outloc + "SB3_B2004a_" + ss.str() + "z_Mags.txt");
     outfiles.push_back(outloc + "SB2_B2004a_" + ss.str() + "z_Mags.txt");
     outfiles.push_back(outloc + "ssp_25Myr_z008_" + ss.str() + "z_Mags.txt");
     outfiles.push_back(outloc + "ssp_5Myr_z008_" + ss.str() + "z_Mags.txt");
-    //string outfile =  outloc + "SB3_B2004a_z008_2.45z_Mags.txt";
-    //string outfile3 = outloc + "SB2_B2004a_z008_2.45z_Mags.txt";
-    //string outfile5 = outloc + "ssp_25Myr_z008_2.45z_Mags.txt";
-    //string outfile7 = outloc + "ssp_5Myr_z008_2.45z_Mags.txt";
 
-    //string outfile2= outloc + "SB3_B2004a_z008_2.45z_Errors.txt";
-    //string outfile4= outloc + "SB2_B2004a_z008_2.45z_Errors.txt";
-    //string outfile6= outloc + "ssp_25Myr_z008_2.45z_Errors.txt";
-    //string outfile8= outloc + "ssp_5Myr_z008_2.45z_Errors.txt";
+//meanIGM files use constant IGM (IGM averaged over 400LOS)
+//    outfiles.push_back(outloc + "meanIGM_SB3_B2004a_1%_" + ss.str() + "z_Mags.txt");
+//    outfiles.push_back(outloc + "meanIGM_SB2_B2004a_1%_" + ss.str() + "z_Mags.txt");
+//    outfiles.push_back(outloc + "meanIGM_ssp_25Myr_z008_1%_" + ss.str() + "z_Mags.txt");
+//    outfiles.push_back(outloc + "meanIGM_ssp_5Myr_z008_1%_" + ss.str() + "z_Mags.txt");
 
-//    string redOutfile = "/home/lidenscheng/MK_DirectSim/testfiles/lsstColorsExtinction.txt";
-
-    // Redshifts
-/*    double zmin=1.4, zmax=2.9;
-    int nz=16;
-    double dz=(zmax-zmin)/(nz-1);
-*/
-      // AA: removed hard coding
-      //int nz=400; //number of lines of sight 
-      //double z=2.45; //constant redshift 
-
-    // Which SED to examine (0-3 for SB3_B2004a, SB2_B2004a, ssp_25Myr_z008, ssp_5Myr_z008)
-
-//    int iSb = 0;
-//      int iSb; 
-//      int nSb= 6; 
 
     /*************************************
     *       Read in Filters              *
@@ -246,6 +227,7 @@ int main(int narg, char* arg[])
     ******************************************************************/
 
     string transFile = "Transmission_" + ss.str() + "z.list";
+//    string transFile = "meanTransmission_" + ss.str() + "z.list";
     vector<string> transFileList = returnFileList(transFile);
     vector<SInterp1D> transIgm;
 
@@ -408,6 +390,7 @@ int main(int narg, char* arg[])
     TVector<r_8> Cug(nz), Cgr(nz), Cri(nz), Ciz(nz), Czy(nz), Cyu(nz);
     TVector<r_8> CugR(nz), CgrR(nz), CriR(nz), CizR(nz), CzyR(nz), CyuR(nz);
 
+// Either 1Yr or 10Yr LSST photometric errors
 //    int nYear = 10; // could as as prog arg
     int nYear = 1;
     
@@ -440,24 +423,7 @@ int main(int narg, char* arg[])
 
     // AA: add loop over SEDs to save code copying
     for (int iSb=0; iSb<sedArray.size(); iSb++) {
-    
-        //iSb=0; 
 
-    //ifstream inp, inp2;
-    //ofstream outp, outp2;
-    //inp.open(outfile.c_str(), ifstream::in);
-    //inp2.open(outfile2.c_str(), ifstream::in);
-    //inp.close();
-    //inp2.close();
-    //if(inp.fail() && inp2.fail()) {
-
-    //    inp.clear(ios::failbit);
-    //    inp2.clear(ios::failbit);
-    //    cout << "Writing to file ..." << outfile.c_str() << endl;
-    //    cout << "Writing to file ..." << outfile2.c_str() << endl;
-    //     outp.open(outfile.c_str(), ofstream::out);
-    //    outp2.open(outfile2.c_str(), ofstream::out);
-    
     
         ifstream inp;
         ofstream outp;
@@ -469,8 +435,11 @@ int main(int narg, char* arg[])
             outp.open(outfiles[iSb].c_str(), ofstream::out);
 
             // Faking magnitudes (no IGM and IGM) by using colors. Manually set m_i=24. 
+
+
 		
-	        for (int i=0; i<nz; i++) {		
+	        for (int i=0; i<nz; i++) {
+		
 
 //            double z=zmin+i*dz;
 
@@ -522,6 +491,8 @@ int main(int narg, char* arg[])
 	           m_gR = CgrR(i) + m_rR;
 	           m_uR = CugR(i) + m_gR;
 
+//	for(int k=0; k<400; k++){
+
               // AA: updated to new method that adds LSST errors
               // AA: @ note photometric errors only added to IGM absorbed magnitudes
 	          error_U = simData.addLSSTError(m_uR, nYear, uLSST); 
@@ -540,10 +511,12 @@ int main(int narg, char* arg[])
 
            	outp << i+1 <<"  "; // IGM line of sight index
            	outp << m_u <<"  "<< m_g <<"  "<< m_r <<"  "<< m_i << "  "<< m_z <<"  "<< m_y <<"  "; // no error no IGM (same each row) 
-           	outp << m_uR <<"  "<< m_gR <<"  "<< m_rR <<"  "<< m_iR <<"  "<< m_zR <<"  "<< m_yR <<"  "; // no error w/IGM
+           	outp << m_uR <<"  "<< m_gR <<"  "<< m_rR <<"  "<< m_iR <<"  "<< m_zR <<"  "<< m_yR <<"  "<< 0.0 << " "; // no error w/IGM
            	outp << error_U[0] <<"  "<< error_G[0] <<"  "<< error_R[0] <<"  "<< error_I[0] <<"  "<< error_Z[0] <<"  "<< error_Y[0] <<"  "; // w/error w/IGM
            	outp << error_U[1] <<"  "<< error_G[1] <<"  "<< error_R[1] <<"  "<< error_I[1] <<"  "<< error_Z[1] <<"  "<< error_Y[1] <<"  "; // errors
-            outp << endl;
+
+                outp << endl;
+
 //           	outp2 << i+1 
 //                 << "    " << error_U[1] << "    " << error_G[1] << "    " << error_R[1] << "    " 
 //		 << error_I[1] << "    " << error_Z[1] << "    " << error_Y[1] << endl;
@@ -556,7 +529,8 @@ int main(int narg, char* arg[])
 //              outp << z << "  " << Cug(i) << "	" << Cgr(i) << endl; 
 //              outp << z << "  " << CugR(i) << " 	" << CgrR(i) << endl;  
 
-            }
+//            }
+         }
 
         outp.close();
         //outp2.close();
@@ -567,206 +541,6 @@ int main(int narg, char* arg[])
         //cout << "Error...file " << outfile2.c_str() << " exists" << endl;
 	    }
     }
-
-
-/*    iSb=1; 
-
-    ifstream inp3, inp4;
-    ofstream outp3, outp4;
-    inp3.open(outfile3.c_str(), ifstream::in);
-    inp4.open(outfile4.c_str(), ifstream::in);
-    inp3.close();
-    inp4.close();
-    if(inp3.fail() && inp4.fail()) {
-
-        inp3.clear(ios::failbit);
-        inp4.clear(ios::failbit);
-        cout << "Writing to file ..." << outfile3.c_str() << endl;
-        cout << "Writing to file ..." << outfile4.c_str() << endl;
-        outp3.open(outfile3.c_str(), ofstream::out);
-        outp4.open(outfile4.c_str(), ofstream::out);
-
-//Faking magnitudes (no IGM and IGM) by using colors. Manually set m_i=24. 
-		
-	    for (int i=0;i<nz;i++) {		
-
-        // Colors with IGM absorption 
-        CugR(i)=computeColorIGM(z, (*sedArray[iSb]), (*filterArray[uLSST]), (*filterArray[gLSST]), transIgm[i], lmin, lmax); 
-        CgrR(i)=computeColorIGM(z, (*sedArray[iSb]), (*filterArray[gLSST]), (*filterArray[rLSST]), transIgm[i], lmin, lmax); 
-        CriR(i)=computeColorIGM(z, (*sedArray[iSb]), (*filterArray[rLSST]), (*filterArray[iLSST]), transIgm[i], lmin, lmax); 
-        CizR(i)=computeColorIGM(z, (*sedArray[iSb]), (*filterArray[iLSST]), (*filterArray[zLSST]), transIgm[i], lmin, lmax); 
-        CzyR(i)=computeColorIGM(z, (*sedArray[iSb]), (*filterArray[zLSST]), (*filterArray[yLSST]), transIgm[i], lmin, lmax); 
-
-	m_rR= CriR(i)+24.0;
-	m_iR= 24.0;
-	m_zR= 24.0-CizR(i);
-	m_yR= m_zR-CzyR(i);
-	m_gR= CgrR(i)+m_rR;
-	m_uR= CugR(i)+m_gR;
-
-    // AA: updated to new method that adds LSST errors
-	error_U= simData.addLSSTError(m_uR, nYear, uLSST); 
-	error_G= simData.addLSSTError(m_gR, nYear, gLSST); 
-	error_R= simData.addLSSTError(m_rR, nYear, rLSST); 
-	error_I= simData.addLSSTError(m_iR, nYear, iLSST); 
-	error_Z= simData.addLSSTError(m_zR, nYear, zLSST); 
-	error_Y= simData.addLSSTError(m_yR, nYear, yLSST); 
-
-           	outp3 << i+1 
-                 << "    " << m_uR << "    " << m_gR << "    " << m_rR << "    " 
-		 << 24.0 << "    " << m_zR << "    " << m_yR << "	" << 0.0 << endl;
-
-           	outp4 << i+1 
-                 << "    " << error_U[1] << "    " << error_G[1] << "    " << error_R[1] << "    " 
-		 << error_I[1] << "    " << error_Z[1] << "    " << error_Y[1] << endl;
-
-}
-
-
-        outp3.close();
-        outp4.close();
-	    }
-
-    else{
-        cout << "Error...file " << outfile3.c_str() << " exists" << endl;
-        cout << "Error...file " << outfile4.c_str() << " exists" << endl;
-	}
-
-
-    iSb=2; 
-
-    ifstream inp5, inp6;
-    ofstream outp5, outp6;
-    inp5.open(outfile5.c_str(), ifstream::in);
-    inp6.open(outfile6.c_str(), ifstream::in);
-    inp5.close();
-    inp6.close();
-    if(inp5.fail() && inp6.fail()) {
-
-        inp5.clear(ios::failbit);
-        inp6.clear(ios::failbit);
-        cout << "Writing to file ..." << outfile5.c_str() << endl;
-        cout << "Writing to file ..." << outfile6.c_str() << endl;
-        outp5.open(outfile5.c_str(), ofstream::out);
-        outp6.open(outfile6.c_str(), ofstream::out);
-
-//Faking magnitudes (no IGM and IGM) by using colors. Manually set m_i=24. 
-		
-	    for (int i=0;i<nz;i++) {		
-
-        // Colors with IGM absorption 
-        CugR(i)=computeColorIGM(z, (*sedArray[iSb]), (*filterArray[uLSST]), (*filterArray[gLSST]), transIgm[i], lmin, lmax); 
-        CgrR(i)=computeColorIGM(z, (*sedArray[iSb]), (*filterArray[gLSST]), (*filterArray[rLSST]), transIgm[i], lmin, lmax); 
-        CriR(i)=computeColorIGM(z, (*sedArray[iSb]), (*filterArray[rLSST]), (*filterArray[iLSST]), transIgm[i], lmin, lmax); 
-        CizR(i)=computeColorIGM(z, (*sedArray[iSb]), (*filterArray[iLSST]), (*filterArray[zLSST]), transIgm[i], lmin, lmax); 
-        CzyR(i)=computeColorIGM(z, (*sedArray[iSb]), (*filterArray[zLSST]), (*filterArray[yLSST]), transIgm[i], lmin, lmax); 
-
-	m_rR= CriR(i)+24.0;
-	m_iR= 24.0;
-	m_zR= 24.0-CizR(i);
-	m_yR= m_zR-CzyR(i);
-	m_gR= CgrR(i)+m_rR;
-	m_uR= CugR(i)+m_gR;
-
-    // AA: updated to new method that adds LSST errors
-	error_U= simData.addLSSTError(m_uR, nYear, uLSST); 
-	error_G= simData.addLSSTError(m_gR, nYear, gLSST); 
-	error_R= simData.addLSSTError(m_rR, nYear, rLSST); 
-	error_I= simData.addLSSTError(m_iR, nYear, iLSST); 
-	error_Z= simData.addLSSTError(m_zR, nYear, zLSST); 
-	error_Y= simData.addLSSTError(m_yR, nYear, yLSST); 
-
-           	outp5 << i+1 
-                 << "    " << m_uR << "    " << m_gR << "    " << m_rR << "    " 
-		 << 24.0 << "    " << m_zR << "    " << m_yR << "	" << 0.0 << endl;
-
-           	outp6 << i+1 
-                 << "    " << error_U[1] << "    " << error_G[1] << "    " << error_R[1] << "    " 
-		 << error_I[1] << "    " << error_Z[1] << "    " << error_Y[1] << endl;
-
-}
-
-
-        outp5.close();
-        outp6.close();
-	    }
-
-    else{
-        cout << "Error...file " << outfile5.c_str() << " exists" << endl;
-        cout << "Error...file " << outfile6.c_str() << " exists" << endl;
-	}
-
-
-    iSb=3; 
-
-    ifstream inp7, inp8;
-    ofstream outp7, outp8;
-    inp7.open(outfile7.c_str(), ifstream::in);
-    inp8.open(outfile8.c_str(), ifstream::in);
-    inp7.close();
-    inp8.close();
-    if(inp7.fail() && inp8.fail()) {
-
-        inp7.clear(ios::failbit);
-        inp8.clear(ios::failbit);
-        cout << "Writing to file ..." << outfile7.c_str() << endl;
-        cout << "Writing to file ..." << outfile8.c_str() << endl;
-        outp7.open(outfile7.c_str(), ofstream::out);
-        outp8.open(outfile8.c_str(), ofstream::out);
-
-//Faking magnitudes (no IGM and IGM) by using colors. Manually set m_i=24. 
-		
-	    for (int i=0;i<nz;i++) {		
-
-        // Colors with IGM absorption 
-        CugR(i)=computeColorIGM(z, (*sedArray[iSb]), (*filterArray[uLSST]), (*filterArray[gLSST]), transIgm[i], lmin, lmax); 
-        CgrR(i)=computeColorIGM(z, (*sedArray[iSb]), (*filterArray[gLSST]), (*filterArray[rLSST]), transIgm[i], lmin, lmax); 
-        CriR(i)=computeColorIGM(z, (*sedArray[iSb]), (*filterArray[rLSST]), (*filterArray[iLSST]), transIgm[i], lmin, lmax); 
-        CizR(i)=computeColorIGM(z, (*sedArray[iSb]), (*filterArray[iLSST]), (*filterArray[zLSST]), transIgm[i], lmin, lmax); 
-        CzyR(i)=computeColorIGM(z, (*sedArray[iSb]), (*filterArray[zLSST]), (*filterArray[yLSST]), transIgm[i], lmin, lmax); 
-
-	m_rR= CriR(i)+24.0;
-	m_iR= 24.0;
-	m_zR= 24.0-CizR(i);
-	m_yR= m_zR-CzyR(i);
-	m_gR= CgrR(i)+m_rR;
-	m_uR= CugR(i)+m_gR;
-
-	error_U= simData.addLSSTError(m_uR, nYear, uLSST); 
-	error_G= simData.addLSSTError(m_gR, nYear, gLSST); 
-	error_R= simData.addLSSTError(m_rR, nYear, rLSST); 
-	error_I= simData.addLSSTError(m_iR, nYear, iLSST); 
-	error_Z= simData.addLSSTError(m_zR, nYear, zLSST); 
-	error_Y= simData.addLSSTError(m_yR, nYear, yLSST); 
-
-           	outp7 << i+1 
-                 << "    " << m_uR << "    " << m_gR << "    " << m_rR << "    " 
-		 << 24.0 << "    " << m_zR << "    " << m_yR << "	" << 0.0 << endl;
-
-           	outp8 << i+1 
-                 << "    " << error_U[1] << "    " << error_G[1] << "    " << error_R[1] << "    " 
-		 << error_I[1] << "    " << error_Z[1] << "    " << error_Y[1] << endl;
-
-}
-
-
-        outp7.close();
-        outp8.close();
-	    }
-
-    else{
-        cout << "Error...file " << outfile7.c_str() << " exists" << endl;
-        cout << "Error...file " << outfile8.c_str() << " exists" << endl;
-	}
-
-
-*/
-//        outp.close();
-
-
-//} // end of for loop of some number of SB galaxies
-
-
  
   }  // End of try bloc 
 
