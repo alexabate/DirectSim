@@ -11,34 +11,28 @@ namespace SOPHYA {
 
 //******* SED ****************************************************************//
 
-// Constructor if reading flux values from a file for interpolation
+// Main Constructor
 SED::SED(string& fname, double xmin, double xmax, int npt)
 : sed2_(sed2init_)
 {
-  	string Tplace;
-	char * pt=getenv("SEDLOC");
-	if (pt==NULL)
-		throw ParmError("ERROR SED LOCATION ENVIRONMENT VARIABLE -SEDLOC- NOT DEFINED");
-	else
-		{
-		Tplace=pt;
-		cout <<"    Location of template files are "<<Tplace<<endl;
-		}
-	string filename=Tplace+fname;
-	
-	// Set interpolation to zero outside of x-range in file 
-    bool isSetZero = false; // this needs to be checked
-    int nComments = 0;
-	sed_.ReadXYFromFile(filename, xmin, xmax, npt, nComments, isSetZero);
 
-    isRead_=true;
+	// read the SED
+	readSED(fname, xmin, xmax, npt);
+
+	// set some defaults
+	a_ = 1.;    // fraction of SED is 100% of one read in
+	EBmV_ = 0.; // no reddening applied yet
+	RvCard_=3.5;
+	law_=0;
+
+    // flags: SED not interpolated or reddened
 	isInterp_ = false;
 	isRedden_ = false;
 	_test_=2.;
 };
 
 
-// copy constructor
+// Copy Constructor
 SED::SED(SED const& a)
 :  sed_(a.sed_)
 {
@@ -48,7 +42,7 @@ SED::SED(SED const& a)
 };
 
 
-// Copy SED: this does a DEEP copy
+// Copy SED method: this does a DEEP copy
 SED& SED::Set(const SED& a)
 {
     sed2_=a.sed2_;// missing this line cost me a whole live long day!
@@ -56,7 +50,6 @@ SED& SED::Set(const SED& a)
     isRedden_=a.isRedden_;
     isInterp_=a.isInterp_;
     a_=a.a_;
-    b_=a.b_;
     EBmV_=a.EBmV_;
     RvCard_=a.RvCard_;
     law_=a.law_;
@@ -64,44 +57,33 @@ SED& SED::Set(const SED& a)
 };
 
 
-//******* SED methods ********************************************************//
+//******* SED methods **************************************************************************************//
 
-void SED::readSED(string& filename, double xmin, double xmax, int npt)
+void SED::readSED(string& fname, double xmin, double xmax, int npt)
 {
 
+    // find location of SED file
+  	string Tplace;
+	char * pt=getenv("SEDLOC");
+	if (pt==NULL)
+		throw ParmError("ERROR SED LOCATION ENVIRONMENT VARIABLE -SEDLOC- NOT DEFINED");
+	else
+		{
+		Tplace=pt;
+		cout <<"     Location of template file is "<< Tplace <<endl;
+		}
+	string filename = Tplace + fname;
+
     // Set interpolation to zero outside of x-range in file 
-    bool isSetZero = false; // this needs to be checked
-    int nComments = 0;
+    bool isSetZero = false; // definitely set to false!
+    int nComments = 0; // no comments at top of file (could add as argument to generalise code)
+
+    //cout << xmin <<"  "<< xmax <<" "<< npt << endl;
 	sed_.ReadXYFromFile(filename, xmin, xmax, npt, nComments, isSetZero);
 	isRead_=true;
 
 };
 
-// Setting up interpolation
-// If interpolating between 2 SEDs
-// Must take as argument a POINTER to an SED object
-void SED::doInterp(SED* sed2,double a,double b)
-{
-    // copy sed2 into sed2_
-    sed2_=sed2;
-    
-    a_=a; b_=b;
-
-	isInterp_ = true;
-	isRedden_ = false;
-	
-};
-
-// Setting up the reddening
-void SED::doRedden(double EBmV, int law, double RvCard)
-{
-    EBmV_=EBmV;
-    law_=law;
-    RvCard_=RvCard;
-
-	isRedden_ = true;
-
-};
 
 // Main return function
 double SED::returnFlux(double lambda) const
@@ -113,22 +95,26 @@ double SED::returnFlux(double lambda) const
         return addReddening(lambda);
     else if (isRedden_&&isInterp_)// if SED is to be interpolated AND reddened
         return interpAddReddening(lambda);
-    else
+    else // if SED will be au natural
         return sed_(lambda);
 
 };
+
 
 double SED::addReddening(double lambda) const
 {
     if (!isRedden_)
         throw ParmError("ERROR! Cannot redden spectrum");
         
+    if (EBmV_<0.00001)
+        return sed_(lambda);
+        
     Reddening red;
 	double k;
 	if (law_<1)
-		k=red.Cardelli(lambda,RvCard_);
+		k = red.Cardelli(lambda, RvCard_);
 	if (law_>0)
-		k=red.Calzetti(lambda);
+		k = red.Calzetti(lambda);
 	
 	return  (sed_(lambda)*pow(10,-0.4*k*EBmV_));
 };
@@ -142,13 +128,17 @@ double SED::interpAddReddening(double lambda) const
     if (!isInterp_)
         throw ParmError("ERROR! Cannot interpolate spectrum");
         
+    if (EBmV_<0.00001)
+        return interpSED(lambda);
+    
     Reddening red;
 	double k;
 	if (law_<1)
-		k=red.Cardelli(lambda,RvCard_);
+		k = red.Cardelli(lambda,RvCard_);
 	if (law_>0)
-		k=red.Calzetti(lambda);
+		k = red.Calzetti(lambda);
 	
+	// redden interpolated SED
 	double redPart = pow(10,-0.4*k*EBmV_);
 	double interpPart = interpSED(lambda);
 	return  (interpPart*redPart);
@@ -162,11 +152,14 @@ double SED::interpSED(double lambda) const
     if (!isInterp_)
         throw ParmError("ERROR! Cannot interpolate spectrum");
         
+    double b = 1. - a_;
+        
     // sed2_ is a POINTER to a SED object
     double sed1=a_*(sed_(lambda));
-    double sed2=b_*(sed2_->returnFlux(lambda));
+    double sed2=b*(sed2_->returnFlux(lambda));
     return (sed1+sed2);
 };
+
 
 //******* ReadSedList ********************************************************//
 
@@ -191,6 +184,9 @@ ReadSedList::ReadSedList(string sedFile, int prt)
     
     // Initialize if SEDs added by interpolation or reddening to false
     isInterp_ = isRedden_ = false;
+    
+    // SEDs have not been read yet
+    isRead_ = false;
 
 };
 
@@ -244,6 +240,8 @@ void ReadSedList::countSeds(string sedFileFullPath)
 
 void ReadSedList::readSeds(double lmin, double lmax, int npt)
 {
+    if (isRead_)
+        throw ParmError("ERROR! SEDs have already been read");
     
     // open up file of list of SEDs
     ifstream ifs;
@@ -257,7 +255,7 @@ void ReadSedList::readSeds(double lmin, double lmax, int npt)
 	for (int i=0; i<nsed_; i++)	{
 		getline(ifs,line);
 		sedFiles_.push_back(line);
-		fileNames[i] = sedDir_ + line;
+		fileNames[i] = line; //sedDir_ + line; becase SED class can find location!
 		if (prt_ > 0)
 		    cout <<"     "<< fileNames[i] <<endl;
 		}
@@ -271,6 +269,11 @@ void ReadSedList::readSeds(double lmin, double lmax, int npt)
 		sedArray_[i]->readSED(fileNames[i], lmin, lmax, npt);
 		reds_.push_back(0.);
 		}
+		
+    // close file of list of SEDs
+    ifs.close();
+    
+    isRead_ = true; // SEDs have now been read
 };
 
 void ReadSedList::interpSeds(int nInterp)
@@ -287,7 +290,7 @@ void ReadSedList::interpSeds(int nInterp)
 	    cout << sedArray_.size()<<endl;
 	    }
 	    
-	int iSED=ntot_; // starting index of next SED
+	int iSED = ntot_; // starting index of next SED
     for (int i=0; i<(nsed_-1); i++) {
     
 		double a=0;
@@ -300,8 +303,8 @@ void ReadSedList::interpSeds(int nInterp)
 		    double b=1-a;
 		
 		    // push new SED to end of array
-		    sedArray_.push_back(new SED(*(sedArray_[i])));// copies SED in i
-		    sedArray_[iSED]->doInterp(sedArray_[i+1],a,b);
+		    sedArray_.push_back( new SED(*(sedArray_[i])) );// copies SED in i
+		    sedArray_[iSED]->doInterp(sedArray_[i+1], a);
 		    reds_.push_back(0.); // hmm this could be bad if interpolated two reddened SEDs, BUT! interp
 		                         // must be done first!
 		                        
@@ -310,17 +313,63 @@ void ReadSedList::interpSeds(int nInterp)
 		 
 		}
 		
-	int nAdd=nInterp*(nsed_-1);
+	int nAdd = nInterp*(nsed_-1);
     ntot_+=nAdd;
     
     if (prt_>0){
-	    cout <<"     Size of SED array is now "<<sedArray_.size()<<endl;
-	    cout <<"     Total number of SEDs is "<<ntot_<<endl;
+	    cout <<"     Size of SED array is now "<< sedArray_.size() <<endl;
+	    cout <<"     Total number of SEDs is "<< ntot_ <<endl;
 	    cout << endl; 
         }
         
      isInterp_ = true; 
 };
+
+
+void ReadSedList::reorderSEDs()
+{
+    if (isRedden_)
+        throw ParmError("ERROR! Cannot reorder SEDs if reddening has been done!");
+    if (!isInterp_)
+        throw ParmError("ERROR! No need to reorder if not interpolated!");
+
+    vector<SED*> tmpsedArray;
+    
+    // If we have nsed's we have nsed-1 spaces inbetween seds
+    // Therefore number of SEDs being added is: nInterped = nInterp*(nsed-1)
+    // nInterp is the number of interpolations done between each original SED
+    
+    
+    int nInterpd = ntot_ - nsed_;
+    int nInterp = nInterpd/(nsed_ - 1);
+    
+    //int iBeginInt = nsed_; // index of sedArray_ where the interpolated SEDS begin
+    
+    for (int i=0; i<(nsed_-1); i++) {
+    
+        // push back original SED from file first
+        tmpsedArray.push_back(sedArray_[i]);
+        
+        // then get the nInterp SEDs between that SED and the one at i+1
+        int ii = i*nInterp;
+         
+        for (int j=0; j<nInterp; j++) {
+            int ik = nsed_ + ii + j;
+            tmpsedArray.push_back(sedArray_[ik]); 
+            }
+        }
+    
+    // push back last SED in original list
+    tmpsedArray.push_back(sedArray_[nsed_-1]); 
+    
+    int tmp = tmpsedArray.size();
+    if ( tmp!=ntot_ )
+        throw ParmError("ERROR! Wrong number of SEDs!");
+            
+    sedArray_.clear();
+    sedArray_ = tmpsedArray;
+};
+
 
 //void ReadSedList::reddenSeds(int nStepRed, double redMax)
 vector<double> ReadSedList::reddenSeds(int nPerSED, int method, int maxidEl, double redMaxEl, double redMaxOther)
@@ -357,8 +406,8 @@ vector<double> ReadSedList::reddenSeds(int nPerSED, int method, int maxidEl, dou
 	    
 	// get reddening values, same for all SEDs except elliptical
 	RandomGenerator rg;
-	vector<double> EBV_El;
-	vector<double> EBV_Other;
+	vector<double> EBV_El;    // five reddening values to apply to El's (or first maxidEl+1 SEDs)
+	vector<double> EBV_Other; // five reddening values to apply to any other SED
 	
 	// if uniform distribution of reddening
 	if (method==0) {
@@ -405,10 +454,11 @@ vector<double> ReadSedList::reddenSeds(int nPerSED, int method, int maxidEl, dou
 		// loop over number of times reddening to be done
 		for (int j=0; j<nPerSED; j++) {
 		    
-		    int law = 0; // default Cardelli
-		    double EBmV = EBV_El[j]; // default Elliptical reddening value
+		    // default expect galaxy is Elliptical:
+		    int law = 0; // Cardelli
+		    double EBmV = EBV_El[j]; // Elliptical reddening value
 
-		    // check if not elliptical template
+		    // if not Elliptical template, change law and reddening value
 		    if (i>maxidEl) {
 		        law = 1;
 		        EBmV = EBV_Other[j];
@@ -418,9 +468,9 @@ vector<double> ReadSedList::reddenSeds(int nPerSED, int method, int maxidEl, dou
 		    
 		    // push new SED to end of array
 		    sedArray_.push_back(new SED(*(sedArray_[i])));
-		    reds_.push_back(EBmV);
+		    reds_.push_back(EBmV); // actual order of reddening values applied
 		    
-		    int lastIndex = sedArray_.size()-1;
+		    int lastIndex = sedArray_.size()-1; // because size just grew by 1
 		    sedArray_[lastIndex]->doRedden(EBmV, law);
 		    }
 		    
@@ -436,43 +486,6 @@ vector<double> ReadSedList::reddenSeds(int nPerSED, int method, int maxidEl, dou
     isRedden_ = true;
 
     return redvals;
-};
-
-void ReadSedList::reorderSEDs()
-{
-    if (isRedden_)
-        throw ParmError("ERROR! Cannot reorder SEDs if reddening has been done!");
-    if (!isInterp_)
-        throw ParmError("ERROR! No need to reorder if not interpolated!");
-
-    vector<SED*> tmpsedArray;
-    
-    // If we have nsed's we have nsed-1 spaces inbetween seds
-    // Therefore number of SEDs being added is: nInterpd = nBetween*(nsed-1)
-    // nBetween is the number of interpolations done between each original SED
-    
-    
-    int nInterpd = ntot_ - nsed_;
-    int nBetween = nInterpd/(nsed_ - 1);
-    
-    //int iBeginInt = nsed_; // index of sedArray_ where the interpolated SEDS begin
-    
-    for (int i=0; i<(nsed_-1); i++) {
-        int ii = i*nBetween;
-        tmpsedArray.push_back(sedArray_[i]); 
-        for (int j=0; j<nBetween; j++) {
-            int ik = nsed_ + ii + j;
-            tmpsedArray.push_back(sedArray_[ik]); 
-            }
-        }
-    tmpsedArray.push_back(sedArray_[nsed_-1]); 
-    
-    int tmp = tmpsedArray.size();
-    if ( tmp!=ntot_ )
-        throw ParmError("ERROR! Wrong number of SEDs!");
-            
-    sedArray_.clear();
-    sedArray_=tmpsedArray;
 };
 
 
@@ -498,7 +511,7 @@ void ReadSedList::writeSpectra(string outFile, double lmin, double lmax, int nl)
 			double lam = lmin + j*dl;
 			outp << lam <<"  ";
 			
-			for (int i=0; i<ntot_; i++) {
+			for (int i=0; i<sedArray_.size(); i++) {
 			
 				double val = sedArray_[i]->returnFlux(lam);
 				outp << val <<"  ";
@@ -566,12 +579,13 @@ void ReadSedList::writeSpectra(string outFile, double lmin, double lmax, int nl)
 *******************************************************************************/
 
 
-//******* Filter *************************************************************//
 
-Filter::Filter(string& fname, double xmin, double xmax, int nComments, 
-                                                      bool zero_outside,int npt)
+//******* Filter methods *****************************************************//
+
+void Filter::readFilter(string& fname, double lmin, double lmax, int npt, int nComments, bool zero_outside)
 {
-	string Fplace;
+
+    string Fplace;
 	char * pf=getenv("FILTLOC");
 	if (pf==NULL) {
 	    string emsg = "ERROR FILTER LOCATION ENVIRONMENT VARIABLE -FILTLOC- ";
@@ -580,40 +594,30 @@ Filter::Filter(string& fname, double xmin, double xmax, int nComments,
         }
 	else {
 		Fplace=pf;
-		cout <<"    Location of filter files are "<<Fplace<<endl;
+		cout <<"    Location of filter files are "<< Fplace <<endl;
 		}
 
-	string filename = Fplace+fname;
+	string filename = Fplace + fname;
 	// zero_outside = true: then interpolation sets stuff to zero outside xmin,xmax
 	// definitely want this to be true for the filter
-    ReadXYFromFile(filename,xmin,xmax,npt,nComments,zero_outside);
-};
-
-//******* Filter methods *****************************************************//
-
-void Filter::readFilter(string& fname, double lmin, double lmax, int nComments,
-                                            bool zero_outside, int npt)
-{
-    // zero_outside = true: then interpolation sets stuff to zero outside xmin,xmax
-	// definitely want this to be true for the filter
-    ReadXYFromFile(fname,lmin,lmax,npt,nComments,zero_outside);
+    ReadXYFromFile(filename, lmin, lmax, npt, nComments, zero_outside);
 
 };
 
 //******* ReadFilterList *****************************************************//
 
-ReadFilterList::ReadFilterList(string filterFile,int prt)
+ReadFilterList::ReadFilterList(string filterFile, int prt)
 {
     // Initialize these to zero to start
-    ntot_=0;
+    ntot_ = 0;
 
 	// first get location of filter files
-	filterDir_=getFilterDirEnviromentVar();
-	filterFileFullPath_=filterDir_+filterFile;
+	filterDir_ = getFilterDirEnviromentVar();
+	filterFileFullPath_ = filterDir_ + filterFile;
 		
 	// open file, read all lines and count number of filters within
 	countFilters(filterFileFullPath_);
-    cout <<"     There are "<<ntot_<<" filters to read in"<<endl;
+    cout <<"     There are "<< ntot_ <<" filters to read in"<<endl;
     cout <<endl;
     
 };
@@ -632,7 +636,7 @@ string ReadFilterList::getFilterDirEnviromentVar()
 		}
 	else {
 		tPlace=pt;
-		cout <<"     Location of Filter template files is "<<tPlace<<endl;
+		cout <<"     Location of Filter template files is "<< tPlace <<endl;
 		}
 	cout << endl;
 	return tPlace;
@@ -663,7 +667,7 @@ void ReadFilterList::countFilters(string filterFileFullPath)
 };
     
 
-void ReadFilterList::readFilters(double lmin, double lmax)
+void ReadFilterList::readFilters(double lmin, double lmax, int npt)
 {
     ifstream ifs;
     
@@ -677,7 +681,7 @@ void ReadFilterList::readFilters(double lmin, double lmax)
 		getline(ifs,line);
 		fileNames[i]=filterDir_+line;
 		if (prt_ > 0)
-		    cout <<"     "<<fileNames[i]<<endl;
+		    cout <<"     "<< fileNames[i] <<endl;
 		}
 		
 	// read in all sed files
@@ -686,7 +690,7 @@ void ReadFilterList::readFilters(double lmin, double lmax)
 
 	for (int i=0; i<ntot_; i++) {
 		filterArray_.push_back(new Filter());// assigned memory for SED pointer
-		filterArray_[i]->readFilter(fileNames[i],lmin,lmax); 
+		filterArray_[i]->readFilter(fileNames[i], lmin, lmax, npt); 
 		}
 
 };

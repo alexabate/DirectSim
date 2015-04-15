@@ -9,6 +9,8 @@
  * @author Alex Abate and Reza Ansari
  * Contact: abate@email.arizona.edu
  *
+ * AA: made improvements to class inheritance structure March 2015
+ *
  * Created on: 2008
  * @date 2008
  *
@@ -53,124 +55,205 @@ namespace SOPHYA {
 *                                                                              *
 *******************************************************************************/
 
-
 /** @class
-  * Spectral Energy Distribution (SED) class
-  * 
-  * SEDs are read in from a text file with 2 columns wavelength in meters and
-  * flux.  The flux value at the given wavelength is returned by the class.
-  * The SED can be optionally interpolated or reddened
+  *
+  * SED Base class
   * 
   */
-class SED : public ClassFunc1D
+class SpecEnergyDist : public ClassFunc1D
+{
+public:
+    SpecEnergyDist() { };
+};
+
+/** @class 
+  *
+  * Base Filter class 
+  * To load in Filter transmission functions:
+  * two columns: observed wavelength (m) ; transmission probability (between 0 and 1)
+  *
+  * Basically just a wrapper for SInterp1D; adds level where it finds where filters are stored before 
+  * trying to read file in
+  */
+class Filter : public SInterp1D
 {
 public:
     /** Default constructor */
-    SED() : sed2_(sed2init_)
-    { isRead_=false; isRedden_=false; isInterp_=false; _test_=1.; };
-  
-    /** Constructor
-        To read in wavelength,flux values from a file, and return flux values
-        based on the linear interpolation of numbers in that file */
-    SED(string& filename, double xmin, double xmax, int npt=1024);
+    Filter(){};
     
-    /** Copy constructor */
-    SED(const SED& sed);
-    virtual SED& Set(const SED& a);
-      
-    /** Read in SED from file 
-        @param fname    name of file to read from */
-    void readSED(string& fname, double xmin, double xmax, int npt=1024);
-      
-    /** @warning code doesn't seem to like this! */
-    virtual double operator()(double x) const
-            { return returnFlux(x); };
-            
-    /** Set up interpolation of the SED */
-    void doInterp(SED* sed2,double a=1.,double b=0.);
-      
-    /** Set up reddening of the SED 
-        @param EBmV    amount of reddening, color excess E(B-V) parameter
-        @param law     Cardelli (law=0) or Calzetti (law=1) reddening law
-        @param RvCard  parameter relevant to Cardelli law */
-    void doRedden(double EBmV=0., int law=0, double RvCard=3.5);
-    
-    /** To return the relevant flux value
-        What is returned depends on isRedden and isInterp values
-        Either: interpSED(), addReddening() or interpAddReddening() is called 
-        @param lambda   rest-frame wavelength                                 */
-    double returnFlux(double lambda) const;
-    
-    /** To return the reddened value 
-        @param lambda   rest-frame wavelength                                 */
-    double addReddening(double lambda) const;
-    
-    /** To return the interpolated value
-        @param lambda   rest-frame wavelength                                 */
-    double interpSED(double lambda) const;
-    
-    /** To return the reddened and interpolated value
-        @param lambda   rest-frame wavelength                                 */
-    double interpAddReddening(double lambda) const;
-    
-    /** return bool holding interpolation information*/
-    bool returnInterpBool(){ return isInterp_; };
-    
-    /** return bool holding reddening information */
-    bool returnReddenBool(){ return isRedden_; };
-    
-    /** return bool holding file-read information */
-    bool returnReadBool(){ return isRead_; };
-    
-    
-    double returntest(){ return _test_; };
-    
-protected:
-    SInterp1D   sed_;           /**< The SED read in and to be used           */
-    bool        isRead_;        /**< true if file has been read               */
-    bool        isRedden_;      /**< true if SED has been reddened            */
-    bool        isInterp_;      /**< true if SED has been interpolated        */
-    SED*        sed2_;          /**< 2nd SED class to interpolate between with*/
-    SED*        sed2init_;      /**< a default setting of sed2                */
-    double      a_,b_;          /**< how to interpolate between sed and sed2  */
-    double      EBmV_,RvCard_;
-    int         law_;
-    double      _test_;
+    /** Constructor 
+        @param filename     file to read transmission function from
+        @param lmin         min observed wavelength value
+        @param lmax         max observed wavelength value
+        @param npt          number of points to do interpolations with between lmin and lmax        
+        @param nComments    number of comment lines the filter file has at start
+        @param zero_outside value of interpolation outside lmin,lmax is zero if true */
+    Filter(string& filename, double lmin, double lmax, int npt = 1024, int nComments=0, bool zero_outside=true)
+    { readFilter(filename, lmin, lmax, npt, nComments, zero_outside); };
+                                      
+   /** Read in filter from file 
+       @param filename     file to read transmission function from
+       @param lmin         min observed wavelength value
+       @param lmax         max observed wavelength value
+       @param npt          number of points to do interpolations with between lmin and lmax   
+       @param nComments    number of comment lines the filter file has at start
+       @param zero_outside value of interpolation outside lmin,lmax is zero if true */
+    void readFilter(string& filename, double lmin, double lmax, int npt=1024, int nComments=0, bool zero_outside=true);
+
 };
 
 
 /** @class
-  * SED interpolation class
+  *
+  * Spectral Energy Distribution (SED) object. It returns flux of a single SED (in wavelength units) at
+  * a given wavelength (in meters). 
   * 
-  * Can linearly interpolate between 2 SED objects as specifed with the 
-  * arguments. For example if you want to interpolate and make a new SED where
-  * 10% of it is "sed1" and 90% of it is "sed2" set "mult1"=0.1 and "mult2"=0.9
-  * 
-  * @note This class is possibly redundant now this functionality is 
-  * with SED class itself
+  * The original SED is read from a text file that has two columns: wavelength (in meters) and
+  * flux (in wavelength units).  The flux value at the given wavelength is returned by the class.
+  *
+  * The original SED can be optionally interpolated (with a second SED read into a class variable) or reddened.
+  * Interpolation *must* be done before reddening.
   * 
   */
-class SEDInterp : public ClassFunc1D
+class SED : public SpecEnergyDist
 {
 public:
-    
-    SEDInterp(SED& sed1, SED& sed2, double mult1, double mult2)
-    : sed1_(sed1), sed2_(sed2), mult1_(mult1), mult2_(mult2) {
-        double eps=1e-6;
-        if ( std::abs(mult1+mult2-1.)>eps)
-            throw ParmError("ERROR! SED factors must sum to 1");
-    };
-     
-    /** returns interpolated SED 
-        @param lambda   rest-frame wavelength                                 */
-    virtual double operator()(double lambda) const
-            {  return (mult1_*sed1_(lambda)+mult2_*sed2_(lambda));  };
 
+    // code copied in both SimData and here (should find a better way)
+    //enum dustLaw{NoDust=0, Card=1, Calz=2};
+
+    /** Default constructor */
+    SED() : sed2_(sed2init_)
+    { isRead_=false; isRedden_=false; isInterp_=false; _test_=1.;
+      a_=1.; EBmV_=0.; RvCard_=3.5; law_=0.; };
+
+  
+  
+    /** Constructor
+        To read in wavelength,flux values from a file, and return flux values based on the linear 
+        interpolation of numbers in that file. For the most accurate interpolation results, the interpolation
+        lookup table (set by lmin, lmax, npt) must match the wavlength grid read from the file as closely as 
+        possible. @warning allows wavelengths to be negative
+        @param filename    file containing SED data: first column wavelength in m, second column flux_lambda
+        @param lmin        minimum wavelength of SED lookup table
+        @param lmax        maximum wavelength of SED lookup table
+        @param npt         number of points in SED lookup table                                             */
+    SED(string& filename, double lmin, double lmax, int npt=1024);
+    
+    
+    /** Copy constructor                                                                                    */
+    SED(const SED& sed);
+    virtual SED& Set(const SED& a);
+      
+      
+    /** Read in SED from file 
+        @param fname    name of file to read from                                                           */
+    void readSED(string& fname, double xmin, double xmax, int npt=1024);
+      
+      
+    /** To return the relevant flux value. What is returned depends on isRedden and isInterp values
+        Either: interpSED(), addReddening() or interpAddReddening() is called 
+        @param lambda   rest-frame wavelength (meters)                                                      */
+    virtual double operator()(double lambda) const { return returnFlux(lambda); };
+    
+    
+    /** To return the relevant flux value. What is returned depends on isRedden and isInterp values
+        Either: interpSED(), addReddening() or interpAddReddening() is called 
+        @param lambda   rest-frame wavelength (meters)                                                      */
+    double returnFlux(double lambda) const;
+    
+            
+    /** Turn on interpolation of the SED with second SED (copies second SED into class variable)
+        @param sed2     second SED to interpolate with (class variable now becomes defined)
+        @param a        fraction of interpolation is from the original SED (the one read from a file). The
+                        rest is from the second SED.                                                        */
+    void doInterp(SED* sed2, double a=1.) {
+        // Must take as argument a POINTER to an SED object to copy sed2 into sed2_
+        sed2_ = sed2;
+        a_ = a; 
+        isInterp_ = true;
+        };
+    
+    /** Turn on reddening of the SED
+        @param EBmV    amount of reddening, color excess E(B-V) parameter
+        @param law     Cardelli (law=0) or Calzetti (law=1) reddening law
+        @param RvCard  parameter relevant to Cardelli law                                                   */
+    void doRedden(double EBmV=0., int law=0, double RvCard=3.5) {
+        EBmV_ = EBmV;
+        law_ = law;
+        RvCard_ = RvCard;
+        isRedden_ = true;
+        };
+    
+    /** Turn off interpolation */
+    void stopInterp() { isInterp_ = false; a_ = 1.; };
+    
+    /** Turn off reddening */
+    void stopRedden() { isRedden_ = false; };
+    
+    /** Return bool if SED was interpolated                                                                 */
+    bool returnInterpBool() { return isInterp_; };
+    
+    /** Return bool if SED was reddened                                                                     */
+    bool returnReddenBool() { return isRedden_; };
+    
+    /** Return bool if SED has been read from a file                                                        */
+    bool returnReadBool() { return isRead_; };
+    
+    /** Return fraction of original SED that is in output (if interpolated will be <1)                      */ 
+    double returnInterpFrac() { return a_; };
+    
+    /** Return reddening parameters. Returns vector of [E(B-V), law_id, RvCard*] (*if applicable). If no 
+        reddening was applied E(B-V)=0 and law_id=-1                                                      */ 
+    vector<double> returnReddeningPars() { 
+        vector<double> redPars;
+        redPars.push_back(EBmV_);
+        if (!isRedden_) {
+            cout <<"     No Reddening was applied! "<<endl;
+            redPars.push_back(-1.);
+            }
+        else {
+            redPars.push_back(law_);
+            if (law_>0)
+                cout <<"     Calzetti law applied"<<endl;
+            else {
+                cout <<"     Cardelli law applied"<<endl;
+                redPars.push_back(RvCard_);
+                }
+            }
+    return redPars; };
+    
+    /** Checks which constructor was called (1=default, 2=main, 3=copy)                                     */
+    double returntest(){ return _test_; };
+
+    
 protected:
-    SED& sed1_;      /**< SED 1                                               */
-    SED& sed2_;      /**< SED 2                                               */
-    double mult1_;   /**< fraction of SED 1 in new SED                        */
-    double mult2_;   /**< fraction of SED 2 in new SED                        */
+    // THESE SHOULD BE PROTECTED METHODS
+    /** To return the reddened value 
+        @param lambda   rest-frame wavelength                                                               */
+    double addReddening(double lambda) const;
+    
+    /** To return the interpolated value
+        @param lambda   rest-frame wavelength                                                               */
+    double interpSED(double lambda) const;
+    
+    /** To return the reddened and interpolated value
+        @param lambda   rest-frame wavelength                                                               */
+    double interpAddReddening(double lambda) const;
+    
+    
+protected:
+    SInterp1D sed_;              /**< The original SED read in and to be used                               */
+    bool isRead_;                /**< true if original SED file has been read                               */
+    bool isRedden_;              /**< true if SED has been reddened                                         */
+    bool isInterp_;              /**< true if SED has been interpolated                                     */
+    SED* sed2_;                  /**< 2nd SED class to interpolate between with                             */
+    SED* sed2init_;              /**< a default setting of sed2                                             */
+    double a_;                   /**< fraction of original SED in final output                              */
+    double EBmV_;                /**< E(B-V) reddening value                                                */
+    double RvCard_;              /**< Cardelli law parameter                                                */
+    int law_;                    /**< Reddening law used 0=Cardelli, 1=Calzetti                             */
+    double _test_;               /**< variable for testing which constructor was called                     */
 };
 
 
@@ -195,272 +278,151 @@ public:
     /** Constructor 
         @param f    SED
         @param g    filter
-        @param z    redshift of galaxy SED                                           */
-    SEDzFilterProd(ClassFunc1D& f, ClassFunc1D& g, double z=0.)
+        @param z    redshift of galaxy SED                                                                  */
+    SEDzFilterProd(SpecEnergyDist& f, Filter& g, double z=0.)
     : sed_(f) , filt_(g) , z_(z) {  };
+    
     
     /** Returns redshifted SED multiplied by the filter transmission and wavelength,
         \f$ SED(\lambda/(1+z))*Filter(\lambda)*\lambda \f$ where \lambda is the 
         observed wavelength    
-        @param lambda   observed wavelength                                   */
+        @param lambda   observed wavelength (in meters)                                                     */
     virtual double operator()(double lambda) const {
-        double lambdaE = lambda/(1+z_);
+        double lambdaE = lambda/(1.+z_);
         return (sed_(lambdaE)*filt_(lambda)*lambda);
-        }  
+        };
+        
 // *lambda if SED in units of wavelength and magnitudes have dnu/nu definition
 // no lambda factor if SED in units of wavelength and magnitudes have dnu definition
 // /lambda if SED in units of frequency and magnitudes have dnu/nu definition
 // /lambda^2 if SED in units of frequency and magnitudes have dnu definition
 
 protected:
-  ClassFunc1D& sed_;          /**< SED                                        */
-  ClassFunc1D& filt_;         /**< filter function                            */
+  SpecEnergyDist& sed_;       /**< SED                                        */
+  Filter& filt_;              /**< filter function                            */
   double z_;                  /**< redshift of galaxy SED                     */
-};
-
-/** @class SEDzFilterProdIGM
-  * Multiply SED, Filter, and IGM transmission together to create an integrand for the k-correction
-  * 
-  * returns: redshifted SED multiplied by the filter transmission and wavelength and IGM transmission
-  *          SED(lambda/(1+z))*Filter(lambda)*IGMTrans(lambda)*lambda
-  *
-  */
-class SEDzFilterProdIGM : public ClassFunc1D
-{
-public:
-    /** Constructor 
-        @param f    SED
-        @param g    filter
-        @param t    IGM transmission (Observer Frame)
-        @param z    redshift of SED                                           */
-    SEDzFilterProdIGM(ClassFunc1D& f, ClassFunc1D& g, ClassFunc1D& t, double z=0.)
-    : sed_(f) , filt_(g) , trans_(t) , z_(z) {  };
-    
-    /** Returns redshifted SED multiplied by the filter transmission, IGM transmission
-        and wavelength, \f$ SED(\lambda/(1+z))*Filter(\lambda)*IGMtrans(\lambda)*\lambda \f$ where 
-        \lambda is the observed wavelength    
-        @param lambda   observed wavelength                                   */
-    virtual double operator()(double lambda) const {
-        double lambdaE = lambda/(1+z_);
-        return (sed_(lambdaE)*filt_(lambda)*trans_(lambda)*lambda);
-        };
-
-protected:
-  ClassFunc1D& sed_; 
-  ClassFunc1D& filt_; 
-  ClassFunc1D& trans_;
-  double z_;
-};
-
-/** @class SEDGOODSRedfix class
-  * 
-  *
-  * Host galaxy reddening via Cardelli or Calzetti law: Reddens SED 
-  * Compensates for the fact that LF used to simulate galaxy luminosity
-  * distributions will NOT have been corrected for host galaxy reddening.
-  * 
-  * Explanation:
-  * To "renormalize" the magnitudes so that the "correct" number of 
-  * simulated galaxies is simulated in the observed GOODS R-band, make the SED 
-  * brighter by the amount the galaxy is extinct at the rest-frame wavelength 
-  * corresponding to the observed R-band. This will look like:
-  * 
-  * \f$ SED^{fix}=SED^{unred}(\lambda)/10^{-0.4k(\lambda_{eff})E(B-V)}\f$
-  * where \f$ \lambda_{eff}=6510./(1+z) \f$
-  * (*dividing* by \f$ 10^{-0.4k(\lambda_{eff})E(B-V)} \f$ means we are making it *brighter*)
-  * 
-  * here \f$\lambda\f$ is the effective wavelength of the R-band that the GOODS LF 
-  * was selected in (assuming that the SEDs are in units of Angstrom). If you use
-  * an LF that is derived from another observed band, for example Ks selected, 
-  * then you should change the \f$\lambda_{eff}\f$ to be the effective wavelength of the Ks 
-  * band instead ( 21620A for the GOODS).
-  * 
-  * Important note: this assumes that the SED^unred(lambda) and \f$k(\lambda)\f$ are in 
-  * "rest-frame" units, i.e., not redshifted. If they are redshifted, then you 
-  * should use \f$\lambda_{eff}=6510.\f$
-  * 
-  * Then to actually redden the SED:
-  *
-  * \f$ SED^{red}=SED^{fix}(\lambda)10^(-0.4k(\lambda)E(B-V)) \f$ 
-  *
-  */
-class SEDGOODSRedfix: public ClassFunc1D
-{
-public:
-
-    /** Constructor 
-        @param S        SED
-        @param z        redshift of SED 
-        @param EBmV     E(B-V) value of galaxy
-        @param law      Reddening law to use (=0 Cardelli,=1 Calzetti)
-        @param RvCard   Rv parameter of Cardelli law
-        @param lam_eff0 effective wavelength (for correcting GOODS reddening) */
-    SEDGOODSRedfix(ClassFunc1D& S,double z,double EBmV=0.,int law=0, 
-            double RvCard=3.5,double lam_eff0=6510e-10)
-        : sed_(S) , z_(z) , EBmV_(EBmV) , law_(law) , RvCard_(RvCard) , 
-                lam_eff0_(lam_eff0){    };
-                
-    /** Return reddened SED after correcting for GOODS reddening
-        @param lambda   rest-frame wavelength                                 */
-    virtual double operator()(double lambda) const {
-        double lameff=lam_eff0_/(1+z_);
-    
-        Reddening red;
-        double k,kfix;
-        if (law_<1) {
-            kfix=red.Cardelli(lameff,RvCard_);
-            k=red.Cardelli(lambda,RvCard_);
-            }
-        if (law_>0) {
-            kfix=red.Calzetti(lameff);
-            k=red.Calzetti(lambda);
-            }
-    
-        return (sed_(lambda)*pow(10,-0.4*k*EBmV_)/
-                    pow(10,-0.4*kfix*EBmV_));
-        };
-
-protected:
-  ClassFunc1D& sed_;       /**< SED to apply host galaxy redening to          */
-  double z_;               /**< redshift of the SED                           */
-  double EBmV_;            /**< E(B-V) host galaxy extinction value           */
-  int law_;                /**< law_=0 uses Cardelli law, law_=1 uses Calzetti law */
-  double RvCard_;          /**< Rv value                                      */
-  double lam_eff0_;     //
-};
-
-
-/** @class SEDRedden class
-  * 
-  * Host galaxy reddening via Cardelli or Calzetti law: Reddens SED 
-  * Reddens SED according to Reddening law and E(B-V) value
-  * Default reddening law is Cardelli
-  * Default Cardelli Rv=3.5
-  */
-class SEDRedden : public ClassFunc1D
-{
-public:
-
-    /** Constructor 
-        @param S        SED
-        @param EBmV     E(B-V) value of galaxy
-        @param law      Reddening law to use (=0 Cardelli,=1 Calzetti)
-        @param RvCard   Rv parameter of Cardelli law                          */
-    SEDRedden(ClassFunc1D& S, double EBmV=0., int law=0, double RvCard=3.5)
-    : sed_(S) , EBmV_(EBmV) , law_(law) , RvCard_(RvCard) { }
-    
-    /** Return reddened SED 
-        @param lambda   rest-frame wavelength                                 */
-    virtual double operator()(double lambda) const {
-        
-        Reddening red;
-    
-        double k;
-        if (law_<1)
-            k=red.Cardelli(lambda,RvCard_);
-        if (law_>0)
-            k=red.Calzetti(lambda);
-    
-        return (sed_(lambda)*pow(10,-0.4*k*EBmV_));
-        } ;
-
-protected:
-  ClassFunc1D& sed_;      /**< SED to redden                                  */
-  double EBmV_;           /**< E(B-V) extinction value                        */
-  int law_;               /**< if law_=0 Cardelli law, if law_=1 Calzetti law */
-  double RvCard_;         /**< Rv value                                       */
-};
-
-
-/** @class SEDMadau class
-  * 
-  * Add Madau absorption
-  */
-class SEDMadau : public ClassFunc1D
-{
-public:
-    /** Constructor 
-        @param S       SED to add Madau absorption to 
-        @param zSED    redshift of galaxy SED                                 
-        @param isLyC   include Lyman continuum absorption                     */
-    SEDMadau(ClassFunc1D& S, double zSED, bool isLyC=true)
-    : sed_(S) , zSED_(zSED) , isLyC_(isLyC) { };
-    
-    /** Return SED with Madau absorption applied
-        @param lambda   rest-frame wavelength */
-    virtual double operator()(double lambda) const {
-        Madau madau(5,isLyC_); // 5 refers to max number of Lyman lines
-        // THINK THIS SHOULD BE RETURNING THE REST FRAME TRANSMISSION
-        double trans = madau.returnRestFrameTransmission(lambda, zSED_);
-        return (sed_(lambda)*trans);
-        };
-
-protected:
-    ClassFunc1D& sed_;       /**< SED to add Madau absorption to              */
-    double zSED_;            /**< redshift of SED                             */
-    bool isLyC_;            /**< include Lyman continuum absorption           */     
 };
 
 
 /** @class SEDIGM class
   * 
-  * Add IGM absorption from a particular line of sight
+  * Add IGM absorption
   */
-class SEDIGM : public ClassFunc1D
+class SEDIGM : public SpecEnergyDist // inherit from SED or from SpecEnergyDist?
 {
 public:
-    /** Constructor 
+
+    /** Constructor if using Madau law for IGM
         @param S       SED to add IGM absorption to
-        @param T       IGM transmission
+        @param zSED    redshift of galaxy SED                                 
+        @param isLyC   include Lyman continuum absorption                                                   */
+    SEDIGM(SED& S, double zSED , bool isLyC=true, double lmin=1e-8, double lmax=2.5e-6, int nl=500)
+    : sed_(S) , igm_(igm_default_) , zSED_(zSED) , isLyC_(isLyC) { 
+        
+        isMadau_ = true; 
+        setupMadau(lmin, lmax, nl);
+        };
+
+    /** Constructor if applying IGM from a transmission function
+        @param S       SED to add IGM absorption to
+        @param T       IGM transmission function
         @param zSED    redshift of galaxy SED                                 */
-    SEDIGM(ClassFunc1D& S, ClassFunc1D& T, double zSED)
-    : sed_(S) , igm_(T) , zSED_(zSED) { };
+    SEDIGM(SED& S, IGMTransmission& T, double zSED)
+    : sed_(S) , igm_(T) , zSED_(zSED) , isLyC_(false) { isMadau_ = false; };
     
-    /** Return SED with IGM absorption applied
+    /** Return SED with IGM absorption applied CHECK THIS METHOD WORKS!
         @param lambda   restframe wavelength                                  */
     virtual double operator()(double lambda) const {
-        double lambdaObs = lambda*(1+zSED_);
-        double trans = igm_(lambdaObs);
-        return (sed_(lambda)*trans);
+    
+        double sedWithIGM;
+        if (isMadau_) {
+            //Madau madau(5, isLyC_); // 5 refers to max number of Lyman lines
+            // THINK THIS SHOULD BE RETURNING THE REST FRAME TRANSMISSION
+            //double trans = madau.returnRestFrameTransmission(lambda, zSED_);
+            
+            sedWithIGM = sed_(lambda)*trans_(lambda);
+            }
+        else {
+            double lambdaObs = lambda*(1 + zSED_); // this is because the transmission files are currently
+                                                   // a function of OBS FRAME wavelength
+                                                   // this undoes that so e.g. Lyman alpha effect at 1216A
+                                                   // for a gal at redshift 2 will be actually found at
+                                                   // 1216*(1+2) = 3648A
+            double trans = igm_(lambdaObs);
+            sedWithIGM = sed_(lambda)*trans;
+            }
+        
+        return sedWithIGM;
+        };
+     
+     
+protected:   
+    void setupMadau(double lmin, double lmax, int nl) {
+        
+        Madau madau(5, isLyC_); // 5 refers to max number of Lyman lines to calculate
+                                // with Madau implementation, 5 is the maximum possible
+        
+        vector<double> rflam;
+        vector<double> trans;
+        double dl = (lmax-lmin)/(nl-1.);
+        for (int i=0; i<nl; i++) {
+            double lam = lmin + i*dl;
+            double t = madau.returnRestFrameTransmission(lam, zSED_);
+            rflam.push_back(lam);
+            trans.push_back(t);
+            }
+        trans_.DefinePoints(rflam, trans, rflam[0], rflam[rflam.size()-1], 2*nl);
         };
 
 
 protected:
-    ClassFunc1D& sed_;            /**< SED to add IGM absorption to           */
-    ClassFunc1D& igm_;            /**< IGM absorption along line of sight     */
-    double zSED_;                 /**< redshift of SED                        */        
+    SED& sed_;                    /**< SED to add IGM absorption to                                         */
+    IGMTransmission& igm_;        /**< IGM absorption along line of sight                                   */
+    IGMTransmission igm_default_; /**< default class to initialise igm_                                     */
+    double zSED_;                 /**< redshift of SED                                                      */
+    bool isLyC_;                  /**< include Lyman continuum absorption (only can be true if Madau)       */
+    bool isMadau_;                /**< true if Madau absorption being used                                  */
+    SInterp1D trans_;             /**< Madau transmission look up table                                     */
 };
 
 
 /** ReadSedList class
   * 
-  * Class to read in SEDs from a list of filenames
+  * Class to read in SEDs from a list of files
+  * Can optionally interpolate new SEDs between the SEDs in the list and redden
   *
   */
 class ReadSedList {
 public:
+
     /** Constructor, finds the file sedFile and counts number of SEDs inside 
         @param sedFile  filename containing list of SEDs 
         @param prt      print level, if prt>0 extra statements are printed */
     ReadSedList(string sedFile, int prt=0);
     
+    
     /** Read environment variable $SEDLOC */
     string getSedDirEnviromentVar();
     
-    /** Counts SEDs in file */
-    void countSeds(string sedFileFullPath);
     
-    /** Main program, reads SEDs from file and arranges them in a vector of
-        pointers pointing to each SED object 
+    /** Main program, reads SEDs from file and arranges them in a vector of pointers pointing to each SED 
+        object 
         @param lmin    minimum wavelength of SED in meters
         @param lmax    maximum wavelength of SED in meters 
         @param npt     number of interpolation points for SED func                                          */
     void readSeds(double lmin=5e-8, double lmax=2.5e-6, int npt=10000);
     
-    /** If interpolating between the SEDs call this method straight after
-        readSeds()
-        @param nInterp number of SEDs to interpolate between each SED */
+    
+    /** Interpolate nInterp SEDs between each SED in list of files. If interpolating between the SEDs call 
+        this method straight after readSeds() (and before reddenSeds()).
+        @param nInterp number of SEDs to interpolate between each SED in file list                          */
     void interpSeds(int nInterp);
+    
+    
+    /** Reorder SEDs so that interpolated SEDs lie between the templates they were interpolated from. This
+        should be called after interpSeds() and before reddenSeds() (if reddening)                          */
+    void reorderSEDs();
+    
     
     /** If reddening all the SEDs call this method straight after #readSeds(), 
         and after #interpSeds() if interpolating.
@@ -469,19 +431,20 @@ public:
         @param nStepRed number of times to redden 
         @param redMax   maximum limit to redden to (even steps between 0 and redMax */
     //void reddenSeds(int nStepRed, double redMax);
-    /** If reddening all the SEDs call this method straight after #readSeds(), 
-        and after #interpSeds() if interpolating. Returns a vector of reddening values applied to the SEDs
+    
+    /** If reddening all the SEDs call this method straight after #readSeds(), and after #interpSeds() if 
+        interpolating. Assumes all ellipical SEDs are at the start of the original file list read in. Returns 
+        a vector of reddening values applied to the SEDs (Ellipticals then others).
         @param nPerSED        number of reddened SEDs to make per original SED
         @param method         method for distributing reddening values: 0=uniform, 1=exponential
-        @param maxidEl        maximum index of an Elliptical galaxy in the sedArray_
+        @param maxidEl        maximum index of an Elliptical galaxy in the sedArray_ (-> all El must be at start)
         @param redMaxEl       maximum E(B-V) value an Elliptical galaxy is allowed 
         @param redMaxOther    maximum E(B-V) value other galaxies are allowed                               */
     vector<double> reddenSeds(int nPerSED, int method=0, int maxidEl=0, double redMaxEl=0.1, 
                                                                                       double redMaxOther=0.3);
     
     /** Write contents of sedArray to a file */
-    void writeSpectra(string outFile, double lmin=5e-8, double lmax=2.5e-6,
-                                                                 int nl=1500);
+    void writeSpectra(string outFile, double lmin=5e-8, double lmax=2.5e-6, int nl=1500);
                                                                  
     /** Return sedArray */
     vector<SED*> getSedArray() { return sedArray_; };
@@ -489,16 +452,15 @@ public:
     /** Return total number of SEDs (could be >= to nsed depending if interpolation
         was done or reddening was applied) */
     int getNTot() { return ntot_; };
+    
                 
     /** Return number of SEDs read in from the initial file */
     int getNSed() { return nsed_; };
-                
-    /** Reorder SEDs so that interpolated SEDs lie between the template they
-        were interpolated from */
-    void reorderSEDs();
+       
     
     /** Return a vector of the SED filenames */
-    vector<string> returnSedFilenames(){ return sedFiles_; };
+    vector<string> returnSedFilenames() { return sedFiles_; };
+    
     
     /** Return a vector of the SED filenames without their extension (leaves dot though)                    */
     vector<string> returnSedFilenamesNoExt() { 
@@ -511,14 +473,20 @@ public:
         return noext; };
     
     
-    /** Return SED reddening values */
+    /** Return SED reddening values applied */
     vector<double> returnReddening() { return reds_; };
+    
+protected:
+
+    /** Counts SEDs in file */
+    void countSeds(string sedFileFullPath);
                    
 private:
     int prt_;                   /**<  print level                             */
     string sedDir_;             /**<  path of SED list file                   */
     string sedFileFullPath_;    /**<  full path and filename to SED list      */
     int nsed_;                  /**<  number of SEDs in the file sedFile      */
+    bool isRead_;               /**<  if SEDs have been read don't read again */
     int ntot_;                  /**<  total number of SEDs after interpolation /
                                       and/or reddening                        */
     vector<SED*> sedArray_;     /**<  pointer to ntot_ SED objects            */
@@ -535,42 +503,15 @@ private:
 *                                                                              *
 *******************************************************************************/
 
-/** @class Filter class 
-  * To load in Filter transmission functions:
-  * two columns: observed wavelength (m) ; transmission probability (between 0 and 1) 
-  */
-class Filter : public SInterp1D
-{
-public:
-    /** Default constructor */
-    Filter(){};
-    
-    /** Constructor 
-        @param filename     file to read transmission function from
-        @param lmin         min observed wavelength value
-        @param lmax         max observed wavelength value
-        @param nComments    number of comment lines the filter file has at start
-        @param zero_outside value of interpolation outside lmin,lmax is zero if true
-        @param npt          number of points to do interpolations from        */
-    Filter(string& filename, double lmin, double lmax, int nComments=0, 
-                                    bool zero_outside = true, int npt = 1024);
-                                      
-   /** Read in filter from file 
-       @param filename     file to read transmission function from
-       @param lmin         min observed wavelength value
-       @param lmax         max observed wavelength value
-       @param nComments    number of comment lines the filter file has at start
-       @param zero_outside value of interpolation outside lmin,lmax is zero if true
-       @param npt          number of points to do interpolations from         */
-    void readFilter(string& filename, double lmin, double lmax, int nComments=0, 
-                                bool zero_outside = true, int npt=1024);
-};
+
 
 
 /** @class BlueShiftFilter
   *
+  * Not entirely sure if this class is needed. It is used in returning the restframe flux of an SED at
+  * some redshift in some filter
   */
-class BlueShiftFilter : public ClassFunc1D
+class BlueShiftFilter : public Filter
 {
 public:
     
@@ -616,19 +557,18 @@ public:
     FilterProd(Filter& g)
     : filt_(g){ };
     
-    /** returns the value of the filter transmission at #lambda, divided by 
-        #lambda */
+    /** returns the value of the filter transmission at #lambda, divided by #lambda                         */
     virtual double operator()(double lambda) const {
         return (filt_(lambda)/lambda);//********* DOUBLE CHECK THIS *********//
         }  
 
 protected:
-  Filter& filt_;    /**< class holding the filter function */
+  Filter& filt_;    /**< class holding the filter function                                                  */
 };
 
 
 /** @class FilterXLambda class
-  * To multiply filter transmission value by the wavelength
+  * To multiply filter transmission value by the wavelength in order to calculate filter effective wavelength
   *
   */
 class FilterXLambda : public ClassFunc1D
@@ -636,7 +576,7 @@ class FilterXLambda : public ClassFunc1D
 public:
     
     /** Constructor */
-    FilterXLambda(ClassFunc1D& g)
+    FilterXLambda(Filter& g)
     : filt_(g){ }
     
     /** returns the value of the filter transmission at #lambda, multiplied by 
@@ -646,30 +586,12 @@ public:
         }  
 
 protected:
-  ClassFunc1D& filt_;          /**< class holding the filter function         */
+  Filter& filt_;          /**< class holding the filter function                                            */
 };
 
 
-/** @class FilterProdProd class
-  * To multiply filter with 1/lambda^2
-  *
-  */
-class FilterProdProd : public ClassFunc1D
-{
-public:
-    FilterProdProd(Filter& g)
-    : filt_(g) {};
-    
-    virtual double operator()(double lambda) {
-        return (filt_(lambda)/(lambda*lambda));
-        }  
 
-protected:
-    Filter& filt_; 
-};
-
-
-//--- Does int F(lambda)/lambda dlambda or SED(lambda)*F(lambda) or whatever
+//--- Does int F(lambda)/lambda dlambda or SED(lambda)*F(lambda) or whatever/any ClassFunc1D
 // Simple summing integration
 class FilterIntegrator : public ClassFunc1D
 {
@@ -726,17 +648,16 @@ public:
     
     /** Main program, reads filters from file and arranges them in a vector of
         pointers pointing to each Filter object 
-        @param lmin minimum wavelength of filter in meters
-        @param lmax maximum wavelength of filter in meters */
-    void readFilters(double lmin=5e-8, double lmax=2.5e-6);
+        @param lmin    minimum wavelength of filter in meters
+        @param lmax    maximum wavelength of filter in meters 
+        @param nl      number of points between lmin and lmax        */
+    void readFilters(double lmin=5e-8, double lmax=2.5e-6, int nl=500);
     
     /** Write contents of filterArray to a file */
-    void writeFilters(string outFile, double lmin=5e-8, double lmax=2.5e-6,
-                                                                 int nl=1500);
+    void writeFilters(string outFile, double lmin=5e-8, double lmax=2.5e-6, int nl=1500);
                                                                  
     /** Return filterArray */
-    vector<Filter*> getFilterArray()
-                { return filterArray_; };
+    vector<Filter*> getFilterArray() { return filterArray_; };
     
     /** Return total number of filters */
     int getNTot() { return ntot_; };
