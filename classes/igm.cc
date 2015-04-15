@@ -851,20 +851,6 @@ void LineOfSightTrans::setReturnType(bool isOpticalDepth)
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /******* Madau methods ********************************************************/
 
 double Madau::returnObserverFrameOpticalDepth(double lambdaObs, double zSource)
@@ -965,7 +951,7 @@ void Madau::setAbsorptionStrengths()
     Avals_.push_back(1.7e-3);
     Avals_.push_back(1.2e-3);
     Avals_.push_back(9.3e-4);
-    nLineMaxMadau_=Avals_.size()+1;
+    nLineMaxMadau_ = Avals_.size() + 1;
 
 };
 

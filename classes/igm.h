@@ -511,21 +511,26 @@ class Madau:
 {
 public:
     /** Constructor
-        @param nLineMax     Maximum Lyman-series to include                   */
+        @param nLineMax     Maximum Lyman-series to include (eg if nLineMax=2 will only calculate Ly-alpha) 
+        @param isLyC        Include Lyman continuum absorption (not just Lyman series)                      */
     Madau(int nLineMax=5, bool isLyC=true)
-    : nLineMax_(nLineMax) , isLyC_(isLyC)
-        { setAbsorptionStrengths(); };
+    : nLineMax_(nLineMax) , isLyC_(isLyC) { 
+        setAbsorptionStrengths(); 
+        if (nLineMax_>nLineMaxMadau_) {
+            cout <<"     Cannot calculate Madau absorption for n > "<< nLineMaxMadau_ <<", setting n = ";
+            cout << nLineMaxMadau_ << endl;
+            }
+        };
     
-    /** Return the transmission in the observer's frame along a line of sight
-        to a source at some redshift z
+    /** Return the transmission in the observer's frame along a line of sight to a source at some redshift z
         @param lambda       observed wavelength in meters   
         @param zSource      redshift of source                  */
     double returnObserverFrameTransmission(double lambda, double zSource)
         { double tau = returnObserverFrameOpticalDepth(lambda, zSource);
           return exp(-tau); };
           
-    /** Return the transmission in the rest-frame along a line of sight
-        to a source at some redshift z
+          
+    /** Return the transmission in the rest-frame along a line of sight to a source at some redshift z
         @param lambda       rest-frame wavelength in meters   
         @param zSource      redshift of source                  */
     double returnRestFrameTransmission(double lambda, double zSource) { 
@@ -533,26 +538,27 @@ public:
             double tau = returnObserverFrameOpticalDepth(lambdaObs, zSource);
             return exp(-tau); };
     
-    /** Return the optical depth in the observer's frame along a line of sight
-        to a source at redshift z
+    
+    /** Return the optical depth in the observer's frame along a line of sight to a source at redshift z
         @param lambda       observed wavelength in meters                          
         @param zSource      redshift of source                                */
     double returnObserverFrameOpticalDepth(double lambda, double zSource);
           
-    /** Return the optical depth in observer's frame along a line of sight due
-        to Lyman continuum absorption only                                    */
+    /** Return the optical depth in observer's frame along a line of sight due to Lyman continuum absorption
+        only                                                                                                */
     double returnLymanContinuumOpticalDepth(double zAbsorber, double zSource); 
-    
+
+
+protected:    
     /** Set constants of Lyman series absorption strengths                    */
     void setAbsorptionStrengths();
 
 
-
 protected:
-    int nLineMax_;          /**< Maximum Lyman series to include              */
-    int nLineMaxMadau_;     /**< Maximum Lyman series can include             */
-    vector<double> Avals_;  /**< Absorption strength of Lyman-alpha to delta  */
-    bool isLyC_;            /**< Include Lyman continuum absorption           */
+    int nLineMax_;          /**< Maximum Lyman series to include                                            */
+    int nLineMaxMadau_;     /**< Maximum Lyman series can include (due to model limits)                     */
+    vector<double> Avals_;  /**< Absorption strength of Lyman-alpha to delta                                */
+    bool isLyC_;            /**< Include Lyman continuum absorption                                         */
 
 
 };
@@ -894,23 +900,96 @@ protected:
     int nl_;
 };
 
+
 /** IGMTransmission class
   *
-  * Reads in the transmission values for a particular line of sight as a 
-  * function of the observed wavelength.
+  * Holds IGM transmission for a galaxy at fixed source redshift. Returns the transmission of a galaxy at
+  * some redshift but in the REST-FRAME of the galaxy (not the observer)
   *
-  * File contains: observed wavelength (m)  transmission (exp[-tau])
+  * Either:
+  * 
+  * - Reads in the transmission values from a file. These values could be the mean transmission across all 
+  *   lines of sight or for a particular line of sight
+  *   @warning the IGM transmission only applies for a certain source galaxy redshift
+  *
+  *   File contains: observed wavelength (m)  transmission (exp[-tau])
+  *   @note REALLY MUST CHANGE FILE DATA TO BE REST-FRAME WAVELENGTH
+  *
+  * - Calculates Madau transmission for a given source redshift
+  *
+  * - Returns transmission consistant with no IGM absorption, i.e. exp[-tau]=1
   *
   */
-class IGMTransmission : public SInterp1D
+class IGMTransmission //: public SInterp1D
 {
 public:
-    IGMTransmission(){};
-    IGMTransmission(string& filename, int npt=1024, int nComments=1) {
-        cout <<"     About to read from file "<< filename << endl;
-        ReadXYFromFile(filename, 1., -1., npt, nComments, false);
+    
+    /** Default constructor (if no IGM)                                                                     */
+    IGMTransmission() {
+    
+        double lmin = 1e-8;
+        double lmax = 1e-5;
+        int npt = 100;
+        vector<double> rflam;
+        vector<double> trans;
+        double dl = (lmax-lmin)/(npt-1.);
+        for (int i=0; i<npt; i++) {
+            double lam = lmin + i*dl;
+            double t = 1.;
+            rflam.push_back(lam);
+            trans.push_back(t);
+            }
+        trans_.DefinePoints(rflam, trans, rflam[0], rflam[rflam.size()-1], npt);
         };
+    
+    /** Constructor if reading transmission data from a file (could be mean IGM transmission or a single line
+        of sight)
+        @param filename     file containing IGM transmission data
+        @param lmin         minimum wavelength for interpolation grid
+        @param lmax         maximum wavelength for interpolation grid
+        @param npt          number of points in interpolation grid
+        @param nComments    number of comments at top of IGM transmission data file                         */
+    IGMTransmission(string& filename, double lmin, double lmax, int npt=1024, int nComments=1) {
+        cout <<"     About to read from file "<< filename << endl;
+        trans_.ReadXYFromFile(filename, lmin, lmax, npt, nComments, false);
+        
+        };
+        
+    /** Constructor if using Madau law for IGM
+        @param zSED    redshift of galaxy SED                                 
+        @param isLyC   include Lyman continuum absorption                                                   */
+    IGMTransmission(double zSED, bool isLyC=true, double lmin=1e-8, double lmax=1e-5, int npt=1000) { 
+        setupMadau(zSED, isLyC, lmin, lmax, npt);
+        };
+        
+        
+    /** Return IGM transmission CHECK THIS METHOD WORKS!
+        @param lambda   restframe wavelength                                  */
+    virtual double operator() (double lambda) const { return trans_(lambda); };
+    
 
+protected:
+    void setupMadau(double zSED, bool isLyC, double lmin, double lmax, int npt) {
+        
+        Madau madau(5, isLyC); // 5 refers to max number of Lyman lines to calculate
+                               // with Madau implementation, 5 is the maximum possible
+        
+        vector<double> rflam;
+        vector<double> trans;
+        double dl = (lmax-lmin)/(npt-1.);
+        for (int i=0; i<npt; i++) {
+            double lam = lmin + i*dl;
+            double t = madau.returnObserverFrameTransmission(lam, zSED); //returnRestFrameTransmission(lam, zSED);
+            // ^^ has to be observer frame to match the fact that the IGMTransmission files are read in as a
+            //    functionof observed wavelength
+            rflam.push_back(lam);
+            trans.push_back(t);
+            }
+        trans_.DefinePoints(rflam, trans, rflam[0], rflam[rflam.size()-1], npt);
+        };
+        
+protected:
+    SInterp1D trans_;             /**< Transmission look up table                                           */
 };
 
 
