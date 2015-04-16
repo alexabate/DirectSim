@@ -164,7 +164,7 @@ int main(int narg, char* arg[]) {
         
 
         // fraction of flux transmitted per observed wavelength 
-        IGMTransmission igmTransmission(infile);
+        IGMTransmission igmTransmission(infile, lminObs, lmaxObs, nl, 0);
         // redshift SED and apply line of sight IGM absorption
         SEDIGM sedIGM(*(sedArray[sedNo]), igmTransmission, zSource);
         // redshift SED and apply average Madau IGM absorption

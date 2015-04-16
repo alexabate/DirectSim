@@ -1,3 +1,4 @@
+// THIS CODE IS DEFUNCT
 #include "machdefs.h"
 #include "sopnamsp.h"
 #include <iostream>
@@ -24,7 +25,7 @@
 #include "cosmocalcs.h"
 #include "gftdist.h"
 #include "simdata.h"
-#define PI 3.141592
+//#define PI 3.141592
 
 void usage(void);
 void usage(void)
@@ -237,9 +238,10 @@ int main(int narg, char* arg[])
     cout <<"     Final total number of SEDs = "<<ntot<<endl;
 	cout << endl;
 
-	// Prepare the class which will calculate the magnitudes
-	cout <<"     Initialize class to calculate magnitudes"<<endl;
-	SimData simgal(sedArray,LSSTfilters,su,rg,nElliptical,nSpiral);
+	// Prepare the classes which will calculate the magnitudes
+	cout <<"     Initialize classes to calculate magnitudes"<<endl;
+	SimData simgal(sedArray, LSSTfilters, su); //,rg,nElliptical,nSpiral);
+	SimObservations simobs(LSSTfilters, rg);
     cout << endl;
     
     // Add Madau preference
@@ -257,10 +259,10 @@ int main(int narg, char* arg[])
 		
 		// Get galaxy properties: galaxy has redshift zs, absolute magnitude am,
 		// SED type type and internal extinction ext.
-		double zs=row[0];
-		double am=row[1];
-		int typ=(int)row[2];
-		double type=simgal.SimSED(typ);
+		double zs = row[0];
+		double am = row[1];
+		int typ = (int)row[2];
+		double type = simgal.SimSED(typ);
 		double ext;
 		if (isAddRedden)
 		    ext = simgal.SimRed(type);
@@ -269,22 +271,22 @@ int main(int narg, char* arg[])
 
         // Calculate galaxy magnitude in observed filters ugrizy
         // Galaxy's absolute magnitude is defined in filter (*goodsBFilter[0])
-		double uMagTh=simgal.GetMag(zs,type,am,ext,iU,(*goodsBFilter[0]));
+		/*double uMagTh=simgal.GetMag(zs,type,am,ext,iU,(*goodsBFilter[0]));
 		double gMagTh=simgal.GetMag(zs,type,am,ext,iG,(*goodsBFilter[0]));
 		double rMagTh=simgal.GetMag(zs,type,am,ext,iR,(*goodsBFilter[0]));
 		double iMagTh=simgal.GetMag(zs,type,am,ext,iI,(*goodsBFilter[0]));
 		double zMagTh=simgal.GetMag(zs,type,am,ext,iZ,(*goodsBFilter[0]));
-		double yMagTh=simgal.GetMag(zs,type,am,ext,iY,(*goodsBFilter[0]));
+		double yMagTh=simgal.GetMag(zs,type,am,ext,iY,(*goodsBFilter[0]));*/
 		
 		// The final observations
 		// The 1st element is the value of the observed magnitude
 		// The 2nd element is the magnitude error
-		vector<double> uObservation = simgal.addLSSTError(uMagTh, nYear, iU);
-		vector<double> gObservation = simgal.addLSSTError(gMagTh, nYear, iG);
-		vector<double> rObservation = simgal.addLSSTError(rMagTh, nYear, iR);
-		vector<double> iObservation = simgal.addLSSTError(iMagTh, nYear, iI);
-		vector<double> zObservation = simgal.addLSSTError(zMagTh, nYear, iZ);
-        vector<double> yObservation = simgal.addLSSTError(yMagTh, nYear, iY);
+		vector<double> uObservation = simobs.addLSSTError(uMagTh, nYear, iU);
+		vector<double> gObservation = simobs.addLSSTError(gMagTh, nYear, iG);
+		vector<double> rObservation = simobs.addLSSTError(rMagTh, nYear, iR);
+		vector<double> iObservation = simobs.addLSSTError(iMagTh, nYear, iI);
+		vector<double> zObservation = simobs.addLSSTError(zMagTh, nYear, iZ);
+        vector<double> yObservation = simobs.addLSSTError(yMagTh, nYear, iY);
 
         // Write the data to the FITS file
 		rowin[0]=zs;

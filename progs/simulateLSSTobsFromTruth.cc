@@ -136,7 +136,7 @@ int main(int narg, char* arg[]) {
     vector<SED*> sedArray=readSedList.getSedArray();
 	
 	// Initialize class that simulates magnitude errors
-	SimData simData(sedArray, filterArray, su, rg);
+	SimObservations simData(filterArray, rg);
 	
 	// Open file for reading
 	cout <<"    Reading in the LSST catalog ... "<< nGalaxy <<" entries from ";

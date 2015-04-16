@@ -310,7 +310,7 @@ int main(int narg, char* arg[]) {
     
     int nElliptical = 1;
     int nSpiral = 2;
-	SimData simgal(sedArray,LSSTfilters,su,rg,nElliptical,nSpiral);
+	SimData simgal(sedArray, LSSTfilters, su); //,rg,nElliptical,nSpiral);
 	
 	stringstream ssz;
     ssz << zSource;
@@ -342,12 +342,14 @@ int main(int narg, char* arg[]) {
         int nAbs = atoi(nAbsString.c_str());
         cout <<"     Number of absorbers = "<<nAbs <<endl;*/
 
-        IGMTransmission igmTransmission(infile);
-        SEDIGM sedIGM(*(sedArray[sedNo]), igmTransmission, zs);
-        SEDIGM sedMadau(*(sedArray[sedNo]), zs);
+        IGMTransmission igmTransmission(infile, lmin, lmax, nl);
+        //SEDIGM sedIGM(*(sedArray[sedNo]), igmTransmission, zs);
+        //SEDIGM sedMadau(*(sedArray[sedNo]), zs);
         
-		double uMag=simgal.GetMag(zs,type,am,ext,0,(*goodsBFilter[0]),igmTransmission);
-		double gMag=simgal.GetMag(zs,type,am,ext,1,(*goodsBFilter[0]),igmTransmission);
+		//double uMag=simgal.GetMag(zs,type,am,ext,0,(*goodsBFilter[0]),igmTransmission);
+		//double gMag=simgal.GetMag(zs,type,am,ext,1,(*goodsBFilter[0]),igmTransmission);
+		double uMag = simgal.getMag(zs, am, sedNo, 0, (*goodsBFilter[0]), igmTransmission);
+		double gMag = simgal.getMag(zs, am, sedNo, 1, (*goodsBFilter[0]), igmTransmission);
 		
 		outp << nAbsorbers[i] <<"  "<< uMag <<"  "<< gMag <<"  "<< totTrans[i] << endl;
 		
@@ -363,7 +365,8 @@ int main(int narg, char* arg[]) {
     double dz = (zmax - zmin)/(nz - 1);
     cout << zmin <<"<z<"<< zmax <<endl;
     
-    SimData simgalNoVaryIGM(sedArray,LSSTfilters,su,rg,nElliptical,nSpiral);
+    //SimData simgalNoVaryIGM(sedArray,LSSTfilters,su,rg,nElliptical,nSpiral);
+    IGMTransmission noIGM(lmin, lmax, nl);
     
     outfile = outfileroot + "_magsZ.txt";
 	outp.open(outfile.c_str());
@@ -374,13 +377,25 @@ int main(int narg, char* arg[]) {
         double ext = 0.;
         double type = 3.007;
         
-        double uMag = simgalNoVaryIGM.GetMag(zs,type,am,ext,0,(*goodsBFilter[0]));
+        /*double uMag = simgalNoVaryIGM.GetMag(zs,type,am,ext,0,(*goodsBFilter[0]));
 		double gMag = simgalNoVaryIGM.GetMag(zs,type,am,ext,1,(*goodsBFilter[0]));
 		simgalNoVaryIGM.setMadau(false);
 		double uMagNoIGM = simgalNoVaryIGM.GetMag(zs,type,am,ext,0,(*goodsBFilter[0]));
 		double gMagNoIGM = simgalNoVaryIGM.GetMag(zs,type,am,ext,1,(*goodsBFilter[0]));
-		simgalNoVaryIGM.setMadau(true);
-        outp << zs <<"  "<< uMag <<"  "<< gMag <<"  "<< uMagNoIGM <<"  "<< gMagNoIGM <<endl;
+		simgalNoVaryIGM.setMadau(true);*/
+		
+		int sedid = 7;
+		
+		// No IGM
+		double uMag = simgal.getMag(zs, am, sedid, 0, (*goodsBFilter[0]), noIGM);
+		double gMag = simgal.getMag(zs, am, sedid, 1, (*goodsBFilter[0]), noIGM);
+		
+		// with Madau
+		IGMTransmission madau(zs);
+		double uMagMadau = simgal.getMag(zs, am, sedid, 0, (*goodsBFilter[0]), madau);
+		double gMagMadau = simgal.getMag(zs, am, sedid, 1, (*goodsBFilter[0]), madau);
+		
+        outp << zs <<"  "<< uMag <<"  "<< gMag <<"  "<< uMagMadau <<"  "<< gMagMadau <<endl;
         }
     outp.close();
         

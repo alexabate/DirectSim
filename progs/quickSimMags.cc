@@ -154,12 +154,13 @@ int main(int narg, char* arg[])
 
 	// Prepare the class which will calculate the magnitudes
 	cout <<"     Initialize class to calculate magnitudes"<<endl;
-	SimData simgal(sedArray, LSSTfilters, su, rg, nElliptical, nSpiral);
+	SimData simgal(sedArray, LSSTfilters, su); //, rg, nElliptical, nSpiral);
+	SimObservations simobs(LSSTfilters, rg);
     cout << endl;
     
     
     // Add Madau preference
-    simgal.setMadau(isAddMadau);
+    //simgal.setMadau(isAddMadau);
     
     
     // Galaxies to simulate
@@ -184,16 +185,27 @@ int main(int narg, char* arg[])
 		// Get galaxy properties: galaxy has redshift zs, absolute magnitude am,
 		// SED type type and internal extinction ext.
 		double zs = zmin + i*dz;
+		
+		IGMTransmission igm(zs); // Madau
 
 
         // Calculate galaxy magnitude in observed filters ugrizy
         // Galaxy's absolute magnitude is defined in filter (*goodsBFilter[0])
-		double uMagTh=simgal.GetMag(zs,type,am,ext,iU,(*goodsBFilter[0]));
+		/*double uMagTh=simgal.GetMag(zs,type,am,ext,iU,(*goodsBFilter[0]));
 		double gMagTh=simgal.GetMag(zs,type,am,ext,iG,(*goodsBFilter[0]));
 		double rMagTh=simgal.GetMag(zs,type,am,ext,iR,(*goodsBFilter[0]));
 		double iMagTh=simgal.GetMag(zs,type,am,ext,iI,(*goodsBFilter[0]));
 		double zMagTh=simgal.GetMag(zs,type,am,ext,iZ,(*goodsBFilter[0]));
-		double yMagTh=simgal.GetMag(zs,type,am,ext,iY,(*goodsBFilter[0]));
+		double yMagTh=simgal.GetMag(zs,type,am,ext,iY,(*goodsBFilter[0]));*/
+		
+		double uMagTh = simgal.getMag(zs, am, 0, iU, (*goodsBFilter[0]), igm);
+		double gMagTh = simgal.getMag(zs, am, 0, iG, (*goodsBFilter[0]), igm);
+		double rMagTh = simgal.getMag(zs, am, 0, iR, (*goodsBFilter[0]), igm);
+		double iMagTh = simgal.getMag(zs, am, 0, iI, (*goodsBFilter[0]), igm);
+		double zMagTh = simgal.getMag(zs, am, 0, iZ, (*goodsBFilter[0]), igm);
+		double yMagTh = simgal.getMag(zs, am, 0, iY, (*goodsBFilter[0]), igm);
+
+		
 		
 		//cout << zs <<"  ";
 		//cout << uMagTh <<"  "<< gMagTh <<"  "<< rMagTh <<"  "<< iMagTh <<"  "<< zMagTh <<"  "<< yMagTh <<endl;
@@ -201,12 +213,12 @@ int main(int narg, char* arg[])
 		// The final observations
 		// The 1st element is the value of the observed magnitude
 		// The 2nd element is the magnitude error
-		vector<double> uObservation = simgal.addLSSTError(uMagTh, nYear, iU);
-		vector<double> gObservation = simgal.addLSSTError(gMagTh, nYear, iG);
-		vector<double> rObservation = simgal.addLSSTError(rMagTh, nYear, iR);
-		vector<double> iObservation = simgal.addLSSTError(iMagTh, nYear, iI);
-		vector<double> zObservation = simgal.addLSSTError(zMagTh, nYear, iZ);
-        vector<double> yObservation = simgal.addLSSTError(yMagTh, nYear, iY);
+		vector<double> uObservation = simobs.addLSSTError(uMagTh, nYear, iU);
+		vector<double> gObservation = simobs.addLSSTError(gMagTh, nYear, iG);
+		vector<double> rObservation = simobs.addLSSTError(rMagTh, nYear, iR);
+		vector<double> iObservation = simobs.addLSSTError(iMagTh, nYear, iI);
+		vector<double> zObservation = simobs.addLSSTError(zMagTh, nYear, iZ);
+        vector<double> yObservation = simobs.addLSSTError(yMagTh, nYear, iY);
 
         // Write the data to the file: zs, ugrizy, eugrizy
         outp << zs <<"  "<< uObservation[0] <<"  "<< gObservation[0] <<"  "<< rObservation[0];

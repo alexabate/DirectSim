@@ -123,13 +123,13 @@ int main(int narg, char* arg[]) {
 	cout <<"     Load in LSST filters"<<endl;
 	string filterFile = "LSST.filters";
 	ReadFilterList readFilterList(filterFile);
-	readFilterList.readFilters(lmin,lmax);
+	readFilterList.readFilters(lmin, lmax);
 	vector<Filter*> LSSTfilters=readFilterList.getFilterArray();
 	// Reference
 	cout <<"     Load in reference (GOODS B) filter"<<endl;
 	string goodsFilterFile = "GOODSB.filters";
 	ReadFilterList readGOODSBfilter(goodsFilterFile);
-	readGOODSBfilter.readFilters(lmin,lmax);
+	readGOODSBfilter.readFilters(lmin, lmax);
 	vector<Filter*> goodsBFilter=readGOODSBfilter.getFilterArray();
 	
 	// this controls the drawing of random numbers
@@ -146,9 +146,9 @@ int main(int narg, char* arg[]) {
 	// Prepare the class which will calculate the magnitudes
 	cout <<"     Calculate u and g magnitudes for a starburst galaxy at z = "<< zSource;
 	cout <<" with varing IGM along the line of sight" <<endl;
-	int nElliptical = 1;
-    int nSpiral = 2;
-	SimData simgal(sedArray,LSSTfilters,su,rg,nElliptical,nSpiral);
+	//int nElliptical = 1;
+    //int nSpiral = 2;
+	SimData simgal(sedArray, LSSTfilters, su); //,rg,nElliptical,nSpiral);
 	cout << endl;
 
     stringstream ssn;
@@ -182,7 +182,7 @@ int main(int narg, char* arg[]) {
         int nAbs = atoi(num.str().c_str());
         cout <<"     Number of absorbers = "<<nAbs <<endl;
 
-        IGMTransmission igmTransmission(infile);
+        IGMTransmission igmTransmission(infile, lmin, lmax);
         
         /*//////////////// THIS PART IS FOR DEBUGGING/CHECKING 
         // Basically this bit is now addIGMToSED
@@ -201,10 +201,14 @@ int main(int narg, char* arg[]) {
         ////////////////*/
         
 
-		double uMag=simgal.GetMag(zs,type,am,ext,0,(*goodsBFilter[0]),igmTransmission);
-		double gMag=simgal.GetMag(zs,type,am,ext,1,(*goodsBFilter[0]),igmTransmission);
+		//double uMag=simgal.GetMag(zs,type,am,ext,0,(*goodsBFilter[0]),igmTransmission);
+		//double gMag=simgal.GetMag(zs,type,am,ext,1,(*goodsBFilter[0]),igmTransmission);
 		//double uMagNoIGM=simgalNoIGM.GetMag(zs,type,am,ext,0,(*goodsBFilter[0]));
 		//double gMagNoIGM=simgalNoIGM.GetMag(zs,type,am,ext,1,(*goodsBFilter[0]));
+		
+		int sedid = 5;
+		double uMag = simgal.getMag(zs, am, sedid, 0, (*goodsBFilter[0]), igmTransmission);
+		double gMag = simgal.getMag(zs, am, sedid, 1, (*goodsBFilter[0]), igmTransmission);
 		
 		outp << nAbs <<"  "<< uMag <<"  "<< gMag <<"  " <<endl;//<< uMagNoIGM <<"  "<< gMagNoIGM <<endl;
 		
@@ -220,7 +224,11 @@ int main(int narg, char* arg[]) {
     double dz = (zmax - zmin)/(nz - 1);
     cout << zmin <<"<z<"<< zmax <<endl;
     
-    SimData simgalNoVaryIGM(sedArray,LSSTfilters,su,rg,nElliptical,nSpiral);
+    int npt = 1000;
+    IGMTransmission noIGM(lmin, lmax, npt);
+    
+    
+    //SimData simgalNoVaryIGM(sedArray,LSSTfilters,su,rg,nElliptical,nSpiral);
     //bool isLyC=false;
     //simgalNoVaryIGM.setMadau(true, isLyC);
     
@@ -233,13 +241,26 @@ int main(int narg, char* arg[]) {
         double ext = 0.;
         double type = 3.007;
         
-        double uMag = simgalNoVaryIGM.GetMag(zs,type,am,ext,0,(*goodsBFilter[0]));
+        /*double uMag = simgalNoVaryIGM.GetMag(zs,type,am,ext,0,(*goodsBFilter[0]));
 		double gMag = simgalNoVaryIGM.GetMag(zs,type,am,ext,1,(*goodsBFilter[0]));
 		simgalNoVaryIGM.setMadau(false);//, isLyC);
 		double uMagNoIGM = simgalNoVaryIGM.GetMag(zs,type,am,ext,0,(*goodsBFilter[0]));
 		double gMagNoIGM = simgalNoVaryIGM.GetMag(zs,type,am,ext,1,(*goodsBFilter[0]));
-		simgalNoVaryIGM.setMadau(true);//, isLyC);
-        outp << zs <<"  "<< uMag <<"  "<< gMag <<"  "<< uMagNoIGM <<"  "<< gMagNoIGM <<endl;
+		simgalNoVaryIGM.setMadau(true);//, isLyC);*/
+		
+		int sedid = 5;
+		
+		// No IGM
+		double uMag = simgal.getMag(zs, am, sedid, 0, (*goodsBFilter[0]), noIGM);
+		double gMag = simgal.getMag(zs, am, sedid, 1, (*goodsBFilter[0]), noIGM);
+		
+		// with Madau
+		IGMTransmission madau(zs);
+		double uMagMadau = simgal.getMag(zs, am, sedid, 0, (*goodsBFilter[0]), madau);
+		double gMagMadau = simgal.getMag(zs, am, sedid, 1, (*goodsBFilter[0]), madau);
+		
+		
+        outp << zs <<"  "<< uMag <<"  "<< gMag <<"  "<< uMagMadau <<"  "<< gMagMadau <<endl;
         }
     outp.close();
     

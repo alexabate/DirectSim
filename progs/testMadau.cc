@@ -89,7 +89,7 @@ int main(int narg, char* arg[]) {
   cout <<"     Redshifts of source galaxies: "<< zSource1 <<", "<< zSource2 <<", "<< zSource3 << endl;
   cout << endl;
   
-  int rc = 1;  
+    int rc = 1;  
     try {  // exception handling try bloc at top level
   
     ifstream inp;
@@ -104,7 +104,9 @@ int main(int narg, char* arg[]) {
     
     
     // Class that calculates Madau absorption
-    Madau madau;  
+    int lineMax = 5;
+    bool isLyC = true;
+    Madau madau(lineMax, isLyC);
     
 	
 	// Write transmission as a function of observed wavelength to file
@@ -205,12 +207,15 @@ int main(int narg, char* arg[]) {
 	
 	// Prepare the class which will calculate the magnitudes
 	cout <<"     Initialize class to calculate magnitudes"<<endl;
-	int nElliptical = 1;
-    int nSpiral = 2;
-	SimData simgal(sedArray,LSSTfilters,su,rg,nElliptical,nSpiral);
-	SimData simgalNoIGM(sedArray,LSSTfilters,su,rg,nElliptical,nSpiral);
-	simgalNoIGM.setMadau(false);
+	//int nElliptical = 1;
+    //int nSpiral = 2;
+	SimData simgal(sedArray, LSSTfilters, su); //,rg,nElliptical,nSpiral);
+	//SimData simgalNoIGM(sedArray,LSSTfilters,su,rg,nElliptical,nSpiral);
+	//simgalNoIGM.setMadau(false);
     cout << endl;
+    
+    int npt = 1000;
+    IGMTransmission noIGM(lmin, lmax, npt);
     
     
     double zmin = 1.5, zmax = 3.7;
@@ -225,13 +230,23 @@ int main(int narg, char* arg[]) {
         double am = -18;
         double ext = 0.;
         double type = 3.004;
+        
+        IGMTransmission madauIGM(zs);
 
         // Calculate galaxy magnitude in observed filters ugrizy
         // Galaxy's absolute magnitude is defined in filter (*goodsBFilter[0])
-		double uMag=simgal.GetMag(zs,type,am,ext,0,(*goodsBFilter[0]));
-		double gMag=simgal.GetMag(zs,type,am,ext,1,(*goodsBFilter[0]));
-		double uMagNoIGM=simgalNoIGM.GetMag(zs,type,am,ext,0,(*goodsBFilter[0]));
-		double gMagNoIGM=simgalNoIGM.GetMag(zs,type,am,ext,1,(*goodsBFilter[0]));
+        
+        int sedid = 5;
+        
+        // with Madau IGM
+		double uMag = simgal.getMag(zs, am, sedid, 0, (*goodsBFilter[0]), madauIGM);
+		double gMag = simgal.getMag(zs, am, sedid ,1, (*goodsBFilter[0]), madauIGM);
+		
+		// with no IGM
+		double uMagNoIGM = simgal.getMag(zs, am, sedid, 0, (*goodsBFilter[0]), noIGM);
+		double gMagNoIGM = simgal.getMag(zs, am, sedid, 1, (*goodsBFilter[0]), noIGM);
+		
+
 		
 		outp << zs <<"  "<< uMag <<"  "<< gMag <<"  "<< uMagNoIGM <<"  "<< gMagNoIGM <<endl;
         }

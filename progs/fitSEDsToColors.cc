@@ -270,12 +270,13 @@ int main(int narg, char* arg[]) {
 	RandomGenerator rg;
 	
 	// for generating photometry
-	SimData simData(sedArray, lsst_filters, su, rg);
+	SimData simData(sedArray, lsst_filters, su); //, rg);
+	//SimObservations simObs(lsst_filters, rg);
 
     // Add Madau preference
-    bool isAddMadau = true;
-    simData.setMadau(isAddMadau);
-
+    //bool isAddMadau = true;
+    //simData.setMadau(isAddMadau);
+    
 
     // this is a file for checking
     outfile = outroot + "_fittedSEDs.txt";
@@ -338,6 +339,10 @@ int main(int narg, char* arg[]) {
         double R = row[idMag];
         //cout <<"dats:"<< ra <<" "<< dec <<" "<< z <<" "<< mi <<" "<< R << endl;
         
+        // IGM model (Madau)
+        IGMTransmission igm(z);
+
+        
         // create vector of colors
         vector<double> colors;
         for (int i=0; i<idCols.size()-1; i++) {
@@ -369,7 +374,9 @@ int main(int narg, char* arg[]) {
         bool all_detected = true;
         for (int j=0; j<lsst_filters.size(); j++) {
         
-            double mag = simData.GetMag(z, bf, R, j, (*phot_filters[iabscol]));
+            //double mag = simData.GetMag(z, bf, R, j, (*phot_filters[iabscol]));
+            
+            double mag = simData.getMag(z, R, bf, j, (*phot_filters[iabscol]), igm);
             mags.push_back(mag);
             if (mag>50.)
                 all_detected = false;

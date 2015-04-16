@@ -510,10 +510,14 @@ class Madau:
     public AtomicCalcs
 {
 public:
+
+    //Madau() {}; 
+
+
     /** Constructor
         @param nLineMax     Maximum Lyman-series to include (eg if nLineMax=2 will only calculate Ly-alpha) 
         @param isLyC        Include Lyman continuum absorption (not just Lyman series)                      */
-    Madau(int nLineMax=5, bool isLyC=true)
+    Madau(int nLineMax, bool isLyC=true)
     : nLineMax_(nLineMax) , isLyC_(isLyC) { 
         setAbsorptionStrengths(); 
         if (nLineMax_>nLineMaxMadau_) {

@@ -403,9 +403,9 @@ double SimData::getMag(double zs, double absmag, int sedid, int iobsfilt, int ir
 	string igmType;
 	if (igm == None)
 	    igmType = "None";
-	else if (igm == Madau)
+	else if (igm == Mad)
 	    igmType = "Madau";
-	else if (igm == Mean)
+	else if (igm == Aver)
 	    igmType = "Mean";
 	else {
 	    cout <<"IGM model type = "<< igm << endl;

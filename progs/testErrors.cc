@@ -156,7 +156,8 @@ int main(int narg, char* arg[])
 	
 	// Prepare the class which will calculate the magnitudes
 	cout <<"     Initialize class to calculate magnitudes"<<endl;
-	SimData simgal(sedArray,LSSTfilters,su,rg,nElliptical,nSpiral);
+	//SimData simgal(sedArray,LSSTfilters,su); //,rg,nElliptical,nSpiral);
+	SimObservations simobs(LSSTfilters,rg);
 
     // Loop over all galaxies in the base catalog
 	cout <<"     Start loop over galaxies ..."<<endl;
@@ -171,12 +172,12 @@ int main(int narg, char* arg[])
 
         double mag = mMin + i*dm;
 		
-		vector<double> uObservation = simgal.addLSSTError(mag, nYear, 0);
-        vector<double> gObservation = simgal.addLSSTError(mag, nYear, 1);
-        vector<double> rObservation = simgal.addLSSTError(mag, nYear, 2);
-        vector<double> iObservation = simgal.addLSSTError(mag, nYear, 3);
-        vector<double> zObservation = simgal.addLSSTError(mag, nYear, 4);
-        vector<double> yObservation = simgal.addLSSTError(mag, nYear, 5);
+		vector<double> uObservation = simobs.addLSSTError(mag, nYear, 0);
+        vector<double> gObservation = simobs.addLSSTError(mag, nYear, 1);
+        vector<double> rObservation = simobs.addLSSTError(mag, nYear, 2);
+        vector<double> iObservation = simobs.addLSSTError(mag, nYear, 3);
+        vector<double> zObservation = simobs.addLSSTError(mag, nYear, 4);
+        vector<double> yObservation = simobs.addLSSTError(mag, nYear, 5);
 		
         // Write the data to the FITS file
 		rowin[0]=mag;

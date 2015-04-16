@@ -127,14 +127,17 @@ int main(int narg, char* arg[])
             int law = 0; // Cardelli law  by default
             if (ty>=25)
                 law = 1; // Calzetti law for more Starburst types
-            SEDRedden sedred((*sedArray[ty]),ebv,law);
+                
+                
+            sedArray[ty]->doRedden(ebv, law);
+            //SEDRedden sedred((*sedArray[ty]),ebv,law);
 
             double cug, cgr, cri, ciz, czy;
-            cug = photometryCalcs.CompColor(redshift,sedred,(*filters[iU]),(*filters[iG]));
-            cgr = photometryCalcs.CompColor(redshift,sedred,(*filters[iG]),(*filters[iR]));
-            cri = photometryCalcs.CompColor(redshift,sedred,(*filters[iR]),(*filters[iI]));
-            ciz = photometryCalcs.CompColor(redshift,sedred,(*filters[iI]),(*filters[iZ]));
-            czy = photometryCalcs.CompColor(redshift,sedred,(*filters[iZ]),(*filters[iY]));
+            cug = photometryCalcs.CompColor(redshift, (*sedArray[ty]), (*filters[iU]),(*filters[iG]));
+            cgr = photometryCalcs.CompColor(redshift, (*sedArray[ty]), (*filters[iG]),(*filters[iR]));
+            cri = photometryCalcs.CompColor(redshift, (*sedArray[ty]), (*filters[iR]),(*filters[iI]));
+            ciz = photometryCalcs.CompColor(redshift, (*sedArray[ty]), (*filters[iI]),(*filters[iZ]));
+            czy = photometryCalcs.CompColor(redshift, (*sedArray[ty]), (*filters[iZ]),(*filters[iY]));
             
             outp << zs <<"  "<< ty <<"  "<< am << "  "<< mi <<"  ";
             outp << cug <<"  "<< cgr <<"  "<< cri <<"  "<< ciz <<"  "<< czy << endl; 

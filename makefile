@@ -58,19 +58,21 @@ MINUIT = -lMinuit
 
 ################################################################################
 
-all : progs tests bao
+all : progs tests 
+#bao
 
 progs : addIGMToSED analyzeBPZ baseSimulation calculateKcorrections cfhtColors \
 colorDistributions convertSEDS fitLSSTspectra lineOfSightLymanAlpha lineOfSightMagnitude \
 lsstPicklesLibrary lymanAlphaToDensity pcaTemplates photoZdist priorFitter \
 projectTemplates rdlss sdssElColors sdssPicklesLibrary simdensity  \
-simulateAbsorberLinesOfSight simulateLSSTobs simulateLSSTobsFromTruth \
+simulateAbsorberLinesOfSight simulateLSSTobsFromTruth \
 cluster_mass_function sim_with_clusters quickSimMags restFrameColors generateTemplSet fitSEDsToColors \
 getSEDcolors
 
-tests : test2Dinterp testbasesim testEMalgorithm testErrors testgoodsmagsim \
-testKcorrColors testKcorrMethod testLF testLymanAlphaAbs testMadau testMeiksin \
-testSimReadKcorr testsimulateIGM testSimulation testTemplateFitting
+tests : test2Dinterp testbasesim testEMalgorithm testErrors \
+testKcorrColors testLF testLymanAlphaAbs testMadau testMeiksin \
+testsimulateIGM 
+#testTemplateFitting -> defunct but might need to look at again
 # testsimdensity 
 
 bao : addGausszerr computepsfromarray fitkbao getpzconvf getsf grid_data \
@@ -176,9 +178,10 @@ simulateAbsorberLinesOfSight : $(EXE)/simulateAbsorberLinesOfSight
 
 simulateCFHTobs : $(EXE)/simulateCFHTobs
 	@echo 'makefile : simulateCFHTobs made'
-	
-simulateLSSTobs : $(EXE)/simulateLSSTobs
-	@echo 'makefile : simulateLSSTobs made'	
+
+# DEFUNCT	
+#simulateLSSTobs : $(EXE)/simulateLSSTobs
+#	@echo 'makefile : simulateLSSTobs made'	
 	
 simulateLSSTobsFromTruth : $(EXE)/simulateLSSTobsFromTruth
 	@echo 'makefile : simulateLSSTobsFromTruth made'
@@ -225,15 +228,13 @@ testEMalgorithm : $(EXE)/testEMalgorithm
 	
 testErrors : $(EXE)/testErrors
 	@echo 'makefile : testErrors made'
-	
-testgoodsmagsim : $(EXE)/testgoodsmagsim
-	@echo 'makefile : testgoodsmagsim made'
+
+# DEFUNCT	
+#testgoodsmagsim : $(EXE)/testgoodsmagsim
+#	@echo 'makefile : testgoodsmagsim made'
 
 testKcorrColors : $(EXE)/testKcorrColors 
 	@echo 'makefile : testKcorrColors made'
-	
-testKcorrMethod : $(EXE)/testKcorrMethod 
-	@echo 'makefile : testKcorrMethod made'
 
 testLF : $(EXE)/testLF 
 	@echo 'makefile :testLF made'
@@ -246,15 +247,17 @@ testMadau : $(EXE)/testMadau
 
 testMeiksin : $(EXE)/testMeiksin
 	@echo 'makefile : testMeiksin made'
-	
-testSimReadKcorr : $(EXE)/testSimReadKcorr
-	@echo 'makefile : testSimReadKcorr made'
+
+# DEFUNCT	
+#testSimReadKcorr : $(EXE)/testSimReadKcorr
+#	@echo 'makefile : testSimReadKcorr made'
 	
 testsimulateIGM : $(EXE)/testsimulateIGM
 	@echo 'makefile : testsimulateIGM made'
-	
-testSimulation : $(EXE)/testSimulation
-	@echo 'makefile : testSimulation made'
+
+# DEFUNCT	
+#testSimulation : $(EXE)/testSimulation
+#	@echo 'makefile : testSimulation made'
 	
 testTemplateFitting : $(EXE)/testTemplateFitting
 	@echo 'makefile : testTemplateFitting made'
@@ -830,17 +833,6 @@ $(EXE)/testKcorrColors : $(OBJ)/testKcorrColors.o $(LIBO)
 $(OBJ)/testKcorrColors.o : $(PROGS)/testKcorrColors.cc $(LIBH)  
 	mkdir -p $(OBJ)
 	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/testKcorrColors.o $(PROGS)/testKcorrColors.cc
-	
-# TEST K CORRECTION INTERPOLATION
-$(EXE)/testKcorrMethod : $(OBJ)/testKcorrMethod.o $(LIBO) 
-	mkdir -p $(EXE)
-	mkdir -p $(TESTS)
-	$(CXXLINK) -o $(EXE)/testKcorrMethod $(OBJ)/testKcorrMethod.o $(LIBO) \
-	$(SOPHYAEXTSLBLIST) $(MYLIB) $(ROOTLIB)
-
-$(OBJ)/testKcorrMethod.o : $(PROGS)/testKcorrMethod.cc $(LIBH)  
-	mkdir -p $(OBJ)
-	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/testKcorrMethod.o $(PROGS)/testKcorrMethod.cc
 
 # TEST LF 
 $(EXE)/testLF : $(OBJ)/testLF.o $(LIBO) 

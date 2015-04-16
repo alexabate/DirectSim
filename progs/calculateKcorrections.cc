@@ -33,7 +33,7 @@ void usage(void)
 	cout << " -s : SEDFILE: reading model galaxy SEDs from file SEDFILE. Must be in order"<<endl;
 	cout << "      of: elliptical types, spiral types, starburst types [DEFAULT=CWWK.list]" <<endl;
 	cout << " -f : FILTFILE: reading filters from file FILTFILE [DEFAULT=LSST.filters]"<<endl;
-	cout << " -t : NELLIPTICAL,NSPIRAL: number of elliptical, spiral SEDs [DEFAULT=1,2]"<<endl;
+	//cout << " -t : NELLIPTICAL,NSPIRAL: number of elliptical, spiral SEDs [DEFAULT=1,2]"<<endl;
 	cout << " -z : ZMIN,ZMAX,NZ: range of k-correction calculation in redshift [DEFAULT=0,3,2000]"<<endl;
 	cout << " -e : EMAX,NE: range of k-correction calculation in host galaxy extinction";
 	cout << " [DEFAULT=0.3,200]"<<endl;
@@ -54,8 +54,8 @@ int main(int narg, char* arg[])
 	string sedFile = "CWWK.list";
 	string filterFile = "LSST.filters";
 
-    int nElliptical = 1;
-    int nSpiral = 2;
+    //int nElliptical = 1;
+    //int nSpiral = 2;
     
     double zmin=0, zmax=3.;
     double emax=0.3;
@@ -65,7 +65,7 @@ int main(int narg, char* arg[])
 	//--- decoding command line arguments 
 	cout << " ==== decoding command line arguments ===="<<endl;
 	char c;
-	while((c = getopt(narg,arg,"hs:f:t:z:e:")) != -1)  {
+	while((c = getopt(narg,arg,"hs:f:z:e:")) != -1)  {
 	    switch (c) {
 	        case 's' :
 		        sedFile = optarg;
@@ -73,9 +73,9 @@ int main(int narg, char* arg[])
             case 'f' :
 		        filterFile = optarg;
 		        break;
-		    case 't' :
-		        sscanf(optarg,"%d,%d",&nElliptical,&nSpiral);
-		        break;
+		    //case 't' :
+		    //    sscanf(optarg,"%d,%d",&nElliptical,&nSpiral);
+		    //    break;
 		    case 'z' :
 		        sscanf(optarg,"%lf,%lf,%d",&zmin,&zmax,&nz);
 		        break;
@@ -96,8 +96,8 @@ int main(int narg, char* arg[])
 	string filtLib = result2[0];
 	
     cout << "     Reading SEDs from file "<< sedFile <<", and filters from "<< filterFile << endl;
-    cout << "     Number of ellipticals = "<< nElliptical <<", number of spirals = ";
-    cout << nSpiral << endl;    
+    //cout << "     Number of ellipticals = "<< nElliptical <<", number of spirals = ";
+    //cout << nSpiral << endl;    
     cout << "     Files will be output to files beginning "<< outfileroot <<endl;
     cout << "     Calculating k-corrections over redshift range "<< zmin <<"<z<"<< zmax;
     cout << " with "<< nz <<" steps"<<endl;
@@ -109,6 +109,8 @@ int main(int narg, char* arg[])
     try {  // exception handling try bloc at top level
 	ResourceUsage res;
 	InitTim();
+	
+	//enum dustLaw{NoDust=0, Card=1, Calz=2};
 	
 	// this controls the drawing of random numbers
 	RandomGenerator rg;
@@ -126,7 +128,7 @@ int main(int narg, char* arg[])
 	cout <<"     Load in filters"<<endl;
 	double lmin=5e-8, lmax=2.5e-6;
 	ReadFilterList readFilterList(filterFile);
-	readFilterList.readFilters(lmin,lmax);
+	readFilterList.readFilters(lmin, lmax);
 	vector<Filter*> filters = readFilterList.getFilterArray();
 	int nFilter = readFilterList.getNTot();
 	cout <<"     Read in "<< nFilter <<" filters"<<endl;
@@ -137,7 +139,7 @@ int main(int narg, char* arg[])
 	string rfFilter = "GOODSB";
 	string goodsFilterFile = rfFilter + ".filters";
 	ReadFilterList readGOODSBfilter(goodsFilterFile);
-	readGOODSBfilter.readFilters(lmin,lmax);
+	readGOODSBfilter.readFilters(lmin, lmax);
 	vector<Filter*> goodsBFilter=readGOODSBfilter.getFilterArray();
 	Filter restFrameFilter((*goodsBFilter[0]));
 	
@@ -151,10 +153,17 @@ int main(int narg, char* arg[])
 
 	// Prepare the class which will calculate the magnitudes
 	cout <<"     Initialize class to calculate magnitudes"<<endl;
-	SimData simgalWithMadau(sedArray, filters, su,rg, nElliptical, nSpiral);
-	SimData simgalNoMadau(sedArray, filters, su, rg, nElliptical, nSpiral);
-	simgalNoMadau.setMadau(false);
+	SimData simData(sedArray, filters, su); //, nElliptical, nSpiral);
+	//SimData simgalNoMadau(sedArray, filters, su, rg); //, nElliptical, nSpiral);
+	//simgalNoMadau.setMadau(false);
     cout << endl;
+    
+    // IGM models
+    //cout <<"     Set IGM models"<<endl
+    int npt = 1000;
+    IGMTransmission noIGM(lmin, lmax, npt);
+    
+    //cout << endl;
     
     // Step in redshift and host galaxy extinction
     double dz = (zmax - zmin)/(nz - 1);
@@ -173,9 +182,11 @@ int main(int narg, char* arg[])
         cout <<"     SED "<< is+1 <<" of "<< nSED <<endl;
             
         // set correct reddening law
-        int law = 0; // The Cardelli law
-        if ( is >= (nElliptical + nSpiral))
-            law = 1; // The Calzetti law
+        dustLaw law = Card;
+        
+        //int law = 0; // The Cardelli law
+        //if ( is >= (nElliptical + nSpiral))
+        //    law = 1; // The Calzetti law
 
         // Current SED
         SED sed(*(sedArray[is]));
@@ -224,14 +235,20 @@ int main(int narg, char* arg[])
             
             double kcorrWithMadau, kcorrNoMadau;
 	        for (int i=0; i<nz; i++) {
+	            double zs = zmin + i*dz;
+	            IGMTransmission madauIGM(zs);
+	            
 	            for (int j=0; j<ne; j++) {
 	            
-	                double zs = zmin + i*dz;
+	                
                     double ex = j*de; 
                     
-                    double kcorrWithMadau = simgalWithMadau.calcKcorr(sed, filter, restFrameFilter, zs, ex, law);
-		            double kcorrNoMadau = simgalNoMadau.calcKcorr(sed, filter, restFrameFilter, zs, ex, law);
+                    double kcorrWithMadau = simData.calcKcorr(sed, filter, restFrameFilter, zs, madauIGM, ex, law);
+		            double kcorrNoMadau = simData.calcKcorr(sed, filter, restFrameFilter, zs, noIGM, ex, law);
 		            
+		            //double calcKcorr(SED& sed, Filter& filter, Filter& restFrameFilter, double zs, 
+	                // IGMTransmission& igmtrans, double ext, dustLaw law);
+	                 
                     
                     outp1 << kcorrWithMadau <<"  ";
                     outp2 << kcorrNoMadau <<"  ";

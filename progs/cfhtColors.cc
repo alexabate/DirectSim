@@ -84,8 +84,8 @@ int main(int narg, char* arg[])
 	// Read out SEDs into array
     readSedList.readSeds(lmin,lmax);
     // Get total number of SEDs
-    vector<SED*> sedArray=readSedList.getSedArray();
-    int nsed=readSedList.getNSed();
+    //vector<SED*> sedArray = readSedList.getSedArray();
+    int nsed = readSedList.getNSed();
     cout <<"     Number of original SEDs = "<<nsed<<endl;
 	cout << endl;
 	
@@ -98,7 +98,7 @@ int main(int narg, char* arg[])
 	int iSB2 = 5;   // starburst 2
 	
 	// Redden the SEDs
-	SEDRedden ElRed1((*sedArray[iEl]),0.1,0);
+	/*SEDRedden ElRed1((*sedArray[iEl]),0.1,0);
 	SEDRedden ElRed2((*sedArray[iEl]),0.3,0);
 	SEDRedden SbcRed1((*sedArray[iSbc]),0.1,0);
 	SEDRedden SbcRed2((*sedArray[iSbc]),0.3,0);
@@ -109,10 +109,22 @@ int main(int narg, char* arg[])
 	SEDRedden SB3Red1((*sedArray[iSB3]),0.1,1);
 	SEDRedden SB3Red2((*sedArray[iSB3]),0.3,1);
 	SEDRedden SB2Red1((*sedArray[iSB2]),0.1,1);
-	SEDRedden SB2Red2((*sedArray[iSB2]),0.3,1);
+	SEDRedden SB2Red2((*sedArray[iSB2]),0.3,1);*/
+	
+	// @todo, this will give two RANDOM reddening values to the SEDs
+	// probably should code a fixed reddening version of this method too.
+	// also output doesn't record what these reddening values were, and they will be different for El vs others
+	int nPerSED = 2;
+	int method=0;
+	int maxidEl=0;
+	double redMaxEl=0.3;
+	double redMaxOther=0.3;
+	readSedList.reddenSeds(nPerSED, method, maxidEl, redMaxEl, redMaxOther);
+	vector<SED*> sedArray = readSedList.getSedArray();
+	
 	
     // PHOTOMETRY CALCULATION CLASS
-    PhotometryCalcs photometryCalcs(lmin,lmax);
+    PhotometryCalcs photometryCalcs(lmin, lmax);
     
 
 	// LOOP OVER REDSHIFTS
@@ -120,18 +132,27 @@ int main(int narg, char* arg[])
 	int nz=100;
 	double dz=(zmax-zmin)/(nz-1);
 	
-	TVector<r_8> CugEllRed0(nz),CizEllRed0(nz),CugEllRed1(nz),CizEllRed1(nz),CugEllRed2(nz),CizEllRed2(nz);
+	vector<double> Cug, Ciz;
+	/*TVector<r_8> CugEllRed0(nz),CizEllRed0(nz),CugEllRed1(nz),CizEllRed1(nz),CugEllRed2(nz),CizEllRed2(nz);
 	TVector<r_8> CugSbcRed0(nz),CizSbcRed0(nz),CugSbcRed1(nz),CizSbcRed1(nz),CugSbcRed2(nz),CizSbcRed2(nz);
 	TVector<r_8> CugScdRed0(nz),CizScdRed0(nz),CugScdRed1(nz),CizScdRed1(nz),CugScdRed2(nz),CizScdRed2(nz);
 	TVector<r_8> CugIrrRed0(nz),CizIrrRed0(nz),CugIrrRed1(nz),CizIrrRed1(nz),CugIrrRed2(nz),CizIrrRed2(nz);
 	TVector<r_8> CugSB3Red0(nz),CizSB3Red0(nz),CugSB3Red1(nz),CizSB3Red1(nz),CugSB3Red2(nz),CizSB3Red2(nz);
-	TVector<r_8> CugSB2Red0(nz),CizSB2Red0(nz),CugSB2Red1(nz),CizSB2Red1(nz),CugSB2Red2(nz),CizSB2Red2(nz);
+	TVector<r_8> CugSB2Red0(nz),CizSB2Red0(nz),CugSB2Red1(nz),CizSB2Red1(nz),CugSB2Red2(nz),CizSB2Red2(nz);*/
 
-	for (int i=0; i<nz;i++)
-		{
-		double z=zmin+i*dz;
-
+	for (int i=0; i<nz; i++) {
+	
+		double z = zmin + i*dz;
 		
+		for (int j=0; j<sedArray.size(); j++) {
+		
+		    double cug = photometryCalcs.CompColor(z,(*sedArray[j]),(*CFHTfilters[uCFHT]),(*CFHTfilters[gCFHT]));
+		    double ciz = photometryCalcs.CompColor(z,(*sedArray[j]),(*CFHTfilters[iCFHT]),(*CFHTfilters[zCFHT]));
+		    
+		    Cug.push_back(cug);
+		    Ciz.push_back(ciz);
+            }
+		/*
 		// El
 		CugEllRed0(i)=photometryCalcs.CompColor(z,(*sedArray[iEl]),(*CFHTfilters[uCFHT]),(*CFHTfilters[gCFHT]));
 		CizEllRed0(i)=photometryCalcs.CompColor(z,(*sedArray[iEl]),(*CFHTfilters[iCFHT]),(*CFHTfilters[zCFHT]));
@@ -178,7 +199,7 @@ int main(int narg, char* arg[])
         CugSB2Red1(i)=photometryCalcs.CompColor(z,SB2Red1,(*CFHTfilters[uCFHT]),(*CFHTfilters[gCFHT]));
 		CizSB2Red1(i)=photometryCalcs.CompColor(z,SB2Red1,(*CFHTfilters[iCFHT]),(*CFHTfilters[zCFHT]));
 		CugSB2Red2(i)=photometryCalcs.CompColor(z,SB2Red2,(*CFHTfilters[uCFHT]),(*CFHTfilters[gCFHT]));
-		CizSB2Red2(i)=photometryCalcs.CompColor(z,SB2Red2,(*CFHTfilters[iCFHT]),(*CFHTfilters[zCFHT]));
+		CizSB2Red2(i)=photometryCalcs.CompColor(z,SB2Red2,(*CFHTfilters[iCFHT]),(*CFHTfilters[zCFHT]));*/
 		}
 		
 	// WRITE TO A FILE
@@ -196,9 +217,11 @@ int main(int narg, char* arg[])
 	    
 			double z=zmin+i*dz;
 			
-			outp << z;
+			outp << z <<"  ";
 			
-			// Ell
+			for (int j=0; j<sedArray.size(); j++)
+			    outp << Cug[j] <<"  "<< Ciz[j] <<"  ";
+			/*// Ell
 			outp <<"    "<<CugEllRed0(i)<<"    "<<CizEllRed0(i);
 			outp <<"    "<<CugEllRed1(i)<<"    "<<CizEllRed1(i);
 			outp <<"    "<<CugEllRed2(i)<<"    "<<CizEllRed2(i);
@@ -221,8 +244,7 @@ int main(int narg, char* arg[])
 			// SB2
 			outp <<"    "<<CugSB2Red0(i)<<"    "<<CizSB2Red0(i);
 			outp <<"    "<<CugSB2Red1(i)<<"    "<<CizSB2Red1(i);
-			outp <<"    "<<CugSB2Red2(i)<<"    "<<CizSB2Red2(i);
-			
+			outp <<"    "<<CugSB2Red2(i)<<"    "<<CizSB2Red2(i);*/
 			
 			outp << endl;
 		  }

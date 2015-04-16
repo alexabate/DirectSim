@@ -37,6 +37,10 @@
 #include "cosmocalcs.h"
 #include "sedfilter.h"
 
+
+enum dustLaw{NoDust=0, Card=1, Calz=2};
+enum igmModel{None=0, Mad=1, Aver=2};
+
 /** @class
   * PhotometryCalcs class
   *
@@ -311,10 +315,6 @@ protected:
 class SimData : public PhotometryCalcs {
 public:
 
-    //typedef enum{None=0, Card=1, Calz=2} dustlaw;
-    //typedef enum{None=0, Madau=1, Mean=2} igmmodel;
-	enum dustLaw{NoDust=0, Card=1, Calz=2};
-	enum igmModel{None=0, Madau=1, Mean=2};
 	
 	                                    
 	/** Constructor: calculate magnitudes from scratch
@@ -389,7 +389,7 @@ public:
         @param sedid        id of galaxy SED in sedArray_
         @param iobsfilt     column id of filter in k-correction table to calculate magnitude in 
         @param irestfilt    column id of filter in k-correction table absmag is defined in
-        @param igm          IGM transmission model (could be None, Madau, Mean)
+        @param igm          IGM transmission model (could be None, Mad, Aver)
         @param ext          internal dust extinction E(B-V) value
         @param dustlaw      dust law describing internal dust extinction (Cardelli or Calzetti)            */
     double getMag(double zs, double absmag, int sedid, int iobsfilt, int irestfilt, igmModel igm, 
@@ -408,8 +408,8 @@ public:
     TArray<double> returnSEDFluxesInRestFrame(double zs);//, Filter& restFrameFilter);
 	
 	
-// internal methods
-protected:
+// internal methods -> actually don't want calcKcorr to be internal
+//protected:
 	
 	/** Calculate k correction (from scratch) 
 	    @param sed                SED (z=0)
