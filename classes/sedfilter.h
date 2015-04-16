@@ -316,7 +316,7 @@ public:
         @param S       SED to add IGM absorption to
         @param zSED    redshift of galaxy SED                                 
         @param isLyC   include Lyman continuum absorption                                                   */
-    SEDIGM(SED& S, double zSED , bool isLyC=true, double lmin=1e-8, double lmax=2.5e-6, int nl=500)
+    SEDIGM(SpecEnergyDist& S, double zSED , bool isLyC=true, double lmin=1e-8, double lmax=2.5e-6, int nl=500)
     : sed_(S) , igm_(igm_default_) , zSED_(zSED) , isLyC_(isLyC) { 
         
         isMadau_ = true; 
@@ -327,7 +327,7 @@ public:
         @param S       SED to add IGM absorption to
         @param T       IGM transmission function
         @param zSED    redshift of galaxy SED                                 */
-    SEDIGM(SED& S, IGMTransmission& T, double zSED)
+    SEDIGM(SpecEnergyDist& S, IGMTransmission& T, double zSED)
     : sed_(S) , igm_(T) , zSED_(zSED) , isLyC_(false) { isMadau_ = false; };
     
     /** Return SED with IGM absorption applied CHECK THIS METHOD WORKS!
@@ -376,7 +376,7 @@ protected:
 
 
 protected:
-    SED& sed_;                    /**< SED to add IGM absorption to                                         */
+    SpecEnergyDist& sed_;         /**< SED to add IGM absorption to                                         */
     IGMTransmission& igm_;        /**< IGM absorption along line of sight                                   */
     IGMTransmission igm_default_; /**< default class to initialise igm_                                     */
     double zSED_;                 /**< redshift of SED                                                      */
