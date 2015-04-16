@@ -4,9 +4,9 @@
 
 
 // K-correction calculations 
+// Must make SED wrapper class that is NOT ClassFunc1D!
 
-double PhotometryCalcs::Kcorr(double z, ClassFunc1D& sed, Filter& filterX, 
-                                                        Filter& restFrameFilter)
+double PhotometryCalcs::Kcorr(double z, SpecEnergyDist& sed, Filter& filterX, Filter& restFrameFilter)
 {
 // rest-frame and observed filters need NOT be the SAME
 // compute general K correction for a galaxy with:
@@ -15,8 +15,13 @@ double PhotometryCalcs::Kcorr(double z, ClassFunc1D& sed, Filter& filterX,
 // -from REST FRAME bandpass Y
 // -to OBSERVED bandpass X
 
+    Timer tm("timer",false);
+    
+    //cout << filterX.Npoints() <<"  "<< restFrameFilter.Npoints() << endl;
+
 	double kxy;
 		
+   // tm.Split();
 	// returns sedred(lambda/(1+z))*filtX(lambda)*lambda;
 	SEDzFilterProd szfx(sed, filterX, z);
 	// returns filtY(lambda)/lambda  
@@ -24,23 +29,65 @@ double PhotometryCalcs::Kcorr(double z, ClassFunc1D& sed, Filter& filterX,
 	// returns sed(lambda)*filtY(lambda)*lambda;    
 	SEDzFilterProd szfB0(sed, restFrameFilter, 0.);
 	 // returns filtX(lambda)/lambda
-	FilterProd  fprodx(filterX);             
+	FilterProd  fprodx(filterX);
+	//tm.Split();
+    //cout <<"Time to set up k-correction = "<< tm.PartialElapsedTimems() <<" ms, ";
+	
+	tm.Split();
+	for (int i=0; i<100000; i++)
+	    double tmp = szfx(4e-7);
+	tm.Split();
+	cout <<"Time of test1 = "<< tm.PartialElapsedTimems() <<" ms, ";
+	
+	tm.Split();
+	for (int i=0; i<100000; i++)
+	    double tmp = szfB0(4e-7);
+	tm.Split();
+	cout <<"Time of test1a = "<< tm.PartialElapsedTimems() <<" ms, ";
+	
+	//tm.Split();
+	for (int i=0; i<100000; i++)
+        double tmp = fprody(4e-7);
+	//tm.Split();
+	//cout <<"Time of test2 = "<< tm.PartialElapsedTimems() <<" ms, "<< endl;
 	
     // To integrate the above
-	FilterIntegrator trpzx(szfx, lmin_, lmax_, npt_);	
-	FilterIntegrator trpzfy(fprody, lmin_, lmax_, npt_);	
-	FilterIntegrator trpzy(szfB0, lmin_, lmax_, npt_);
-	FilterIntegrator trpzfx(fprodx, lmin_, lmax_, npt_);	
+    
+	FilterIntegrator trpzx(szfx, lmin_, lmax_, npt_); //tm.Split(); //
+	//tm.Split();
+	//cout <<"Time to int1 = "<< tm.PartialElapsedTimems() <<" ms, "<< endl;
+	FilterIntegrator trpzfy(fprody, lmin_, lmax_, npt_); //tm.Split(); //cout <<"Time to int2 = "<< tm.PartialElapsedTimems() <<" ms, ";
+	//tm.Split();
+	FilterIntegrator trpzy(szfB0, lmin_, lmax_, npt_); //tm.Split(); //cout <<"Time to int3 = "<< tm.PartialElapsedTimems() <<" ms, ";
+	//tm.Split();
+	FilterIntegrator trpzfx(fprodx, lmin_, lmax_, npt_); //tm.Split(); //cout <<"Time to int4 = "<< tm.PartialElapsedTimems() <<" ms, ";
 		
-	kxy=-2.5*log10(pow((1+z),-1)*(trpzx.Value()/trpzfx.Value())*
-	                                    (trpzfy.Value()/trpzy.Value()));
+    //tm.Split();
+    double a = trpzx.Value(); // this takes a long time
+    //tm.Split();
+	//cout <<"Time to do a = "<< tm.PartialElapsedTimems() <<" ms, ";
+	//tm.Split();
+    double b = trpzfx.Value();
+    //tm.Split();
+	//cout <<"Time to do b = "<< tm.PartialElapsedTimems() <<" ms, ";
+	//tm.Split();
+    double c = trpzfy.Value();
+    //tm.Split();
+	//cout <<"Time to do c = "<< tm.PartialElapsedTimems() <<" ms, ";
+	//tm.Split();
+    double d = trpzy.Value(); // this takes a long time
+    //tm.Split();
+	//cout <<"Time to do d = "<< tm.PartialElapsedTimems() <<" ms, ";
+	kxy=-2.5*log10(pow((1.+z),-1)*(a/b)*(c/d));
+	//tm.Split();
+	//cout <<"Time to do end = "<< tm.PartialElapsedTimems() <<" ms"<<endl;
 	//if (z<0.0001)
 	//    cout << z <<"  "<< kxy <<endl;
 	return kxy;
 };
 
 
-double PhotometryCalcs::Kcorr1Filter(double z, ClassFunc1D& sed, Filter& filterX)
+double PhotometryCalcs::Kcorr1Filter(double z, SpecEnergyDist& sed, Filter& filterX)
 {
 // 1 FILTER: rest-frame and observed filters are the SAME
 // compute general K correction for a galaxy with:
@@ -63,7 +110,7 @@ double PhotometryCalcs::Kcorr1Filter(double z, ClassFunc1D& sed, Filter& filterX
 };
 
 
-double PhotometryCalcs::CompColor(double z, ClassFunc1D& sed, Filter& filterX, Filter& filterY)
+double PhotometryCalcs::CompColor(double z, SpecEnergyDist& sed, Filter& filterX, Filter& filterY)
 {
 // compute color: mag in filter X - filter Y, for a galaxy with:
 // -redshift z
@@ -92,7 +139,7 @@ double PhotometryCalcs::CompColor(double z, ClassFunc1D& sed, Filter& filterX, F
 };
 
 
-double PhotometryCalcs::restFrameFlux(ClassFunc1D& sed, Filter& filter, double zs)
+double PhotometryCalcs::restFrameFlux(SpecEnergyDist& sed, Filter& filter, double zs)
 {
  /* I think there is a problem with this - Matt Kirby 
      
@@ -141,7 +188,7 @@ double PhotometryCalcs::getFilterZeroPointFlux(Filter& filterX)
 };
 
 
-double PhotometryCalcs::effectiveFilterWavelength(ClassFunc1D& filter)
+double PhotometryCalcs::effectiveFilterWavelength(Filter& filter)
 {
 
     double x, y, lambdaEff, lmin, lmax;
@@ -168,7 +215,7 @@ double PhotometryCalcs::effectiveFilterWavelength(ClassFunc1D& filter)
 };
 
 
-double PhotometryCalcs::findFilterMax(ClassFunc1D& filter, double& lambdaAtMax, int nStep)
+double PhotometryCalcs::findFilterMax(Filter& filter, double& lambdaAtMax, int nStep)
 {
 
     // over whole range lmin_:lmax_
@@ -198,7 +245,7 @@ double PhotometryCalcs::findFilterMax(ClassFunc1D& filter, double& lambdaAtMax, 
 };
 
 
-double PhotometryCalcs::findFilterTransValue(ClassFunc1D& filter, double trans, double lmin, 
+double PhotometryCalcs::findFilterTransValue(Filter& filter, double trans, double lmin, 
                                                          double lmax, int nStep)
 {
 
@@ -236,10 +283,10 @@ double PhotometryCalcs::findFilterTransValue(ClassFunc1D& filter, double trans, 
 };
 
 
-void PhotometryCalcs::findFilterEdges(double& lmin, double& lmax, ClassFunc1D& filter, 
-	                                                double edgeDefinition)
+void PhotometryCalcs::findFilterEdges(double& lmin, double& lmax, Filter& filter, double edgeDefinition)
 {
 
+    // first find wavelength at filter maximum
     double lTMax;
     double filterMax = findFilterMax(filter, lTMax);
     double minTranmsission = edgeDefinition*filterMax;
@@ -258,49 +305,27 @@ void PhotometryCalcs::findFilterEdges(double& lmin, double& lmax, ClassFunc1D& f
 };
 
 
-/******* SimData **************************************************************/
-
-//constructor for when want to use this class to **calculate** k-corrections
-SimData::SimData(vector<SED*> sedArray, vector<Filter*> filterArray, 
-            SimpleUniverse& su, RandomGeneratorInterface& rg,
-                                    int nEllipticals, int nSpirals)
-: sedArray_(sedArray) , filterArray_(filterArray) , nEllipticals_(nEllipticals),
-    nSpirals_(nSpirals) , su_(su) , rg_(rg)
-{
-	ebvmax_=0.3; ebvmaxEl_=0.1;
-	nsed_ = sedArray_.size();
-	nFilters_ = filterArray_.size();
-	nStarbursts_ = nsed_ - nEllipticals_ - nSpirals_;
-	
-	isAddMadau_ = true;
-	isLyC_ = true;
-	isReadKcorr_ = false;
-	
-	setLSSTPars();
-	
-	if (nsed_>=1000)
-	    throw ParmError("ERROR! Too many SEDs");
-};
-
-//constructor for when want to use this class to **read** k-corrections
-SimData::SimData(SimpleUniverse& su, RandomGeneratorInterface& rg, 
-    vector<SInterp2D*> kInterpZExt, int nFilters, int nEllipticals, int nSpirals)
-: su_(su) , rg_(rg) , kInterpZExt_(kInterpZExt) , nFilters_(nFilters) , nEllipticals_(nEllipticals), nSpirals_(nSpirals)
-{
-
-	isReadKcorr_ = true;
-	setLSSTPars();
-	
-};
-
 
 /******* SimData methods ******************************************************/
                                                
 // Simulation methods
 
-// Simulate a "true" magnitude with or without Madau IGM absorption
-double SimData::GetMag(double zs, double sedtype, double amag, double ext,
-                                       int iFilterObs, Filter& restFrameFilter)
+// Full calculation of galaxy magnitude (rest-frame filter *is* one of the filters in filterArray_)
+double SimData::getMag(double zs, double absmag, int sedid, int iobsfilt, int irestfilt, 
+                       IGMTransmission& igmtrans, double ext, dustLaw law)
+{
+
+    // copy contents of filterArray_[irestfilt] into a new Filter object
+    Filter rfFilter((*filterArray_[irestfilt])); // restframe filter of absmag
+    
+    return getMag(zs, absmag, sedid, iobsfilt, rfFilter, igmtrans, ext, law);
+
+};
+
+
+// Full calculation of galaxy magnitude (rest-frame filter *is not* one of the filters in filterArray_)
+double SimData::getMag(double zs, double absmag, int sedid, int iobsfilt, Filter& rfFilter, 
+                       IGMTransmission& igmtrans, double ext, dustLaw law)
 {
 
     Timer tm("timer",false);
@@ -315,50 +340,24 @@ double SimData::GetMag(double zs, double sedtype, double amag, double ext,
 	    mu = 25.;
 	else {
 	    su_.SetEmissionRedShift(zs);
-	    mu=5.*log10(su_.LuminosityDistanceMpc())+25;
+	    mu = 5.*log10(su_.LuminosityDistanceMpc()) + 25.;
 	    }
 	    
-	// retrieve SED id of galaxy
-	int sedID = returnSedId(sedtype);// Check this is doing the correct job
-
-    // set correct reddening law
-    int law = 0; // The Cardelli law
-    if ( sedtype >= (nEllipticals_+nSpirals_) )
-        law = 1; // The Calzetti law
+	// copy contents of sedArray_[sedid] into new SED object
+    SED sed(*(sedArray_[sedid])); // SED (no internal dust or IGM applied yet)
+    
+    // copy contents of filterArray_[iobsfilt] into a new Filter object
+    Filter obsFilter((*filterArray_[iobsfilt])); // observation filter
     
     tm.Split();
-    // copy contents of sedArray_[sedID] into new SED object
-    SED sed(*(sedArray_[sedID]));
-    
-    // copy contents of filterArray_[iFilter] into a new Filter object
-    Filter filter((*filterArray_[iFilterObs]));
-    
-    double kcorr = calcKcorr(sed, filter, restFrameFilter, zs, ext, law);
-    // @warning WHY IS THE BELOW COMMENTED OUT!!! Because it was moved to calcKcorr method
-    /*if (isAddMadau_) {
-        // add Madau absorption
-        SEDMadau sedMadau(sed, zs);
-    
-        // redden SED
-        SEDGOODSRedfix sedReddened(sedMadau,zs,ext,law);
-		
-        // k correction from REST FRAME filter to OBS FRAME filter
-	    kcorr = Kcorr(zs,sedReddened,filter,restFrameFilter);    
-	    }
-	else{ 
-	    // redden SED
-        SEDGOODSRedfix sedReddened(sed,zs,ext,law);
-		
-        // k correction from REST FRAME filter to OBS FRAME filter
-	    kcorr = Kcorr(zs,sedReddened,filter,restFrameFilter); 
-        }*/
+    double kcorr = calcKcorr(sed, obsFilter, rfFilter, zs, igmtrans, ext, law);
     tm.Split();
-    //cout <<"Time to do k-corr part = "<< tm.PartialElapsedTimems() <<" ms"<<endl;
+    cout <<"Time to do k-corr part = "<< tm.PartialElapsedTimems() <<" ms"<<endl;
     
-    tm.Split();
 	// magnitude
-	double mag =  amag + mu + kcorr;
+	double mag =  absmag + mu + kcorr;
 	
+	// Check for infinities
 	int isInf = my_isinf(kcorr);
     if (isInf != 0) // if kcorrection is infinite because filter has
         mag = 99;   // shifted out of where galaxy has flux values set 
@@ -366,334 +365,93 @@ double SimData::GetMag(double zs, double sedtype, double amag, double ext,
                     
     int isMagInf = my_isinf(mag);
     if (isMagInf != 0) {
-        cout <<"     Warning magnitude is infinite, z = "<< zs <<", k = "<< kcorr <<", amag = "<< amag;
+        cout <<"     Warning magnitude is infinite, z = "<< zs <<", k = "<< kcorr <<", amag = "<< absmag;
         cout <<", mu = "<< mu <<endl;
         }
         
 	return mag;
+
 };
 
-// Simulate a "true" magnitude with or without Madau IGM absorption
-// USING SED ID INSTEAD OF SED TYPE VALUE
-double SimData::GetMag(double zs, int sedID, double amag, int iFilterObs, Filter& restFrameFilter) {
 
-    Timer tm("timer",false);
-
-    if (isReadKcorr_)
-        throw ParmError("ERROR! Not set up to read k-correction from a file");
-
-	// calculate distance modulus
-	// @warning galaxy magnitudes for redshifts z<<0.01 don't have much meaning
-	double mu;
-	if (zs<1e-5) 
-	    mu = 25.;
-	else {
-	    su_.SetEmissionRedShift(zs);
-	    mu=5.*log10(su_.LuminosityDistanceMpc())+25;
-	    }
-	    
-    
-    tm.Split();
-    // copy contents of sedArray_[sedID] into new SED object
-    SED sed(*(sedArray_[sedID]));
-    
-    // copy contents of filterArray_[iFilter] into a new Filter object
-    Filter filter((*filterArray_[iFilterObs]));
-    
-    double ext=0.;
-    int law = 0;
-    double kcorr = calcKcorr(sed, filter, restFrameFilter, zs, ext, law);
-    /*if (isAddMadau_) {
-        // add Madau absorption
-        SEDMadau sedMadau(sed, zs);
-    
-        // redden SED
-        SEDGOODSRedfix sedReddened(sedMadau,zs,ext,law);
-		
-        // k correction from REST FRAME filter to OBS FRAME filter
-	    kcorr = Kcorr(zs,sedReddened,filter,restFrameFilter);    
-	    }
-	else{ 
-	    // redden SED
-        SEDGOODSRedfix sedReddened(sed,zs,ext,law);
-		
-        // k correction from REST FRAME filter to OBS FRAME filter
-	    kcorr = Kcorr(zs,sedReddened,filter,restFrameFilter); 
-        }*/
-    tm.Split();
-    //cout <<"Time to do k-corr part = "<< tm.PartialElapsedTimems() <<" ms"<<endl;
-    
-    tm.Split();
-	// magnitude
-	double mag =  amag + mu + kcorr;
-	
-	int isInf = my_isinf(kcorr);
-    if (isInf != 0) // if kcorrection is infinite because filter has
-        mag = 99;   // shifted out of where galaxy has flux values set 
-                    // magnitude to 99 (undetected)	
-                    
-    int isMagInf = my_isinf(mag);
-    if (isMagInf != 0) {
-        cout <<"     Warning magnitude is infinite, z = "<< zs <<", k = "<< kcorr <<", amag = "<< amag;
-        cout <<", mu = "<< mu <<endl;
-        }
-        
-	return mag;
-};
-
-// Simulate a "true" magnitude with or without Madau IGM absorption
-// READ K-CORRECTION FROM A FILE
-double SimData::GetMag(double zs, double sedtype, double amag, double ext, int iFilterObs)
+// Calculate magnitude of a galaxy using pre-calculated k-correction tables
+double SimData::getMag(double zs, double absmag, int sedid, int iobsfilt, int irestfilt, igmModel igm, 
+                  double ext, dustLaw law)
 {
+
     Timer tm("timer",false);
 
     if (!isReadKcorr_)
         throw ParmError("ERROR! Not set up to read k-correction from a file");
 
 	// calculate distance modulus
-	su_.SetEmissionRedShift(zs);
-	double mu=5*log10(su_.LuminosityDistanceMpc())+25;
+	// @warning galaxy magnitudes for redshifts z<<0.01 don't have much meaning
+	double mu;
+	if (zs<1e-5) 
+	    mu = 25.;
+	else {
+	    su_.SetEmissionRedShift(zs);
+	    mu = 5.*log10(su_.LuminosityDistanceMpc()) + 25.;
+	    }
+	    
+	// build k-correction filename to read in
 	
-	// retrieve SED id of galaxy
-	int sedID = returnSedId(sedtype);// Check this is doing the correct job
-
-    // get k correction
-    tm.Split();
-    double kcorr = interpKcorr(sedID, iFilterObs, zs, ext);
-    tm.Split();
-    cout <<"Time to do k-corr part = "<< tm.PartialElapsedTimems() <<" ms"<<endl;
+	// SED name
+	string sedname = sedNames_[sedid];
+	
+	// IGM type
+	string igmType;
+	if (igm == None)
+	    igmType = "None";
+	else if (igm == Madau)
+	    igmType = "Madau";
+	else if (igm == Mean)
+	    igmType = "Mean";
+	else {
+	    cout <<"IGM model type = "<< igm << endl;
+	    throw ParmError("ERROR! IGM type not understood");
+	    }
+	    
+	// dust type
+	string dustType;
+	if (law == NoDust)
+	    dustType = "NoDust";
+	else if (law == Card)
+	    dustType = "Card";
+	else if (law == Calz)
+	    dustType = "Calz";
+	else {
+	    cout <<"Dust model type = "<< law << endl;
+	    throw ParmError("ERROR! Dust law not understood");
+	    }
+	    
+	// dust amount
+    char* dchar = new char[8];
+    float dval=ext;
+    sprintf(dchar, "%0.2f", dval);
+    stringstream ss;
+    ss<<dchar;
     
-	// magnitude
-	double mag =  amag + mu + kcorr;
+	string filename = sedname + "_" + filterSet_ + "_igm" + igmType + "_ext" + dustType + ss.str() + ".dat";
+	    
+	double kcorr;
+
+    // magnitude
+	double mag =  absmag + mu + kcorr;
 	
+	// Check for infinities
 	int isInf = my_isinf(kcorr);
     if (isInf != 0) // if kcorrection is infinite because filter has
         mag = 99;   // shifted out of where galaxy has flux values set 
                     // magnitude to 99 (undetected)	
                     
     int isMagInf = my_isinf(mag);
-    if (isMagInf != 0)
-        cout <<"     Warning magnitude is infinite"<<endl;
-
-	return mag;
-};
-
-
-// Simulate a "true" magnitude with a particular line of sight IGM absorption
-double SimData::GetMag(double zs, double sedtype, double amag, double ext,
-    int iFilterObs, Filter& restFrameFilter, IGMTransmission igmTransmission)
-{
-    if (isReadKcorr_)
-        throw ParmError("ERROR! Not set up to read k-correction from a file");
-
-	// calculate distance modulus
-	su_.SetEmissionRedShift(zs);
-	double mu=5*log10(su_.LuminosityDistanceMpc())+25;
-	
-	// retrieve SED id of galaxy
-	int sedID = returnSedId(sedtype);// Check this is doing the correct job
-
-    // set correct reddening law
-    int law = 0; // The Cardelli law
-    if ( sedtype >= (nEllipticals_+nSpirals_) )
-        law = 1; // The Calzetti law
-        
-    // copy contents of sedArray_[sedID] into new SED object
-    SED sed(*(sedArray_[sedID]));
-    
-    // copy contents of filterArray_[iFilter] into a new Filter object
-    Filter filter((*filterArray_[iFilterObs]));
-    
-    double kcorr;
-    
-    // add IGM absorption
-    SEDIGM sedIGM(sed, igmTransmission, zs);
-    
-    // redden SED
-    SEDGOODSRedfix sedReddened(sedIGM,zs,ext,law);
-		
-    // k correction from REST FRAME filter to OBS FRAME filter
-    kcorr = Kcorr(zs,sedReddened,filter,restFrameFilter);    
-
-        
-	// magnitude
-	double mag =  amag + mu + kcorr;
-	
-	int isInf = my_isinf(kcorr);
-    if (isInf != 0) // if kcorrection is infinite because filter has
-        mag = 99;   // shifted out of where galaxy has flux values set 
-                    // magnitude to 99 (undetected)	
-                    
-    int isMagInf = my_isinf(mag);
-    if (isMagInf != 0)
-        cout <<"     Warning magnitude is infinite"<<endl;
-	
-	return mag;
-};
-
-
-/*// add percentage magnitude error
-vector<double> SimData::addError(double mag, double percentError, int iFilter)
-{
-    Filter filter((*filterArray_[iFilter]));
-    double fluxError = percentError*convertABMagToFluxMaggies(mag, filter);
-    vector<double> observation; // observed magnitude and magnitude error
-    observation = addFluxError(mag, fluxError, iFilter);
-	return observation;
-};*/
-
-/*
-// add LSST u band error
-vector<double> SimData::addLSSTuError(double mag, int nVisits)
-{   
-    int iFilter = 0;
-    double m5 = calcPointSource5sigmaDepth(uCm_,uMsky_,uTheta_,tVis_,
-                                                            ukm_,airMass_);
-
-    vector<double> obsmag = getObservedLSSTMagnitude(mag, m5, uGamma_, nVisits, iFilter);
-    
-	return obsmag;
-};
-
-
-// add LSST g band error
-vector<double> SimData::addLSSTgError(double mag, int nVisits)
-{   
-    int iFilter = 1;
-    double m5 = calcPointSource5sigmaDepth(gCm_,gMsky_,gTheta_,tVis_,
-                                                            gkm_,airMass_);
-    vector<double> obsmag = getObservedLSSTMagnitude(mag, m5, gGamma_, nVisits, iFilter);
-	return obsmag;
-};
-
-	
-// add LSST r band error
-vector<double> SimData::addLSSTrError(double mag, int nVisits)
-{   
-    int iFilter = 2;
-    double m5 = calcPointSource5sigmaDepth(rCm_,rMsky_,rTheta_,tVis_,
-                                                            rkm_,airMass_);
-    vector<double> obsmag = getObservedLSSTMagnitude(mag, m5, rGamma_, nVisits, iFilter);
-	return obsmag;
-};
-
-
-// add LSST i band error
-vector<double> SimData::addLSSTiError(double mag, int nVisits)
-{   
-    int iFilter = 3;
-    double m5 = calcPointSource5sigmaDepth(iCm_,iMsky_,iTheta_,tVis_,
-                                                            ikm_,airMass_);
-    vector<double> obsmag = getObservedLSSTMagnitude(mag, m5, iGamma_, nVisits, iFilter);
-	return obsmag;
-};
-
-
-// add LSST z band error
-vector<double> SimData::addLSSTzError(double mag, int nVisits)
-{   
-    int iFilter = 4;
-    double m5 = calcPointSource5sigmaDepth(zCm_,zMsky_,zTheta_,tVis_,
-                                                            zkm_,airMass_);
-    vector<double> obsmag = getObservedLSSTMagnitude(mag, m5, zGamma_, nVisits, iFilter);
-	return obsmag;
-};
-
-
-// add LSST y band error
-vector<double> SimData::addLSSTyError(double mag, int nVisits)
-{   
-    int iFilter = 5;
-    double m5 = calcPointSource5sigmaDepth(yCm_,yMsky_,yTheta_,tVis_,
-                                                            ykm_,airMass_);
-    vector<double> obsmag = getObservedLSSTMagnitude(mag, m5, yGamma_, nVisits, iFilter);
-	return obsmag;
-};*/
-
-
-// simulate an SED
-double SimData::SimSED(int gtype)
-// The 1st nEllipticals_ elements in sedArray correspond to elliptical galaxies
-// The next (nEllipticals_+1) to (nSpirals_+nEllipticals_) correspond to spiral galaxies
-// The next (nSpirals_+nEllipticals_+1) to nsed_ correspond to starbursts
-// Also be aware: elliptical == early type; spiral == late type
-// Also remember the zero indexing!
-// WARNING: only can deal with <1000 SEDs
-{
-
-    if ( (gtype<1)||(gtype>3) )
-        throw ParmError("ERROR! Unknown galaxy type");
-
-    // to make the flat random number draw over a CLOSED interval
-    // i.e. including the edges
-	double fudge=0.5; 
-			 
-    // bounds of elliptical galaxy SEDs in sedArray_
-	double E1 = 0 - fudge;
-	double E2 = nEllipticals_-1 + fudge;
-	// bounds of spiral galaxy SEDs in sedArray_
-	double L1 = nEllipticals_ - fudge;
-	double L2 = nEllipticals_ + nSpirals_-1 + fudge;
-	// bounds of starburst galaxy SEDs in sedArray_
-	double S1 = nEllipticals_ + nSpirals_ - fudge;
-	double S2 = nsed_-1 + fudge;
-
-	double sedtype;
-	if (gtype<2) // if gal is elliptical type
-		sedtype=1+round(E1+(E2-E1)*rg_.Flat01())/1000;
-	else if (gtype>1 && gtype<3)// if gal is late type
-		sedtype=2+round(L1+(L2-L1)*rg_.Flat01())/1000;
-	else if (gtype>2)// if gal is starburst type
-		sedtype=3+round(S1+(S2-S1)*rg_.Flat01())/1000;
-    else
-        throw ParmError("ERROR! Galaxy type not understood!");
-
-    // sedtype is a number in the following form:
-    // 1.XXX or 2.XXX or 3.XXX
-    // The 1., 2. or 3. correspond to whether the galaxy was originally an 
-    // elliptical, spiral or starburst galaxy type.
-    // The XXX part is an integer from 0 to 999 (though always with 3 signficant
-    // figures, padded with zeros when necessary) and corresponds to the exact
-    // SED of the galaxy, found in sedArray e.g sedArray[0], sedArray[1] ....
-	return sedtype;
-};
-
-
-// simulate reddening amount
-double SimData::SimRed(double type)
-{
-		double ebv;
-	if (type<2)
-		ebv=ebvmaxEl_*rg_.Flat01();
-	else
-		ebv=ebvmax_*rg_.Flat01();
-			
-	return ebv;
-};
-
-
-// Calculation methods
-
-vector<double> SimData::returnFilterRFWavelengths(double zs)
-{
-
-    vector<double> lambdaRFs;
-    for (int i=0; i<nFilters_; i++) {
-    
-        // current filter
-        Filter filter((*filterArray_[i]));
-        
-        // find wavelength of filter in galaxy's restframe
-        double lamObs = effectiveFilterWavelength(filter);
-        //cout << lamObs <<"  ";
-        double lamRF = returnRestFrameWaveLength(lamObs,zs);
-        lambdaRFs.push_back(lamRF);
-        
+    if (isMagInf != 0) {
+        cout <<"     Warning magnitude is infinite, z = "<< zs <<", k = "<< kcorr <<", amag = "<< absmag;
+        cout <<", mu = "<< mu <<endl;
         }
-    //cout << endl;
         
-    return lambdaRFs;
-
+	return mag;
 };
 
 
@@ -729,33 +487,79 @@ TArray<double> SimData::returnSEDFluxesInRestFrame(double zs)//, Filter& restFra
     return templateFluxes;
 };
 
+
+
+
 // INTERNAL FUNCTIONS
 
-double SimData::calcKcorr(SED& sed, Filter& filter, Filter& restFrameFilter, double zs, double ext, int law)
+double SimData::calcKcorr(SED& sed, Filter& filter, Filter& restFrameFilter, double zs, 
+                          IGMTransmission& igmtrans, double ext, dustLaw law)
 {
-    double kcorr;
-    if (isAddMadau_) {
-        // add Madau absorption
-        SEDMadau sedMadau(sed, zs, isLyC_);
+    Timer tm("timer",false);
     
-        // redden SED
-        SEDGOODSRedfix sedReddened(sedMadau,zs,ext,law);
-		
-        // k correction from REST FRAME filter to OBS FRAME filter
-	    kcorr = Kcorr(zs,sedReddened,filter,restFrameFilter);    
-	    }
-	else{ 
-	    // redden SED
-        SEDGOODSRedfix sedReddened(sed,zs,ext,law);
-		
-        // k correction from REST FRAME filter to OBS FRAME filter
-	    kcorr = Kcorr(zs,sedReddened,filter,restFrameFilter); 
+    // Check if need to add extinction
+    if (ext>0) {
+    
+        // redden SED   
+        int lawtype;
+        if (law == Card)
+            lawtype = 0;
+	    else if (law == Calz)
+	        lawtype = 1;
+        else {
+	        cout <<"Dust model type = "<< law << endl;
+	        throw ParmError("ERROR! Dust law not understood");
+	        }
+        
+        sed.doRedden(ext, lawtype);
         }
+    
+    
+    // add IGM absorption
+    SEDIGM sedIGM(sed, igmtrans, zs);
+
+
+    // k correction from REST FRAME filter to OBS FRAME filter
+    tm.Split();
+	double kcorr = Kcorr(zs, sedIGM, filter, restFrameFilter);
+	tm.Split();
+    cout <<"Time to calc k-correction = "<< tm.PartialElapsedTimems() <<" ms"<<endl;
+
 
     return kcorr;
 };
 
-double SimData::interpKcorr(int sedID, int iFilterObs, double zs, double ext)
+
+double SimData::interpKcorr(string filename, double zs, int iobsfilt, int irestfilt)
+{
+
+    // interpolate kcorr value 
+    SInterp1D kCorrData;
+    kCorrData.ReadXYFromFile(filename, 0., zs+1., npt_);
+    double sedpart = kCorrData(zs);
+    
+    
+    //------------------------------------------------------------------
+    // integrate obs and restframe filters -> make a PhotometryCalcs method
+    Filter obsFilter((*filterArray_[iobsfilt])); // observation filter
+    Filter rfFilter((*filterArray_[irestfilt])); // rest-frame filter
+    
+    FilterProd  obsFiltIntegrand(obsFilter);
+    FilterProd  rfFiltIntegrand(rfFilter);
+    
+    FilterIntegrator intObsFilt(obsFiltIntegrand, lmin_, lmax_, npt_);
+    FilterIntegrator intRfFilt(rfFiltIntegrand, lmin_, lmax_, npt_);
+    
+    double filterpart = intRfFilt.Value()/intObsFilt.Value();
+    //------------------------------------------------------------------
+    
+    // calc final k correction
+    double kcorr = -2.5*log10((1./(1.+zs)) * sedpart * filterpart);
+
+    return kcorr;
+};
+
+/*double SimData::interpKcorr(int sedID, int iFilterObs, double zs, double ext)
 {
     int id = returnLinearIndex(sedID,iFilterObs,nFilters_);
     double kcorr = kInterpZExt_[id]->operator()(zs,ext);
@@ -767,28 +571,34 @@ double SimData::interpKcorr(int linearIndex, double zs, double ext)
 {
     double kcorr = kInterpZExt_[linearIndex]->operator()(zs,ext);
     return kcorr;
-};
+};*/
 
-int SimData::returnSedId(double sedtype)
+/****** SimObservations methods *****************************************************************************/
+
+vector<double> SimObservations::returnFilterRFWavelengths(double zs)
 {
-    double eps = 1e-6;
+
+    vector<double> lambdaRFs;
+    for (int i=0; i<nFilters_; i++) {
     
-    int sedID;
-    
-    if( (floor(sedtype)-1)<eps )        // If galaxy is elliptical type
-			sedID=(int)round(1000*sedtype-1000);
-    else if ( (floor(sedtype)-2)<eps )  // If galaxy is spiral type
-            sedID=(int)round(1000*sedtype-2000);
-    else if ( (floor(sedtype)-3)<eps )  // If galaxy is starburst type
-            sedID=(int)round(1000*sedtype-3000);
-    else
-        throw ParmError("Unknown galaxy SED");
+        // current filter
+        Filter filter((*filterArray_[i]));
         
-    return sedID;
+        // find wavelength of filter in galaxy's restframe
+        double lamObs = effectiveFilterWavelength(filter);
+        //cout << lamObs <<"  ";
+        double lamRF = returnRestFrameWaveLength(lamObs, zs);
+        lambdaRFs.push_back(lamRF);
+        
+        }
+    //cout << endl;
+        
+    return lambdaRFs;
+
 };
 
 
-vector<double> SimData::addFluxError(double flux, double fluxError, int iFilter)
+vector<double> SimObservations::addFluxError(double flux, double fluxError, int iFilter)
 {
     
     Filter filter((*filterArray_[iFilter]));
@@ -822,7 +632,7 @@ vector<double> SimData::addFluxError(double flux, double fluxError, int iFilter)
 };
 
 
-vector<double> SimData::getObservedLSSTMagnitude(double mag, double m5, double gamma, int nYear, int iFilter)
+vector<double> SimObservations::getObservedLSSTMagnitude(double mag, double m5, double gamma, int nYear, int iFilter)
 {
     Filter filter((*filterArray_[iFilter]));
 
@@ -859,27 +669,8 @@ vector<double> SimData::getObservedLSSTMagnitude(double mag, double m5, double g
 };
 
 
-/*double SimData::returnLSSTRandomErrorSq(double x, double gamma, double nVis)
-{
 
-    double sigmaRandsq = (0.04 - gamma)*x + gamma*x*x;
-    // in magnitudes^2
-    return sigmaRandsq/nVis;
-
-};*/
-
-
-/*double SimData::calcPointSource5sigmaDepth(double Cm, double msky,
-                                double theta, double tvis, double km, double X)
-{
-
-    double m5 = Cm + 0.50*(msky - 21) + 2.5*log10(0.7/theta) +
-                                        1.25*log10(tvis/30) - km*(X - 1);
-    return m5;                              
-};*/
-
-
-void SimData::setLSSTPars()
+void SimObservations::setLSSTPars()
 {
     // Number of visits per year (Table 1, Ivezic et al 2008)
     nVisYear_.push_back(6);
@@ -957,6 +748,7 @@ void SimData::setLSSTPars()
     // systematic error
     sigmaSys_ = 0.0025;
 };
+
 
 /******* ReadKCorrections methods ********************************************/
 

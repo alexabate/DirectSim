@@ -72,7 +72,7 @@ public:
         @param sed              rest-frame SED of object \f$f_\lambda(\lambda)\f$
         @param filterX          filter object observed in \f$X(\lambda)\f$
         @param restFrameFilter  rest-frame filter \f$Y(\lambda)\f$            */
-	double Kcorr(double z, ClassFunc1D& sed, Filter& filterX, Filter& restFrameFilter);
+	double Kcorr(double z, SpecEnergyDist& sed, Filter& filterX, Filter& restFrameFilter);
 	
 	/** The k-correction calculation when the rest-frame and observed-frame bandpasses
 	    are the same:  \f$ K_{xy} = -2.5\log10\left( \frac{1}{1+z} 
@@ -81,7 +81,7 @@ public:
 	    @param z                redshift of object \f$z\f$
         @param sed              rest-frame SED of object \f$f_\lambda(\lambda)\f$
         @param filterX          filter object observed in (same as rest-frame filter) \f$X(\lambda)\f$*/
-	double Kcorr1Filter(double z, ClassFunc1D& sed, Filter& filterX);
+	double Kcorr1Filter(double z, SpecEnergyDist& sed, Filter& filterX);
 
 	/** Calculate galaxy color X-Y: 
 	    \f$ C_{xy} = -2.5\log10\left(
@@ -93,21 +93,23 @@ public:
         @param sed              rest-frame SED of object \f$f_\lambda(\lambda)\f$
         @param filterX          filter object observed in \f$X(\lambda)\f$ (should be bluer filter than Y)
         @param filterY          other filter object observed in \f$Y(\lambda)\f$  */
-	double CompColor(double z, ClassFunc1D& sed, Filter& filterX, Filter& filterY);
+	double CompColor(double z, SpecEnergyDist& sed, Filter& filterX, Filter& filterY);
 	
-	/** Calculate rest-frame flux of object in band \f$X(\lambda\f$ in FREQUENCY units: 
+	// AA: not 100% what these two methods, restFrameFlux and restFrameFluxLambda do?
+	
+	/** Calculate rest-frame flux of object in band \f$X(\lambda)\f$ in FREQUENCY units: 
         \f$ F_\nu(\lambda^{eff}_e) = 
             \frac{\int f_\lambda(\lambda_e)X(\lambda_e)\lambda_e d\lambda_e}
                  {\int X(\lambda_e)/\lambda_e d\lambda_e} \f$  
         @param sed      rest-frame SED of object \f$f_\lambda(\lambda)\f$
         @param filter   filter object observed in \f$X(\lambda)\f$
         @param zs       redshift of object                                    */
-	double restFrameFlux(ClassFunc1D& sed, Filter& filter, double zs);
+	double restFrameFlux(SpecEnergyDist& sed, Filter& filter, double zs);
 	            
 	/** Rest-frame flux in WAVELENGTH units: 
 	    \f$ F_\lambda(\lambda^{eff}_e) = \frac{F_\nu(\lambda^{eff}_e)}{\lambda_e^2} \f$*/
-	double restFrameFluxLambda(ClassFunc1D& sed, Filter& filter, double zs) {
-	    double f0nu = restFrameFlux(sed,filter, zs);
+	double restFrameFluxLambda(SpecEnergyDist& sed, Filter& filter, double zs) {
+	    double f0nu = restFrameFlux(sed, filter, zs);
 	    BlueShiftFilter blueshiftFilter(filter, zs);
 	    double lamEffRF = effectiveFilterWavelength(blueshiftFilter);
 	    double f0l = f0nu/(lamEffRF*lamEffRF);
@@ -124,7 +126,7 @@ public:
 	    @param dL           luminosity distance at zs
 	    @param sed          SED of object
 	    @param filterX      arbitrary filter band                             */
-	double convertABMagToFlux(double mag, double zs, double dL, ClassFunc1D& sed, Filter& filterX) {
+	double convertABMagToFlux(double mag, double zs, double dL, SpecEnergyDist& sed, Filter& filterX) {
         double magPart = pow(10,-0.4*mag);
         SEDzFilterProd sedXlambdaXfilter(sed, filterX, 0);// returns sed*lambda*filter
         FilterIntegrator integrandSED(sedXlambdaXfilter, lmin_, lmax_, npt_);
@@ -141,7 +143,7 @@ public:
 	    @param sed          SED of object
 	    @param filterX      arbitrary filter band
 	    @param filterY      filter band object observed in                           */
-	double convertABMagToFluxLambda(double mag, double zs, double dL, ClassFunc1D& sed, Filter& filterX, Filter& filterY) {
+	double convertABMagToFluxLambda(double mag, double zs, double dL, SpecEnergyDist& sed, Filter& filterX, Filter& filterY) {
 	    double fnu = convertABMagToFlux(mag, zs, dL, sed, filterX);
 	    double lambdaEff = effectiveFilterWavelength(filterY);
         double fl = fnu/(lambdaEff*lambdaEff);
@@ -222,13 +224,13 @@ public:
 	/** Calculate effective wavelength of filter.  Calculates: 
 	    \f$ \frac{\int X(\lambda)\lambda d\lambda}{\int X(\lambda) d\lambda}\f$
 	    where the integrals are between the filter lower and upper edges.*/
-	double effectiveFilterWavelength(ClassFunc1D& filterX);
+	double effectiveFilterWavelength(Filter& filterX);
 	
 	/** Return the value of the maximum transmission of the filter 
 	    @param  filterX     filter transmission function
 	    @param  lambdaAtMax wavelength at maximum transmission (returned by method)
 	    @param  nStep       number of steps in the search between #lmin_, #lmax_*/
-	double findFilterMax(ClassFunc1D& filterX, double& lambdaAtMax, int nStep=1000);
+	double findFilterMax(Filter& filterX, double& lambdaAtMax, int nStep=1000);
 	
 	/** Find the wavelength closest to the transmission value #trans in filter
 	    #iFilter between lmin and lmax
@@ -238,16 +240,14 @@ public:
 	    @param  lmax        search for closest wavelength ending at #lmax
 	    @param  nStep       number of steps in the search between #lmin
 	                        and #lmax */
-	double findFilterTransValue(ClassFunc1D& filterX, double trans, double lmin,
-	                                            double lmax, int nStep=1000);
+	double findFilterTransValue(Filter& filterX, double trans, double lmin, double lmax, int nStep=1000);
 	
-	/** Find wavelength edges of filter iFilter 
+	/** Find wavelength edges of filter filterX 
 	    @param lmin             lower wavelength edge of filter (returned by method)
 	    @param lmax             upper wavelength edge of filter (returned by method)
 	    @param filterX          filter transmission function
 	    @param edgeDefinition   percent of filter maximum defined as the "edge"*/
-	void findFilterEdges(double& lmin, double& lmax, ClassFunc1D& filterX, 
-	                                            double edgeDefinition=0.05);
+	void findFilterEdges(double& lmin, double& lmax, Filter& filterX, double edgeDefinition=0.05);
 	                                            
 	/** Return rest frame wavelength: \f$ \lambda_e = \frac{\lambda_o}{1+z} \f$
 	    @param  lambdaObs   observed wavelength \f$ \lambda_o \f$
@@ -268,99 +268,186 @@ protected:
 /** @class
   * SimData class
   * 
-  * Class to simulate galaxy observed magnitudes
-  * Can also be used just to calculate colors and k-corrections
+  * Class to simulate/calculate galaxy magnitudes (no photometric errors)
   *
-  * This class should probably inherit from a base class containing the more
-  * generic functions such as convertMagToFlux etc
   *
   */
 class SimData : public PhotometryCalcs {
 public:
+
+    //typedef enum{None=0, Card=1, Calz=2} dustlaw;
+    //typedef enum{None=0, Madau=1, Mean=2} igmmodel;
+	enum dustLaw{NoDust=0, Card=1, Calz=2};
+	enum igmModel{None=0, Madau=1, Mean=2};
+	
 	                                    
-	/** Constructor: full k-correction calculation
+	/** Constructor: calculate magnitudes from scratch
 	    @param sedArray     array holding pointers to SED objects 
 	    @param filterArray  array holding pointers to Filter objects
-	    @param su           object holding cosmological parameters and calculations
-	    @param rg           random number generator object
-	    @param nElliptcals  number of "elliptical" type galaxies in sedArray
-	    @param nSpirals     number of "spiral" type galaxies in sedArray      */
-	SimData(vector<SED*> sedArray, vector<Filter*> filterArray, 
-	        SimpleUniverse& su, RandomGeneratorInterface& rg, 
-	                int nEllipticals = 1, int nSpirals = 2);
-	                        
+	    @param su           object holding cosmological parameters and calculations                         
+	    @param lmin         minimum wavelength
+	    @param lmax         maximum wavelength
+	    @param npt          wavelength resolution                                                           */
+	SimData(vector<SED*> sedArray, vector<Filter*> filterArray, SimpleUniverse& su, double lmin = 5e-8, 
+	        double lmax = 2.5e-6, int npt=10000)
+	: sedArray_(sedArray) , filterArray_(filterArray) , su_(su) , PhotometryCalcs(lmin, lmax, npt) {
+              
+              nsed_ = sedArray_.size();
+              nFilters_ = filterArray_.size();	
+              isReadKcorr_ = false;
+              //if (nsed_>=1000)
+              //    throw ParmError("ERROR! Too many SEDs");
+              };
+
+
 	/** Constructor: read k-corrections from files and interpolate
+	    @param sedNames     list of names of all SEDs
+	    @param filterSet    name of filter set
+	    @param filterArray  array holding pointers to Filter objects
 	    @param su           object holding cosmological parameters and calculations
-	    @param rg           random number generator object
-	    @param kInterpZExt  array of pointers to k-corr interps
-	    @param nFilters     number of filters
-	    @param nElliptcals  number of "elliptical" type galaxies in sedArray
-	    @param nSpirals     number of "spiral" type galaxies in sedArray      */
-	SimData(SimpleUniverse& su, RandomGeneratorInterface& rg, vector<SInterp2D*> kInterpZExt,
-	                int nFilters = 6, int nEllipticals = 1, int nSpirals = 2 );
+	    @param lmin         minimum wavelength
+	    @param lmax         maximum wavelength
+	    @param npt          wavelength resolution                                                           */
+    SimData(vector<string> sedNames, string filterSet, vector<Filter*> filterArray, SimpleUniverse& su, 
+            double lmin = 5e-8, double lmax = 2.5e-6, int npt=10000)
+	: sedNames_(sedNames), filterSet_(filterSet) , filterArray_(filterArray) , su_(su) , 
+	  PhotometryCalcs(lmin, lmax, npt) { isReadKcorr_=true; };
 	                            
 	                                    
 	/** Destructor */
-	virtual ~SimData(void){};
+	virtual ~SimData(void) { };
 	
-	// Put at top: everything that definitely should be accessable from 
+	// Put at top: everything that definitely should be accessible from 
 	// OUTSIDE the class
 	
 	// SIMULATION FUNCTIONS //
 
-	/** Function to simulate a true magnitude given: z, sed-type, abs-mag, ext, 
-	    rest-frame-filter, observed-filter. Assumes **Madau law IGM** if 
-	    @param isAddMadau_ is set to true, assumes no IGM absorption if it's not
-	    @param zs               redshift
-	    @param sedtype          SED type of galaxy, in form of 1.XXX, 2.XXX, 3.XXX
-	    @param amag             absolute magnitude in filter ifRF 
-	    @param ext              extinction amount in E(B-V) magnitudes 
-	    @param ifO              observation filter id
-	    @param RestFrameFilter  rest-frame filter amag is defined in */
-	double GetMag(double zs, double sedtype, double amag, double ext, int ifO, 
-	                                                    Filter& restFrameFilter);
-	                                                    
-    /** Function to simulate a true magnitude given: z, abs-mag, SED, 
-	    rest-frame-filter, observed-filter. Assumes **Madau law IGM** if 
-	    @param isAddMadau_ is set to true, assumes no IGM absorption if it's not
-	    **This is different to above because takes SED id instead of a type to convert to an id AND no
-	    extinction can be added.**
-	    @param zs               redshift
-	    @param sedID            SED id
-	    @param amag             absolute magnitude in filter RestFrameFilter 
-	    @param ifO              observation filter id
-	    @param RestFrameFilter  rest-frame filter amag is defined in                  */
-	double GetMag(double zs, int sedID, double amag, int ifO, Filter& restFrameFilter);
-	                       
-	                            
-	/** Function to simulate a true magnitude given: z, sed-type, abs-mag, ext, 
-	    rest-frame-filter, observed-filter. Assumes Madau law IGM if 
-	    @param isAddMadau_ is set to true, assumes no IGM absorption if it's not.
-	    **Uses k-correction calculated from files.**
-	    @param zs               redshift
-	    @param sedtype          SED type of galaxy, in form of 1.XXX, 2.XXX, 3.XXX
-	    @param amag             absolute magnitude in filter ifRF 
-	    @param ext              extinction amount in E(B-V) magnitudes 
-	    @param ifO              observation filter
-	    @param RestFrameFilter  rest-frame filter amag is defined in */
-	double GetMag(double zs, double sedtype, double amag, double ext, int ifO);
-	                            
-	                            
-	/** Function to simulate a true magnitude given: z, sed-type, abs-mag, ext, 
-	    rest-frame-filter, observed-filter. Uses the **line of sight IGM transmission**
-	    given by igmTransmission
-	    @param zs               redshift
-	    @param sedtype          SED type of galaxy, in form of 1.XXX, 2.XXX, 3.XXX
-	    @param amag             absolute magnitude in filter ifRF 
-	    @param ext              extinction amount in E(B-V) magnitudes 
-	    @param ifO              observation filter
-	    @param RestFrameFilter  rest-frame filter amag is defined in 
-	    @param igmTransmission  line of sight IGM transmission                */
-	double GetMag(double zs, double sedtype, double amag, double ext,
-	    int ifO, Filter& restFrameFilter, IGMTransmission igmTransmission);
+    /** Calculate magnitude of a galaxy (rest-frame filter *is* one of the filters in filterArray_)
+        @param zs           redshift of galaxy
+        @param absmag       absolute magnitude of galaxy in filter indexed by irestfilt
+        @param sedid        id of galaxy SED in sedArray_
+        @param iobsfilt     id of filter in filterArray_ to calculate magnitude in 
+        @param irestfilt    id of filter in filterArray_ absmag is defined in
+        @param igmtrans     IGM transmission object (returns transmission by IGM given galaxy redshift z)
+        @param ext          internal dust extinction E(B-V) value
+        @param law          dust law describing internal dust extinction (Cardelli or Calzetti)             */
+    double getMag(double zs, double absmag, int sedid, int iobsfilt, int irestfilt, IGMTransmission& igmtrans,
+                  double ext=0., dustLaw law=Card);
+                  
+    /** Calculate magnitude of a galaxy (rest-frame filter *is not* one of the filters in filterArray_)
+        @param zs           redshift of galaxy
+        @param absmag       absolute magnitude of galaxy in filter restfilter
+        @param sedid        id of galaxy SED in sedArray_
+        @param iobsfilt     id of filter in filterArray_ to calculate magnitude in 
+        @param restfilter   filter absmag is defined in
+        @param igmtrans     IGM transmission object (returns transmission by IGM given galaxy redshift z)
+        @param ext          internal dust extinction E(B-V) value
+        @param dustlaw      dust law describing internal dust extinction (Cardelli or Calzetti)             */
+    double getMag(double zs, double absmag, int sedid, int iobsfilt, Filter& restfilter, IGMTransmission& igmtrans,
+                  double ext=0., dustLaw law=Card);
+                  
+                  
+    /** Calculate magnitude of a galaxy using pre-calculated k-correction tables 
+        @param zs           redshift of galaxy
+        @param absmag       absolute magnitude of galaxy in filter restfilter
+        @param sedid        id of galaxy SED in sedArray_
+        @param iobsfilt     column id of filter in k-correction table to calculate magnitude in 
+        @param irestfilt    column id of filter in k-correction table absmag is defined in
+        @param igm          IGM transmission model (could be None, Madau, Mean)
+        @param ext          internal dust extinction E(B-V) value
+        @param dustlaw      dust law describing internal dust extinction (Cardelli or Calzetti)            */
+    double getMag(double zs, double absmag, int sedid, int iobsfilt, int irestfilt, igmModel igm, 
+                  double ext, dustLaw law);
 	
 	
-	/** Add GENERIC flux percentage error to magnitude. Return the observed magnitude and magnitude error in a
+	// SETTINGS FUNCTIONS //
+	
+	/** Set min and max and wavelength */
+	void setXminXmax(double lmin, double lmax)
+			{ lmin_=lmin; lmax_=lmax; };
+
+    /** Return fluxes of each SED in each of the rest-frame filters
+        @param zs               redshift of the SED
+        @param restFrameFilter  filter absolute magnitude is defined in */
+    TArray<double> returnSEDFluxesInRestFrame(double zs);//, Filter& restFrameFilter);
+	
+	
+// internal methods
+protected:
+	
+	/** Calculate k correction (from scratch) 
+	    @param sed                SED (z=0)
+	    @param filter             observation filter
+	    @param restFrameFilter    rest-frame filter
+	    @param zs                 redshift of SED
+	    @param igmtrans           transmission by IGM
+	    @param ext                internal dust extinction E(B-V) value
+        @param dustlaw            dust law describing internal dust extinction (Cardelli or Calzetti)       */
+	double calcKcorr(SED& sed, Filter& filter, Filter& restFrameFilter, double zs, 
+	                 IGMTransmission& igmtrans, double ext, dustLaw law);
+	                 
+	                 
+	/** Interpolate k-correction from data read in from a file
+	    @param filename    name of file to read in
+	    @param zs          redshift of galaxy
+	    @param iobsfilt    column id of filter in k-correction table to calculate magnitude in
+	    @param irestfilt    column id of filter in k-correction table absmag is defined in                  */
+	double interpKcorr(string filename, double zs, int iobsfilt, int irestfilt);
+	
+	
+	/** Interpolate k correction  
+	    @param sedID        SED id
+	    @param iFilterObs   filter id
+	    @param zs           redshift
+	    @param ext          extinction                                        */
+	//double interpKcorr(int sedID, int iFilterObs, double zs, double ext);
+	/** Interpolate k correction  
+	    @param linearIndex  SED,filter combination id
+	    @param zs           redshift
+	    @param ext          extinction                                        */
+	//double interpKcorr(int linearIndex, double zs, double ext);
+	
+	/** Given a row index @param i and a column index @param j, return the single array 
+	    element number if there are @param nj columns                         */
+	//int returnLinearIndex(int i, int j, int nj) { return i*nj + j; };
+	
+     
+    
+protected:
+
+	SimpleUniverse& su_;              /**< class that holds the cosmological parameters and calculations    */
+    vector<SED*> sedArray_;           /**< holds the SEDs (for full calculation)                            */
+    vector<Filter*> filterArray_;     /**< holds the filters (for full calculation)                         */
+    vector<string> sedNames_;         /**< holds the names of all SEDs (for reading k-correction)           */
+    string filterSet_;                /**< name of filter set (for reading k-correction)                    */
+    bool isReadKcorr_;                /**< read k corrections from file                                     */
+	int nsed_;                        /**< number of SEDs                                                   */
+	int nFilters_;                    /**< number of filters                                                */
+	vector<SInterp2D*> kInterpZExt_;  /**< array of pointers to k-corr interpolation                        */
+	// To initialize when the references are not used                                                       */
+	SimpleUniverse su_default_;       /**< to initialize #su_ when it's not used                            */
+	
+	
+	
+};
+
+
+/** @class SimObservations
+  *
+  * Take truth photometric data and add photometric errors.
+  *
+  */
+class SimObservations : public PhotometryCalcs {
+public:
+
+    /** Constructor 
+        @param filterArray  array holding pointers to Filter objects
+	    @param rg           random number generator object                                                  */
+    SimObservations(vector<Filter*> filterArray, RandomGeneratorInterface& rg) 
+    : filterArray_(filterArray) , rg_(rg) { setLSSTPars(); nFilters_ = filterArray_.size(); };
+    
+    
+    /** Add GENERIC flux percentage error to magnitude. Return the observed magnitude and magnitude error in a
 	    vector
 	    @param mag             (true) magnitude 
 	    @param percentError    error on flux in percent of flux (eg 10% is percentError=0.1) 
@@ -405,82 +492,10 @@ public:
 	     return obsmag;
 	     
 	     };
-		
-	
-	/** Add LSST u band error. Returns the observed magnitude and magnitude 
-	    error in a vector
-	    @param mag      (true) magnitude
-	    @param nVisits  number of visits of the telescope in this band        */
-	//vector<double> addLSSTuError(double mag, int nVisits);
-		
-	/** Add LSST g band error */
-	//vector<double> addLSSTgError(double mag, int nVisits);
-	
-	/** Add LSST r band error */
-	//vector<double> addLSSTrError(double mag, int nVisits);
-	
-	/** Add LSST i band error */
-	//vector<double> addLSSTiError(double mag, int nVisits);
-	
-	/** Add LSST z band error */
-	//vector<double> addLSSTzError(double mag, int nVisits);
-	
-	/** Add LSST y band error */
-	//vector<double> addLSSTyError(double mag, int nVisits);	
-	
-	/** Simulate galaxy type, returns a number that corresponds to an SED in
-	    #sedArray_
-	    @param broad galaxy type, can be equal to 1 (elliptical), 2 (spiral) 
-	           or 3 (starburst) */
-	double SimSED(int gtype);
-	
-	/** Simulate reddening amount */
-	double SimRed(double type);
-	
-	
-	// SETTINGS FUNCTIONS //
-	
-	/** Set min and max and wavelength */
-	void setXminXmax(double lmin,double lmax)
-			{ lmin_=lmin; lmax_=lmax; };
-	
-	/** Set reddening amount */
-	void setRed(double ebvmax,double ebvmaxEl) // if want to change from 0.3,0.1
-		{ ebvmax_=ebvmax; ebvmaxEl_=ebvmaxEl; };
-		
-    /** Set if applying Madau absorption */
-    void setMadau(bool isAddMadau, bool isLyC=true)
-        { isAddMadau_ = isAddMadau; isLyC_ = isLyC; };
-			
-	
-	// INTERNAL FUNCTIONS: THESE SHOULD BE PROTECTED? //
-	
-	/** Calculate k correction */
-	double calcKcorr(SED& sed, Filter& filter, Filter& restFrameFilter, double zs, double ext, int law);
-	
-	/** Interpolate k correction  
-	    @param sedID        SED id
-	    @param iFilterObs   filter id
-	    @param zs           redshift
-	    @param ext          extinction                                        */
-	double interpKcorr(int sedID, int iFilterObs, double zs, double ext);
-	/** Interpolate k correction  
-	    @param linearIndex  SED,filter combination id
-	    @param zs           redshift
-	    @param ext          extinction                                        */
-	double interpKcorr(int linearIndex, double zs, double ext);
-	
-	/** Given a row index @param i and a column index @param j, return the single array 
-	    element number if there are @param nj columns                         */
-	int returnLinearIndex(int i, int j, int nj) { return i*nj + j; };
-	
-	/** Given an sedtype number generated by #SimSED returns the actual index 
-	    of the SED in #sedArray_ 
-	    @param sedtype  number generated by #SimSED */
-	int returnSedId(double sedtype);
-     
+
     /** Return observed LSST magnitude and magnitude error */
     vector<double> getObservedLSSTMagnitude(double mag, double m5, double gamma, int nYear, int iFilter);
+	
 	
 	/** Return observed magnitude and magnitude error after adding flux error 
 	    in the filter indexed by #iFilter
@@ -488,6 +503,7 @@ public:
 	    @param fluxError    error on flux
 	    @param iFilter      index of filter  */
 	vector<double> addFluxError(double flux, double fluxError, int iFilter);
+	
 	
 	/** Return the LSST random photometric error squared
 	    See equation 3.2 in LSST Science Book (divided by Nvisit)
@@ -500,6 +516,7 @@ public:
         // in magnitudes^2
         return sigmaRandsq; ///nVis;
         };
+        
 		       
     /** Return \f$10^{0.4(m-m5)}\f$ */
 	double returnX(double mag, double m5) {
@@ -518,50 +535,27 @@ public:
 	    double m5 = Cm + 0.50*(msky - 21) + 2.5*log10(0.7/theta) + 1.25*log10(nvis) - km*(X - 1);
         return m5;
         };    
+        
 	   
     /** Set the LSST photometric error parameters */
 	void setLSSTPars();
+	
                         
     /** Return effective filter restframe wavelengths if galaxy is at zs.  Basically
         returns \f$\lambda_{eff}^o = \lambda_{eff}/(1+z)\f$ for each filter   */
     vector<double> returnFilterRFWavelengths(double zs);
     
-    /** Return fluxes of each SED in each of the rest-frame filters
-        @param zs               redshift of the SED
-        @param restFrameFilter  filter absolute magnitude is defined in */
-    TArray<double> returnSEDFluxesInRestFrame(double zs);//, Filter& restFrameFilter);
+    
+    
+    
     
     vector<double> returnm5single() { return m5single_; };
-
-    // not sure why these have to be public
-	SimpleUniverse& su_;            /**< class that holds the cosmological
-	                                      parameters and calculations           */
-	RandomGeneratorInterface& rg_;  /**< class that generates the random numbers*/
-
+    
 protected:
-    vector<SED*> sedArray_;         /**< holds the SEDs in order of: "elliptical" 
-                                    //   then "spiral" then "starburst" types */
-    vector<Filter*> filterArray_;   /**< holds the filters                    */
-    int nEllipticals_;              /**< number of ellipticals in sedArray    */
-    int nSpirals_;                  /**< number of spirals in sedArray        */
-    int nStarbursts_;               /**< number of starbursts in sedArray =   //
-    nStarbursts_ = nsed_ - nEllipticals_ - nSpirals_                          */
-    bool isAddMadau_;               /**< add Madau absorption                 */
-    bool isLyC_;                    /**< include Lyman continuum in Madau absorption */
-    bool isReadKcorr_;              /**< read k corrections from file         */
-	int nsed_;                      /**< number of SEDs                       */
-	int nFilters_;                  /**< number of filters                    */
-	double ebvmax_;                 /**< max extinction to apply to galaxies  */
-	double ebvmaxEl_;               /**< max extinction to apply to El galaxy */
-	vector<SInterp2D*> kInterpZExt_;  /**< array of pointers to k-corr interpolation */
-	// To initialize when the references are not used
-	SimpleUniverse su_default_;     /**< to initialize #su_ when it's not used*/
-	DR48RandGen rg_default_;        /**< to initialize #rg_ when it's not used*/
-	//double uMsky_,gMsky_,rMsky_,iMsky_,zMsky_,yMsky_;
-	//double uTheta_,gTheta_,rTheta_,iTheta_,zTheta_,yTheta_;
-	//double uGamma_,gGamma_,rGamma_,iGamma_,zGamma_,yGamma_;
-	//double uCm_,gCm_,rCm_,iCm_,zCm_,yCm_;
-	//double ukm_,gkm_,rkm_,ikm_,zkm_,ykm_;
+    vector<Filter*> filterArray_;   /**< holds the filters                                                  */
+    RandomGeneratorInterface& rg_;  /**< class that generates the random numbers                            */
+    DR48RandGen rg_default_;        /**< to initialize #rg_ when it's not used                              */
+    int nFilters_;                  /**< number of filters                                                  */
 	vector<int> nVisYear_;    /**< number of visits per year                                     */
 	double tVis_;             /**< exposure time, 2 back-to-back 15s exposures                   */
 	double airMass_;          /**< median airmass                                                */
@@ -573,8 +567,7 @@ protected:
 	vector<double> km_;       /**< adopted atmospheric extinction in each band                   */
 	vector<double> m5single_; /**< SINGLE VISIT 5-sigma depth for point sources                  */
 	
-	
-	
+
 };
 
 /** @class BpzCorrectMags
