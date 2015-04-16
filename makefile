@@ -34,7 +34,7 @@ $(MYCL)/schechter.h $(MYCL)/sinterp.h $(MYCL)/simdata.h $(MYCL)/reddening.h \
 $(MYCL)/sedfilter.h $(MYCL)/genefluct3d.h  $(MYCL)/pkspectrum.h \
 $(MYCL)/mass2gal.h $(MYCL)/powerspec.h $(MYCL)/matrix.h $(MYCL)/igm.h \
 $(MYCL)/hpoly.h $(MYCL)/shapelets.h $(MYCL)/em.h $(MYCL)/cat2grid.h $(MYCL)/igmstatistics.h \
-$(MYCL)/fitkbaoscale.h $(MYCL)/chisqstats.h $(MYCL)/massfunc.h
+$(MYCL)/fitkbaoscale.h $(MYCL)/chisqstats.h $(MYCL)/massfunc.h $(MYCL)/testclass.h
 
 #$(MYCL)/constcosmo.h
 #$(MYCL)/root_plots.h
@@ -44,7 +44,7 @@ $(OBJ)/schechter.o $(OBJ)/sinterp.o $(OBJ)/simdata.o $(OBJ)/reddening.o \
 $(OBJ)/sedfilter.o $(OBJ)/genefluct3d.o  $(OBJ)/pkspectrum.o $(OBJ)/mass2gal.o \
 $(OBJ)/powerspec.o $(OBJ)/matrix.o $(OBJ)/igm.o $(OBJ)/hpoly.o $(OBJ)/shapelets.o\
 $(OBJ)/em.o $(OBJ)/igmstatistics.o $(OBJ)/cat2grid.o $(OBJ)/fitkbaoscale.o $(OBJ)/chisqstats.o \
-$(OBJ)/massfunc.o
+$(OBJ)/massfunc.o $(OBJ)/testclass.o
 
 #$(OBJ)/root_plots.o
 
@@ -258,6 +258,9 @@ testSimulation : $(EXE)/testSimulation
 	
 testTemplateFitting : $(EXE)/testTemplateFitting
 	@echo 'makefile : testTemplateFitting made'
+	
+time_test_getmag : $(EXE)/time_test_getmag
+	@echo 'makefile : time_test_getmag made'
 
 ## programs below here have not been CHECKED or maybe even finished...
 
@@ -929,6 +932,17 @@ $(OBJ)/testTemplateFitting.o : $(PROGS)/testTemplateFitting.cc $(LIBH)
 	mkdir -p $(OBJ)
 	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/testTemplateFitting.o $(PROGS)/testTemplateFitting.cc
 	
+
+# TIME TEST OF GETMAG
+$(EXE)/time_test_getmag : $(OBJ)/time_test_getmag.o $(LIBO) 
+	mkdir -p $(EXE)
+	mkdir -p $(TESTS)
+	$(CXXLINK) -o $(EXE)/time_test_getmag $(OBJ)/time_test_getmag.o $(LIBO) \
+	$(SOPHYAEXTSLBLIST) $(MYLIB) $(ROOTLIB)
+
+$(OBJ)/time_test_getmag.o : $(PROGS)/time_test_getmag.cc $(LIBH)  
+	mkdir -p $(OBJ)
+	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/time_test_getmag.o $(PROGS)/time_test_getmag.cc
 	
 	
 # TEMPORARY TEST CODE

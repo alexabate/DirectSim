@@ -168,7 +168,7 @@ int main(int narg, char* arg[]) {
         // redshift SED and apply line of sight IGM absorption
         SEDIGM sedIGM(*(sedArray[sedNo]), igmTransmission, zSource);
         // redshift SED and apply average Madau IGM absorption
-        SEDMadau sedMadau(*(sedArray[sedNo]), zSource);
+        SEDIGM sedMadau(*(sedArray[sedNo]), zSource);
         
         outfile = outfileroot + "_zSource" + ssz.str() + "_SightLine";
 	    outfile += ss.str() + "of" + ssn.str() + ".txt";

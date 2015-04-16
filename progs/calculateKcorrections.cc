@@ -232,17 +232,6 @@ int main(int narg, char* arg[])
                     double kcorrWithMadau = simgalWithMadau.calcKcorr(sed, filter, restFrameFilter, zs, ex, law);
 		            double kcorrNoMadau = simgalNoMadau.calcKcorr(sed, filter, restFrameFilter, zs, ex, law);
 		            
-                    /*// with Madau absorption
-                    SEDMadau sedMadau(sed, zs);
-                    // redden SED 
-                    SEDGOODSRedfix sedMadauRed(sedMadau, zs, ex, law);
-                    // k correction filter
-                    kcorrWithMadau = simgalWithMadau.Kcorr(zs, sedMadauRed, filter ,restFrameFilter); 
-                    
-                    // without Madau absorption
-                    // redden SED (wo/Madau)
-                    SEDGOODSRedfix sedRed(sed,zs,ex,law);                   
-                    kcorrNoMadau = simgalNoMadau.Kcorr(zs, sedRed, filter ,restFrameFilter);*/
                     
                     outp1 << kcorrWithMadau <<"  ";
                     outp2 << kcorrNoMadau <<"  ";

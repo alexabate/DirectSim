@@ -30,29 +30,49 @@ void usage(void);
 void usage(void) {
 	cout << endl<<" Usage: fitSEDsToColors [...options...]" << endl<<endl;
 	
-    cout <<"  Reads absolute SDSS UGRIZ magnitudes from a FITS file and finds the best matched SED in  "<<endl;
-    cout <<"  the supplied SED library to these rest-frame colors.                                     "<<endl;
+    cout <<"  Reads absolute magnitudes from a FITS file and finds the best matched SED in the supplied"<<endl;
+    cout <<"  SED library to these rest-frame colors.                                                  "<<endl;
     cout << endl;
     
-    cout <<"  Using the redshift from the FITS file, SDSS absolute magnitude and the best fit SED,     "<<endl;
-    cout <<"  observed LSST ugrizy magnitudes (with errors) are simulated.                             "<<endl;
+    cout <<"  Then ->                                                                                  "<<endl;
+    cout <<"  Using the redshift from the FITS file, an absolute magnitude, and this best fit SED,     "<<endl;
+    cout <<"  observed LSST ugrizy magnitudes *without errors* are simulated.                          "<<endl;
     cout << endl;
     
-    cout <<"  Three files are output:                                                                  "<<endl;
-    cout <<"  a) catalog containing: LSST ugrizy (true), SED id, z^, SDSS UGRIZ^                       "<<endl;
-    cout <<"     ^ denotes values copied direct from FITS file                                         "<<endl;
-	cout <<"  b) the SEDs that were generated to calculate the photometry                              "<<endl;
-	cout <<"  c) a dictionary for matching SED id to SED in file and the E(B-V) that was added to it   "<<endl;
+    cout <<"  IMPORTANT NOTE: a list of column names corresponding to the absolute magnitude data in   "<<endl;
+    cout <<"  the FITS file must be supplied as an argument AND this list must match *exactly* the     "<<endl;
+    cout <<"  contents and order in the list of filters these magnitudes are in (also supplied as an   "<<endl;
+    cout <<"  argument, -f).                                                                           "<< endl;
+    cout << endl;
+    
+    cout <<"  Files that are are output:                                                               "<<endl;
+    cout <<"  MAIN OUTPUT: FITS file catalog containing: LSST ugrizy (true), SED id, z^, [ABS MAGS]^   "<<endl;
+    cout <<"     ^ denotes values copied direct from input FITS file                                   "<<endl;
+    cout << endl;
+    cout <<"  SUPPLEMENTARY OUTPUT:                                                                    "<<endl;
+	cout <<"  - the SEDs that were generated to calculate the photometry                               "<<endl;
+	cout <<"  - a dictionary for matching SED in above file to the E(B-V) that was added to it (if any)"<<endl;
+	cout <<"  - color of each SED in library (row order matching SED library file list; column order   "<<endl;
+	cout <<"    matching filter file list)                                                             "<<endl;
+	cout <<"  - all colors from input FITS file (column order matching filter file list) with last     "<<endl;
+	cout <<"    column being row position of best match SED in library list                            "<<endl;
 	cout << endl;
 	
 	cout <<"  Example usage:                                                                           "<<endl;
-	cout <<"  fitSEDsToColors -o sim_from_file -t CWWKSB.list -i tao_xxx.fits -n 5                     "<<endl;
+	cout <<"  fitSEDsToColors -i tao_xxx.fits -o sim_from_file -t CWWKSB.list -n 5 -f SDSS.filters     "<<endl;
+	cout <<"         -c SDSS_u_Absolute,SDSS_g_Absolute,SDSS_r_Absolute,SDSS_i_Absolute,SDSS_z_Absolute"<<endl;
+	cout <<"         -m SDSS_r_Absolute,2 -w 0.0000001,0.00002,10000                                   "<<endl;
 	cout << endl;
 	
+	cout << " -i: FITS: input FITS file catalog                                                        "<<endl; 
 	cout << " -o: OUTROOT: write files to filenames beginning OUTROOT                                  "<<endl;
-	cout << " -t: SEDLIB: file containing list of SED files                                            "<<endl;
-	cout << " -i: FITS: FITS file                                                                      "<<endl; 
+	cout << " -t: SEDLIB: file containing list of SED files in library                                 "<<endl;
+	cout << " -f: FILTLIB: file containing list of filters                                             "<<endl;
+	cout << " -c: MCOL: column names matching order of filters in FILTLIB                              "<<endl;
 	cout << " -n: NRED: number of reddenings to apply to each SED in SEDLIB                            "<<endl;
+	cout << " -m: ABSMCOL,IFILT: column name containing absolute magnitude to use to define galaxy     "<<endl;
+	cout << "                    luminosity, id of corresponding filter in filter list file            "<<endl;
+	cout << " -w: LMIN,LMAX,NL: wavelength resolution of the SEDs                                      "<<endl;
 	cout << endl;
     };
 
@@ -71,12 +91,19 @@ int main(int narg, char* arg[]) {
     //--- decoding command line arguments 
     string outroot;
     string infile;
-    string sedfile="CWWKSB.list";
+    string sedfile = "CWWKSB.list";
+    string filtfile = "SDSS.list";
+    //string abscol = "SDSS_r_Absolute";
+    //int iabscol = 2; // zero indexed
+    string abs = "SDSS_r_Absolute,2";
+    string magcols = "SDSS_u_Absolute,SDSS_g_Absolute,SDSS_r_Absolute,SDSS_i_Absolute,SDSS_z_Absolute"; 
     int nred = 5;
     bool doRedden = true;
+    double lmin=1e-8, lmax=2.5e-6; // need to be careful with this given what filters are read in!
+	int npt = 1000; // interpolation resolution of SEDs (need more if many fine features)
 
 	char c;
-    while((c = getopt(narg,arg,"ho:i:t:n:")) != -1) {
+    while((c = getopt(narg,arg,"ho:i:t:n:f:m:c:w:")) != -1) {
 	    switch (c)  {
 	        case 'o' :
 	            outroot = optarg;
@@ -87,8 +114,20 @@ int main(int narg, char* arg[]) {
 	        case 't' :
 	            sedfile = optarg;
 	            break;
+	        case 'f' :
+	            filtfile = optarg;
+	            break;
+	        case 'c' :
+	            magcols = optarg;
+	            break;
+	        case 'm' :
+	            abs = optarg;
+	            break;
 	        case 'n' :
 	            sscanf(optarg,"%d",&nred);
+	            break;
+	        case 'w' :
+	            sscanf(optarg,"%lf,%lf,%d",&lmin,&lmax,&npt);
 	            break;
 	        case 'h' :
 		        default :
@@ -97,12 +136,27 @@ int main(int narg, char* arg[]) {
 	    }
 	if (nred<1)
 	    doRedden = false;
+	    
+	vector<string> listOfCols;
+	stringSplit(magcols,",",listOfCols);
+	
+	vector<string> tmp;
+	stringSplit(abs,",",tmp);
+	string abscol = tmp[0];
+	string x = tmp[1];
+	int iabscol = atoi(x.c_str());
 
     //-- end command line arguments
     cout <<"     Writing to files beginning "<< outroot <<endl;
     cout <<"     Reading from FITS file " << infile << endl;
-    cout <<"     Using SED library "<< sedfile <<endl;
+    cout <<"     Using SED library "<< sedfile <<" with wavelength range (in m) "<< lmin <<" to "<< lmax;
+    cout <<" and resolution "<< npt << endl;
     cout <<"     Number of times to redden each template = "<< nred << endl;
+    cout <<"     Fitting to photometry in filters listed in "<< filtfile <<", and reading photometry from columns:"<<endl;
+    for (int i=0; i<listOfCols.size(); i++)
+        cout <<"     "<< listOfCols[i] << endl;
+    cout <<"     Setting luminosity of galaxies using absolute magnitude in column "<< abscol <<", which";
+    cout <<" corresponds to filter "<< iabscol <<" in "<< filtfile << endl;
     cout << endl;
     //-- end command line arguments
   
@@ -127,16 +181,30 @@ int main(int narg, char* arg[]) {
     cout <<"     Number of columns = "<< nc <<", number of entries = "<< ng << endl;
     cout << endl;
     
+    // GET COLUMN INDICES
+    int idMag = dt.IndexNom(abscol);
+    int idRa = dt.IndexNom("Right_Ascension");
+    int idDec = dt.IndexNom("Declination");
+    int idz = dt.IndexNom("Redshift_Cosmological");
+    int idmapp = dt.IndexNom("SDSS_i_Apparent");
+    cout << "     Column: Right_Ascension has index "<< idRa << endl;
+    cout << "     Column: Declination has index "<< idDec << endl;
+    cout << "     Column: Redshift_Cosmological has index "<< idz << endl;
+    cout << "     Column: SDSS_i_Apparent has index "<< idmapp << endl;
+    cout << "     Column: "<< abscol << " has index "<< idMag << endl;
+    vector<int> idCols;
+    for (int i=0; i<listOfCols.size(); i++) {
+        idCols.push_back(dt.IndexNom(listOfCols[i]));
+        cout << "     Column: "<< listOfCols[i] << " has index "<< idCols[i] << endl;
+        }
+    cout << endl;
+    
 		
 	// GALAXY SED TEMPLATES
-	
-	// wavelength range of the SEDs/filters
-	double lmin=5e-8, lmax=2.5e-6;
-	
 	ReadSedList readSedList(sedfile);
 	
 	// Read out SEDs into array
-    readSedList.readSeds(lmin,lmax);
+    readSedList.readSeds(lmin, lmax, npt);
     
     if (doRedden) {
         // Redden SEDs 
@@ -161,7 +229,7 @@ int main(int narg, char* arg[]) {
     
     // write out SEDs (this generates file b and c as described in the usage instructions)
     outfile = outroot + "_SEDlib.txt";
-    readSedList.writeSpectra(outfile);
+    readSedList.writeSpectra(outfile, lmin, lmax, npt);
     
     
     // FILTERS
@@ -175,20 +243,21 @@ int main(int narg, char* arg[]) {
 	cout <<"     "<< nLSST <<" LSST filters read in "<<endl;
     cout << endl;
 	
-	// SDSS
-    filterFile = "SDSS.filters";
-	ReadFilterList sdssFilters(filterFile);
-	sdssFilters.readFilters(lmin, lmax);
-	vector<Filter*> sdss_filters = sdssFilters.getFilterArray();
-	int nSDSS = sdssFilters.getNTot();
-	cout <<"     "<< nSDSS <<" SDSS filters read in "<<endl;
+	// PHOTOMETRY FILTERS
+	ReadFilterList photFilters(filtfile);
+	photFilters.readFilters(lmin, lmax);
+	vector<Filter*> phot_filters = photFilters.getFilterArray();
+	int nphotFilt = photFilters.getNTot();
+	cout <<"     "<< nphotFilt <<" photometry filters read in "<<endl;
+	if (nphotFilt != idCols.size())
+	    throw ParmError("ERROR! number of photometry columns != number of photometry filters");
     cout << endl;
 	
 	
 	// FIT SEDS AND GENERATE PHOT
 	
 	// for fitting SEDs to colors
-	SEDLibColors sedLibColors(sedArray, sdss_filters);
+	SEDLibColors sedLibColors(sedArray, phot_filters, lmin, lmax, npt);
 	// this file also for extra checking
 	outfile = outroot + "_colorarray.txt";
 	sedLibColors.writeColorArray(outfile);
@@ -225,11 +294,8 @@ int main(int narg, char* arg[]) {
     gals.AddFloatColumn("it_LSST");
     gals.AddFloatColumn("zt_LSST");
     gals.AddFloatColumn("yt_LSST");
-    gals.AddFloatColumn("U_ABS_SDSS");
-    gals.AddFloatColumn("G_ABS_SDSS");
-    gals.AddFloatColumn("R_ABS_SDSS");
-    gals.AddFloatColumn("I_ABS_SDSS");
-    gals.AddFloatColumn("Z_ABS_SDSS");
+    for (int i=0; i<idCols.size(); i++)
+        gals.AddFloatColumn(listOfCols[i]);
     DataTableRow rowin = gals.EmptyRow();
     
 
@@ -237,7 +303,18 @@ int main(int narg, char* arg[]) {
     Timer tm("timer",false);
     double maxmi=0;
     
+    Timer loop_time("lptm", false);
+    int lt=0;
+    
+    Timer bestfit_time("bftm", false);
+    int bft=0;
+    
+    Timer phot_time("phtm", false);
+    int pt=0;
+    
+    
 	// loop over whole catalog
+	cout <<"     Starting loop over "<< ng <<" galaxies in the catalog"<<endl;
 	int cnt = 0;
     for (int i=0; i<ng; i++) {
 
@@ -250,32 +327,34 @@ int main(int narg, char* arg[]) {
             }
             
         dt.GetRow(i,row);
+        //cout <<"row:"<< row << endl;
 
         
         // data from file
-        int gal_class = row[0];
-        double ra = row[1];
-        double dec = row[2];
-        double z = row[3];
-        // z obs (zcosmo+vpec)
-        double U = row[5];
-        double G = row[6];
-        double R = row[7];
-        double I = row[8];
-        double mi = row[9];
-        double Z = row[10];
+        double ra = row[idRa];
+        double dec = row[idDec];
+        double z = row[idz];
+        double mi = row[idmapp]; // don't actually need this
+        double R = row[idMag];
+        //cout <<"dats:"<< ra <<" "<< dec <<" "<< z <<" "<< mi <<" "<< R << endl;
         
-
         // create vector of colors
         vector<double> colors;
-        colors.push_back(U-G);
-        colors.push_back(G-R);
-        colors.push_back(R-I);
-        colors.push_back(I-Z);
+        for (int i=0; i<idCols.size()-1; i++) {
+            double c1 = row[idCols[i]];
+            double c2 = row[idCols[i+1]];
+            //cout << "col:"<< c1-c2 << endl;
+            colors.push_back(c1-c2);
+            }
         
 
         // best fit SED
+        bestfit_time.Split();
         int bf = sedLibColors.bestSED(colors); // this is zero indexed
+        bestfit_time.Split();
+        bft+=bestfit_time.PartialElapsedTimems();
+        
+        //cout << "bf: "<< bf << endl;
         // index corresponds to index of SED in sedArray (zero=first entry)
         
         
@@ -285,15 +364,18 @@ int main(int narg, char* arg[]) {
         outp << bf+1 << endl;
         
         // next part, generate photometry
+        phot_time.Split();
         vector<double> mags;
         bool all_detected = true;
         for (int j=0; j<lsst_filters.size(); j++) {
         
-            double mag = simData.GetMag(z, bf, R, j, (*sdss_filters[2]));
+            double mag = simData.GetMag(z, bf, R, j, (*phot_filters[iabscol]));
             mags.push_back(mag);
             if (mag>50.)
                 all_detected = false;
             }
+        phot_time.Split();
+        pt+=phot_time.PartialElapsedTimems();
             
         
         // to write to FITS file
@@ -305,20 +387,25 @@ int main(int narg, char* arg[]) {
         rowin[5] = mags[3];
         rowin[6] = mags[4];
         rowin[7] = mags[5];
-        rowin[8] = U;
-        rowin[9] = G;
-        rowin[10] = R;
-        rowin[11] = I;
-        rowin[12] = Z;
+        int ii = 8;
+        for (int i=0; i<idCols.size(); i++) {
+            rowin[ii] = row[idCols[i]];
+            ii++;
+            }
         gals.AddRow(rowin);
         
         
         cnt++;
         //if (cnt>1000000)
         //    break;
+        loop_time.Split();
+        lt+=loop_time.PartialElapsedTimems();
         }
     cout << endl;
-        
+    cout << "Average time per loop = "<< double(lt)/ng <<" ms "<<endl;
+    cout << "Average time per best-fit SED calculation = "<< double(bft)/ng <<" ms "<<endl; 
+    cout << "Average time per photometry calculation = "<< double(pt)/ng <<" ms "<<endl;
+    
     /*cout <<"     Number of lost galaxies = "<< cntlost << endl;
     cout << endl;
 

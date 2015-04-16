@@ -344,7 +344,7 @@ int main(int narg, char* arg[]) {
 
         IGMTransmission igmTransmission(infile);
         SEDIGM sedIGM(*(sedArray[sedNo]), igmTransmission, zs);
-        SEDMadau sedMadau(*(sedArray[sedNo]), zs);
+        SEDIGM sedMadau(*(sedArray[sedNo]), zs);
         
 		double uMag=simgal.GetMag(zs,type,am,ext,0,(*goodsBFilter[0]),igmTransmission);
 		double gMag=simgal.GetMag(zs,type,am,ext,1,(*goodsBFilter[0]),igmTransmission);

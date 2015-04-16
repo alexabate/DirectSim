@@ -58,11 +58,11 @@ double SInterp1D::YInterp(double x) const
         // find closest index to given x value where x[i]<x
         long i = (long)((x-xmin_)/dx_);  // cast as long is equivalent to floor
         
-        bool wCase = false;
+        /*bool wCase = false;
         if (xmax_<2.5e-6 && x>=2.43336e-6 && x<2.4336e-6) {
             cout <<"printing i for weird x: "<< i <<" x = "<< x << endl;
             wCase = true;
-            }
+            }*/
     
     
         // if index is negative (i.e. x < xmin-dx)
@@ -202,7 +202,7 @@ void SInterp1D::DefinePoints(vector<double>& xs, vector<double>& ys, double xmin
     yreg_.resize(npoints_+1); // npoints+1 y vals from regularly spaced x
     // this is npoints+1 so that it includes xmax_
 
-    
+    //cout << xmin_ <<"  "<< xmax_ <<" "<< npoints_ << endl;
     
     // AA: fixed bug 27Mar15
     // don't do this: if xmax!=x[ksmx_] won't be right!
@@ -349,6 +349,7 @@ size_t SInterp1D::ReadXYFromFile(string const& filename, double xmin, double xma
     size_t nLines = cnt - nComments;
     //cout << " SInterp1D::ReadXYFromFile()/Info: " << nLines;
     //cout << " (x,y) pairs read from file " << filename << endl;  
+    
     DefinePoints(xsv, ysv, xmin, xmax, npt);
 	
     return nLines;

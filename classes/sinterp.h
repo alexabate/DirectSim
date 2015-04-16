@@ -142,10 +142,10 @@ public :
     size_t ReadXYFromFile(string const& filename, double xmin=1., double xmax=-1.,
                              size_t npt=0, int nComments=0, bool setzero=false);
   
-    /** Return x values of interpolation table                                */
+    /** Return x values of original data read in                              */
     vector<double>& GetVX()  { return xs_; };
     
-    /** Return y values of interpolation table                                */
+    /** Return y values of original data read in                              */
     vector<double>& GetVY()  { return ys_; };
 
     /** Print properties of interpolation to the output stream

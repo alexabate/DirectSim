@@ -240,7 +240,7 @@ int main(int narg, char* arg[])
 
     string transFile = "Transmission_" + ss.str() + "z.list";
     vector<string> transFileList = returnFileList(transFile);
-    vector<SInterp1D> transIgm;
+    vector<IGMTransmission> transIgm;
 
     for(int i=0; i<transFileList.size()-1; i++) {
         SInterp1D trans;

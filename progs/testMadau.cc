@@ -141,15 +141,15 @@ int main(int narg, char* arg[]) {
     SED sed(*(sedArray[4]));
         
     // add Madau absorption
-    SEDMadau sedMadauz0(sed,0.);
-    SEDMadau sedMadauz1(sed,0.5);
-    SEDMadau sedMadauz2(sed,1.0);
-    SEDMadau sedMadauz3(sed,1.5);
-    SEDMadau sedMadauz4(sed,2.0);
-    SEDMadau sedMadauz5(sed,2.5);
-	SEDMadau sedMadauz6(sed,3.0);
-	SEDMadau sedMadauz7(sed,3.5);
-	SEDMadau sedMadauz8(sed,4.0);
+    SEDIGM sedMadauz0(sed,0.);
+    SEDIGM sedMadauz1(sed,0.5);
+    SEDIGM sedMadauz2(sed,1.0);
+    SEDIGM sedMadauz3(sed,1.5);
+    SEDIGM sedMadauz4(sed,2.0);
+    SEDIGM sedMadauz5(sed,2.5);
+	SEDIGM sedMadauz6(sed,3.0);
+	SEDIGM sedMadauz7(sed,3.5);
+	SEDIGM sedMadauz8(sed,4.0);
 	
 	outfile = outfileroot + "_SB3.txt";
 	outp.open(outfile.c_str());

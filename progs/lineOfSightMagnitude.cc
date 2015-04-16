@@ -183,8 +183,6 @@ int main(int narg, char* arg[]) {
         cout <<"     Number of absorbers = "<<nAbs <<endl;
 
         IGMTransmission igmTransmission(infile);
-        //SEDIGM sedIGM(*(sedArray[sedNo]), igmTransmission, zs);
-        //SEDMadau sedMadau(*(sedArray[sedNo]), zs);
         
         /*//////////////// THIS PART IS FOR DEBUGGING/CHECKING 
         // Basically this bit is now addIGMToSED
