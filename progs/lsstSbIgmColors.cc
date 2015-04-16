@@ -29,15 +29,17 @@
 
 // AA: updated old Sophya version's GenericFunc to ClassFunc1D
 
-// @todo's below
-// AA: put the below function into the igm.h, igm.cc source files
+
+// AA: @todo put the below function into the igm.h, igm.cc source files
 vector<string> returnFileList(string fname);
-// AA: add these two functions as methods in PhotometryCalcs class
-double computeColorIGM(double z, ClassFunc1D& sed, Filter& filterX, Filter& filterY, ClassFunc1D& transmission, double lmin, double lmax);
+
+// AA: added a similar method to PhotometryCalcs to use instead of this
+//double computeColorIGM(double z, SpecEnergyDist& sed, Filter& filterX, Filter& filterY, IGMTransmission& transmission, double lmin, double lmax);
 //double restFrameFluxIGM(ClassFunc1D &sed, Filter& filter, double zs, ClassFunc1D& transmission, double lmin, double lmax);
-double restFrameFluxIGM(ClassFunc1D& sed, Filter& filter, double zs, ClassFunc1D& transmission, double lmin, double lmax);
-// AA: then just can use the getFilterZeroPointFlux method in PhotometryCalcs instead of this
-double getFilterZeroPointFlux(Filter& filter, double lmin, double lmax);
+// AA: added a similar method to PhotometryCalcs to use instead of this
+//double restFrameFluxIGM(SpecEnergyDist& sed, Filter& filter, double zs, IGMTransmission& transmission, double lmin, double lmax);
+// AA: using getFilterZeroPointFlux method in PhotometryCalcs instead of this
+//double getFilterZeroPointFlux(Filter& filter, double lmin, double lmax);
 
 
 // AA: made a usage function
@@ -182,6 +184,14 @@ int main(int narg, char* arg[])
 //    outfiles.push_back(outloc + "meanIGM_ssp_25Myr_z008_1%_" + ss.str() + "z_Mags.txt");
 //    outfiles.push_back(outloc + "meanIGM_ssp_5Myr_z008_1%_" + ss.str() + "z_Mags.txt");
 
+    /*************************************
+    *     Initialise main calc class     *
+    *************************************/
+    
+    // AA: this class will be used instead of the functions coded in this program
+    int npt = 1000; // this controls how precise/slow the integration will be
+    PhotometryCalcs photCalcs(lmin, lmax, npt);
+
 
     /*************************************
     *       Read in Filters              *
@@ -190,7 +200,7 @@ int main(int narg, char* arg[])
 
     string filterFile = "LSST.filters";
     ReadFilterList lsstFilters(filterFile);
-    lsstFilters.readFilters(lmin,lmax);
+    lsstFilters.readFilters(lmin, lmax);
     vector<Filter*> filterArray = lsstFilters.getFilterArray();
     int nFilters = lsstFilters.getNTot();
     cout <<"     "<< nFilters <<" LSST filters read in "<<endl;
@@ -213,7 +223,7 @@ int main(int narg, char* arg[])
 
     ReadSedList cwwSEDs(sedFile);
     // Read out SEDs into array
-    cwwSEDs.readSeds(lmin,lmax);
+    cwwSEDs.readSeds(lmin, lmax);
     // Get total number of SEDs
     vector<SED*> sedArray=cwwSEDs.getSedArray();
     int nsed=cwwSEDs.getNSed();
@@ -229,12 +239,17 @@ int main(int narg, char* arg[])
     string transFile = "Transmission_" + ss.str() + "z.list";
 //    string transFile = "meanTransmission_" + ss.str() + "z.list";
     vector<string> transFileList = returnFileList(transFile);
-    vector<IGMTransmission> transIgm;
+    
+    // AA notes:
+    // IGMTransmission is now a class that is initialised either with an IGM transmission read from a file or 
+    // with with the IGM Madau model, or with no IGM (i.e. full transmission/transmission always=1)
+    vector<IGMTransmission*> transIgm; // changed to vector of pointers
 
     for(int i=0; i<transFileList.size()-1; i++) {
-        SInterp1D trans;
-        trans.ReadXYFromFile(transFileList[i], lmin, lmax, 1024, 0, false);
-        transIgm.push_back(trans);
+        //SInterp1D trans;
+        //trans.ReadXYFromFile(transFileList[i], lmin, lmax, 1024, 0, false);
+        transIgm.push_back(new IGMTransmission());
+        transIgm[i]->readTransmission(transFileList[i], lmin, lmax, 1024, 0);
         }
 
 
@@ -244,7 +259,8 @@ int main(int narg, char* arg[])
     *************************************/
     int iSb = 0;
 
-    PhotometryCalcs photometryCalcs(lmin,lmax);
+    // AA: removed this now using PhotometryCalcs for all mags w/IGM or wo/IGM
+    //PhotometryCalcs photometryCalcs(lmin,lmax);
 
 //for(iSb=0; iSb<nSb; iSb)
 //{
@@ -255,22 +271,22 @@ int main(int narg, char* arg[])
 //        double z=zmin+i*dz;
 
         // flux in u filter
-        uFlux(i)=photometryCalcs.restFrameFlux((*sedArray[iSb]),
+        uFlux(i)=photCalcs.restFrameFlux((*sedArray[iSb]),
                                 (*filterArray[uLSST]), z);
         // flux in g filter
-        gFlux(i)=photometryCalcs.restFrameFlux((*sedArray[iSb]),
+        gFlux(i)=photCalcs.restFrameFlux((*sedArray[iSb]),
                                 (*filterArray[gLSST]), z);
         // flux in r filter
-        rFlux(i)=photometryCalcs.restFrameFlux((*sedArray[iSb]),
+        rFlux(i)=photCalcs.restFrameFlux((*sedArray[iSb]),
                                 (*filterArray[rLSST]), z);
         // flux in i filter
-        iFlux(i)=photometryCalcs.restFrameFlux((*sedArray[iSb]),
+        iFlux(i)=photCalcs.restFrameFlux((*sedArray[iSb]),
                                 (*filterArray[iLSST]), z);
         // flux in z filter
-        zFlux(i)=photometryCalcs.restFrameFlux((*sedArray[iSb]),
+        zFlux(i)=photCalcs.restFrameFlux((*sedArray[iSb]),
                                 (*filterArray[zLSST]), z);
         // flux in y filter
-        yFlux(i)=photometryCalcs.restFrameFlux((*sedArray[iSb]),
+        yFlux(i)=photCalcs.restFrameFlux((*sedArray[iSb]),
                                 (*filterArray[yLSST]), z);
     }
 
@@ -286,22 +302,22 @@ int main(int narg, char* arg[])
 //      double z = zmin + i*dz;
 
         // magnitude in u filter
-        uMag(i) = photometryCalcs.convertFluxMaggiesToABMag(uFlux(i), 
+        uMag(i) = photCalcs.convertFluxMaggiesToABMag(uFlux(i), 
                                 (*filterArray[uLSST]));
         // magnitude in g filter
-        gMag(i) = photometryCalcs.convertFluxMaggiesToABMag(gFlux(i), 
+        gMag(i) = photCalcs.convertFluxMaggiesToABMag(gFlux(i), 
                                 (*filterArray[gLSST]));
         // magnitude in r filter
-        rMag(i) = photometryCalcs.convertFluxMaggiesToABMag(rFlux(i), 
+        rMag(i) = photCalcs.convertFluxMaggiesToABMag(rFlux(i), 
                                 (*filterArray[rLSST]));
         // magnitude in i filter
-        iMag(i) = photometryCalcs.convertFluxMaggiesToABMag(iFlux(i), 
+        iMag(i) = photCalcs.convertFluxMaggiesToABMag(iFlux(i), 
                                 (*filterArray[iLSST]));
         // magnitude in z filter
-        zMag(i) = photometryCalcs.convertFluxMaggiesToABMag(zFlux(i), 
+        zMag(i) = photCalcs.convertFluxMaggiesToABMag(zFlux(i), 
                                 (*filterArray[zLSST]));
         // magnitude in y filter
-        yMag(i) = photometryCalcs.convertFluxMaggiesToABMag(yFlux(i), 
+        yMag(i) = photCalcs.convertFluxMaggiesToABMag(yFlux(i), 
                                 (*filterArray[yLSST]));
     }
 
@@ -321,31 +337,33 @@ int main(int narg, char* arg[])
 	
 //        double z=zmin+i*dz;
 
+        // AA: changed argument transIgm[i] to be pointer (since changed it to be a vector of pointers above)
+        // AA: now using PhotometryCalcs class methods instead of functions coded in this program
 
         // flux in u filter
-        uFluxR(i)=restFrameFluxIGM((*sedArray[iSb]), 
+        uFluxR(i) = photCalcs.restFrameFlux((*sedArray[iSb]), 
                                 (*filterArray[uLSST]), z,
-                                transIgm[i], lmin, lmax);
+                                (*transIgm[i]));
         // flux in g filter
-        gFluxR(i)=restFrameFluxIGM((*sedArray[iSb]),
+        gFluxR(i) = photCalcs.restFrameFlux((*sedArray[iSb]),
                                 (*filterArray[gLSST]), z,
-                                transIgm[i], lmin, lmax);
+                                (*transIgm[i]));
         // flux in r filter
-        rFluxR(i)=restFrameFluxIGM((*sedArray[iSb]),
+        rFluxR(i) = photCalcs.restFrameFlux((*sedArray[iSb]),
                                 (*filterArray[rLSST]), z,
-                                transIgm[i], lmin, lmax);
+                                (*transIgm[i]));
         // flux in i filter
-        iFluxR(i)=restFrameFluxIGM((*sedArray[iSb]),
+        iFluxR(i) = photCalcs.restFrameFlux((*sedArray[iSb]),
                                 (*filterArray[iLSST]), z,
-                                transIgm[i], lmin, lmax);
+                                (*transIgm[i]));
         // flux in z filter
-        zFluxR(i)=restFrameFluxIGM((*sedArray[iSb]),
+        zFluxR(i) = photCalcs.restFrameFlux((*sedArray[iSb]),
                                 (*filterArray[zLSST]), z,
-                                transIgm[i], lmin, lmax);
+                                (*transIgm[i]));
         // flux in y filter
-        yFluxR(i)=restFrameFluxIGM((*sedArray[iSb]),
+        yFluxR(i) = photCalcs.restFrameFlux((*sedArray[iSb]),
                                 (*filterArray[yLSST]), z,
-                                transIgm[i], lmin, lmax);
+                                (*transIgm[i]));
     }
 
 
@@ -359,22 +377,22 @@ int main(int narg, char* arg[])
 //        double z = zmin + i*dz;
 
         // magnitude in u filter
-        uMagR(i) = photometryCalcs.convertFluxMaggiesToABMag(uFluxR(i), 
+        uMagR(i) = photCalcs.convertFluxMaggiesToABMag(uFluxR(i), 
                                 (*filterArray[uLSST]));
         // magnitude in g filter
-        gMagR(i) = photometryCalcs.convertFluxMaggiesToABMag(gFluxR(i), 
+        gMagR(i) = photCalcs.convertFluxMaggiesToABMag(gFluxR(i), 
                                 (*filterArray[gLSST]));
         // magnitude in r filter
-        rMagR(i) = photometryCalcs.convertFluxMaggiesToABMag(rFluxR(i), 
+        rMagR(i) = photCalcs.convertFluxMaggiesToABMag(rFluxR(i), 
                                 (*filterArray[rLSST]));
         // magnitude in i filter
-        iMagR(i) = photometryCalcs.convertFluxMaggiesToABMag(iFluxR(i), 
+        iMagR(i) = photCalcs.convertFluxMaggiesToABMag(iFluxR(i), 
                                 (*filterArray[iLSST]));
         // magnitude in z filter
-        zMagR(i) = photometryCalcs.convertFluxMaggiesToABMag(zFluxR(i), 
+        zMagR(i) = photCalcs.convertFluxMaggiesToABMag(zFluxR(i), 
                                 (*filterArray[zLSST]));
         // magnitude in y filter
-        yMagR(i) = photometryCalcs.convertFluxMaggiesToABMag(yFluxR(i), 
+        yMagR(i) = photCalcs.convertFluxMaggiesToABMag(yFluxR(i), 
                                 (*filterArray[yLSST]));
     }
 // AA: ^^THIS SECTION CALCS NOT ACTUALLY USED ----- END
@@ -417,8 +435,14 @@ int main(int narg, char* arg[])
     // AA: code m_i=24. so we know what it is
     double imag_fixed = 24.; // can make this prog arg
 
+    // AA: this class no longer simulates magnitude errors (just the true magnitudes)
+    //SimData simData(sedArray, filterArray, su, rg);
+    
+    // AA: 
+    
     // Initialize class that simulates magnitude errors
-    SimData simData(sedArray, filterArray, su, rg);
+    // AA: new class that simulates magnitude errors
+    SimObservations simObs(filterArray, rg);
 
 
     // AA: add loop over SEDs to save code copying
@@ -444,27 +468,27 @@ int main(int narg, char* arg[])
 //            double z=zmin+i*dz;
 
 		        // mag in filter u - mag in filter g 
-		        Cug(i) = photometryCalcs.CompColor(z,(*sedArray[iSb]),
+		        Cug(i) = photCalcs.CompColor(z,(*sedArray[iSb]),
 								(*filterArray[uLSST]), (*filterArray[gLSST]));
 		
 		        // mag in filter g - mag in filter r 
-		        Cgr(i) = photometryCalcs.CompColor(z,(*sedArray[iSb]),
+		        Cgr(i) = photCalcs.CompColor(z,(*sedArray[iSb]),
 								(*filterArray[gLSST]), (*filterArray[rLSST]));
 		
 		        // mag in filter r - mag in filter i 
-		        Cri(i)=photometryCalcs.CompColor(z,(*sedArray[iSb]),
+		        Cri(i)=photCalcs.CompColor(z,(*sedArray[iSb]),
 								(*filterArray[rLSST]), (*filterArray[iLSST]));
 								
 		        // mag in filter i - mag in filter z 
-		        Ciz(i) = photometryCalcs.CompColor(z,(*sedArray[iSb]),
+		        Ciz(i) = photCalcs.CompColor(z,(*sedArray[iSb]),
 								(*filterArray[iLSST]), (*filterArray[zLSST]));
 		
 		        // mag in filter z - mag in filter y 
-		        Czy(i) = photometryCalcs.CompColor(z,(*sedArray[iSb]),
+		        Czy(i) = photCalcs.CompColor(z,(*sedArray[iSb]),
 								(*filterArray[zLSST]), (*filterArray[yLSST]));
 
 		        // mag in filter y - mag in filter z 
-		        Cyu(i) = photometryCalcs.CompColor(z,(*sedArray[iSb]),
+		        Cyu(i) = photCalcs.CompColor(z,(*sedArray[iSb]),
 								(*filterArray[yLSST]), (*filterArray[uLSST]));
 								
 			    // no IGM mags
@@ -477,11 +501,18 @@ int main(int narg, char* arg[])
 
 
                 // Colors with IGM absorption 
-               CugR(i) = computeColorIGM(z, (*sedArray[iSb]), (*filterArray[uLSST]), (*filterArray[gLSST]), transIgm[i], lmin, lmax); 
-               CgrR(i) = computeColorIGM(z, (*sedArray[iSb]), (*filterArray[gLSST]), (*filterArray[rLSST]), transIgm[i], lmin, lmax); 
-               CriR(i) = computeColorIGM(z, (*sedArray[iSb]), (*filterArray[rLSST]), (*filterArray[iLSST]), transIgm[i], lmin, lmax); 
-               CizR(i) = computeColorIGM(z, (*sedArray[iSb]), (*filterArray[iLSST]), (*filterArray[zLSST]), transIgm[i], lmin, lmax); 
-               CzyR(i) = computeColorIGM(z, (*sedArray[iSb]), (*filterArray[zLSST]), (*filterArray[yLSST]), transIgm[i], lmin, lmax); 
+                
+                // AA: changed argument transIgm[i] to be pointer (since changed it to be a vector of pointers above)
+               CugR(i) = photCalcs.CompColor(z, (*sedArray[iSb]), (*filterArray[uLSST]), (*filterArray[gLSST]), 
+                                            (*transIgm[i])); 
+               CgrR(i) = photCalcs.CompColor(z, (*sedArray[iSb]), (*filterArray[gLSST]), (*filterArray[rLSST]), 
+                                            (*transIgm[i])); 
+               CriR(i) = photCalcs.CompColor(z, (*sedArray[iSb]), (*filterArray[rLSST]), (*filterArray[iLSST]), 
+                                            (*transIgm[i])); 
+               CizR(i) = photCalcs.CompColor(z, (*sedArray[iSb]), (*filterArray[iLSST]), (*filterArray[zLSST]), 
+                                            (*transIgm[i])); 
+               CzyR(i) = photCalcs.CompColor(z, (*sedArray[iSb]), (*filterArray[zLSST]), (*filterArray[yLSST]), 
+                                            (*transIgm[i])); 
 
                // w/IGM mags
 	           m_rR = CriR(i) + imag_fixed;
@@ -494,13 +525,24 @@ int main(int narg, char* arg[])
 //	for(int k=0; k<400; k++){
 
               // AA: updated to new method that adds LSST errors
-              // AA: @ note photometric errors only added to IGM absorbed magnitudes
+              // AA: @note photometric errors only added to IGM absorbed magnitudes
+              /*
 	          error_U = simData.addLSSTError(m_uR, nYear, uLSST); 
 	          error_G = simData.addLSSTError(m_gR, nYear, gLSST); 
 	          error_R = simData.addLSSTError(m_rR, nYear, rLSST); 
 	          error_I = simData.addLSSTError(m_iR, nYear, iLSST); 
 	          error_Z = simData.addLSSTError(m_zR, nYear, zLSST); 
-	          error_Y = simData.addLSSTError(m_yR, nYear, yLSST); 
+	          error_Y = simData.addLSSTError(m_yR, nYear, yLSST); */
+	          
+	          // AA: new class SimObservations has same addLSSTError method usage as SimData
+	          error_U = simObs.addLSSTError(m_uR, nYear, uLSST); 
+	          error_G = simObs.addLSSTError(m_gR, nYear, gLSST); 
+	          error_R = simObs.addLSSTError(m_rR, nYear, rLSST); 
+	          error_I = simObs.addLSSTError(m_iR, nYear, iLSST); 
+	          error_Z = simObs.addLSSTError(m_zR, nYear, zLSST); 
+	          error_Y = simObs.addLSSTError(m_yR, nYear, yLSST);
+	          
+	          
 
 //           	outp << z 
 //                << "    " << m_u << "    " << m_g<< "    " << m_r << "    " 
@@ -600,6 +642,7 @@ vector<string> returnFileList(string fname) {
 *   Computer Galaxy Color with IGM Transmission   *
 **************************************************/
 
+/* 
 double computeColorIGM(double z, ClassFunc1D& sed, Filter& filterX, Filter& filterY, ClassFunc1D& transmission, double lmin, double lmax) {
 
     SEDzFilterProdIGM SEDFX(sed, filterX, transmission, z);
@@ -620,7 +663,8 @@ double computeColorIGM(double z, ClassFunc1D& sed, Filter& filterX, Filter& filt
     double Cxy = -2.5*log10(intsedX.Value()/intsedY.Value()) + zpCxy;
 
     return Cxy;
-}
+    
+}*/
 
 /***************************************************
 *   Compute Galaxy Magntude with IGM Transmission  *
@@ -628,7 +672,7 @@ double computeColorIGM(double z, ClassFunc1D& sed, Filter& filterX, Filter& filt
 
 //double restFrameFluxIGM(ClassFunc1D &sed, Filter& filter, double zs, ClassFunc1D& transmission, double lmin, double lmax) {
 
-double restFrameFluxIGM(ClassFunc1D& sed, Filter& filter, double zs, ClassFunc1D& transmission, double lmin, double lmax) {
+/*double restFrameFluxIGM(ClassFunc1D& sed, Filter& filter, double zs, ClassFunc1D& transmission, double lmin, double lmax) {
 
     SEDzFilterProdIGM sedXfilter(sed, filter, transmission, zs);
     FilterIntegrator intSED(sedXfilter, lmin, lmax);
@@ -637,19 +681,20 @@ double restFrameFluxIGM(ClassFunc1D& sed, Filter& filter, double zs, ClassFunc1D
     double f0 = intSED.Value()/zpFluxFilter;
 
     return f0;
-}
+    
+}*/
 
 /********************************
 *   Compute Filter Zero Point   *
 ********************************/
 
-double getFilterZeroPointFlux(Filter& filter, double lmin, double lmax) {
+/*double getFilterZeroPointFlux(Filter& filter, double lmin, double lmax) {
     FilterProd FX(filter);
     FilterIntegrator intFX(FX, lmin, lmax);
     double zp = intFX.Value();
 
-  
+    
   return zp;
-}
+}*/
 
 
