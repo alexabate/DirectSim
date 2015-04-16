@@ -95,7 +95,27 @@ public:
         @param filterY          other filter object observed in \f$Y(\lambda)\f$  */
 	double CompColor(double z, SpecEnergyDist& sed, Filter& filterX, Filter& filterY);
 	
+	
+	/** Calculate galaxy color X-Y: 
+	    \f$ C_{xy} = -2.5\log10\left(
+        \frac{\int f_\lambda(\lambda_o/(1+z))\lambda_oX(\lambda_o)d\lambda_o
+              \int \frac{Y(\lambda_o)}{\lambda_o}d\lambda_o  }
+             {\int \frac{X(\lambda_o)}{\lambda_o}d\lambda_o
+              \int f_\lambda(\lambda_o/(1+z))\lambda_oY(\lambda_o)d\lambda_o}\right) \f$
+	    @param z                redshift of object \f$z\f$
+        @param sed              rest-frame SED of object \f$f_\lambda(\lambda)\f$
+        @param filterX          filter object observed in \f$X(\lambda)\f$ (should be bluer filter than Y)
+        @param filterY          other filter object observed in \f$Y(\lambda)\f$  
+        INCLUDING IGM TRANSMISSION                                                                          */
+	double CompColor(double z, SpecEnergyDist& sed, Filter& filterX, Filter& filterY, 
+	                                                                         IGMTransmission& transmission) {
+	    SEDIGM sedIGM(sed, transmission, z);
+	    return CompColor(z, sedIGM, filterX, filterY);
+	    };
+	    
+	    
 	// AA: not 100% what these two methods, restFrameFlux and restFrameFluxLambda do?
+	// AA: restFrameFlux is used in LC's lsstSbIgmColors program
 	
 	/** Calculate rest-frame flux of object in band \f$X(\lambda)\f$ in FREQUENCY units: 
         \f$ F_\nu(\lambda^{eff}_e) = 
@@ -105,6 +125,22 @@ public:
         @param filter   filter object observed in \f$X(\lambda)\f$
         @param zs       redshift of object                                    */
 	double restFrameFlux(SpecEnergyDist& sed, Filter& filter, double zs);
+	
+	
+	/** Calculate rest-frame flux of object in band \f$X(\lambda)\f$ in FREQUENCY units: 
+        \f$ F_\nu(\lambda^{eff}_e) = 
+            \frac{\int f_\lambda(\lambda_e)X(\lambda_e)\lambda_e d\lambda_e}
+                 {\int X(\lambda_e)/\lambda_e d\lambda_e} \f$  
+        INCLUDING IGM TRANSMISSION
+        @param sed             rest-frame SED of object \f$f_\lambda(\lambda)\f$
+        @param filter          filter object observed in \f$X(\lambda)\f$
+        @param zs              redshift of object                                    
+        @param transmission    IGM transmission function                                                    */
+	double restFrameFlux(SpecEnergyDist& sed, Filter& filter, double zs, IGMTransmission& transmission) {
+	    SEDIGM sedIGM(sed, transmission, zs);
+	    return restFrameFlux(sedIGM, filter, zs);
+	    };
+	    
 	            
 	/** Rest-frame flux in WAVELENGTH units: 
 	    \f$ F_\lambda(\lambda^{eff}_e) = \frac{F_\nu(\lambda^{eff}_e)}{\lambda_e^2} \f$*/
