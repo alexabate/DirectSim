@@ -923,13 +923,17 @@ protected:
 class IGMTransmission //: public SInterp1D
 {
 public:
+
+    /** Default constructor                                                                                 */
+    IGMTransmission() { };
     
-    /** Default constructor (if no IGM)                                                                     */
-    IGMTransmission() {
     
-        double lmin = 1e-8;
-        double lmax = 1e-5;
-        int npt = 100;
+    /** Constructor (if no IGM)        
+        @param lmin         minimum wavelength for interpolation grid
+        @param lmax         maximum wavelength for interpolation grid
+        @param npt          number of points in interpolation grid                                          */
+    IGMTransmission(double lmin, double lmax, int npt) {
+    
         vector<double> rflam;
         vector<double> trans;
         double dl = (lmax-lmin)/(npt-1.);
@@ -951,8 +955,7 @@ public:
         @param nComments    number of comments at top of IGM transmission data file                         */
     IGMTransmission(string& filename, double lmin, double lmax, int npt=1024, int nComments=1) {
         cout <<"     About to read from file "<< filename << endl;
-        trans_.ReadXYFromFile(filename, lmin, lmax, npt, nComments, false);
-        
+        readTransmission(filename, lmin, lmax, npt, nComments);
         };
         
     /** Constructor if using Madau law for IGM
@@ -966,6 +969,18 @@ public:
     /** Return IGM transmission CHECK THIS METHOD WORKS!
         @param lambda   restframe wavelength                                  */
     virtual double operator() (double lambda) const { return trans_(lambda); };
+    
+    
+    /** 
+        @param filename     file containing IGM transmission data
+        @param lmin         minimum wavelength for interpolation grid
+        @param lmax         maximum wavelength for interpolation grid
+        @param npt          number of points in interpolation grid
+        @param nComments    number of comments at top of IGM transmission data file                         */
+    void readTransmission(string& filename, double lmin, double lmax, int npt=1024, int nComments=1) {
+        cout <<"     About to read from file "<< filename << endl;
+        trans_.ReadXYFromFile(filename, lmin, lmax, npt, nComments, false);  
+        };
     
 
 protected:
