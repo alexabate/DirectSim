@@ -13,6 +13,8 @@ endif
 
 #define GEN3D_FLOAT
 
+COMPFLAGS = -O3
+
 OBJ = ${GALSIM}/objs
 
 EXE = ${GALSIM}/exe
@@ -34,10 +36,18 @@ $(MYCL)/schechter.h $(MYCL)/sinterp.h $(MYCL)/simdata.h $(MYCL)/reddening.h \
 $(MYCL)/sedfilter.h $(MYCL)/genefluct3d.h  $(MYCL)/pkspectrum.h \
 $(MYCL)/mass2gal.h $(MYCL)/powerspec.h $(MYCL)/matrix.h $(MYCL)/igm.h \
 $(MYCL)/hpoly.h $(MYCL)/shapelets.h $(MYCL)/em.h $(MYCL)/cat2grid.h $(MYCL)/igmstatistics.h \
-$(MYCL)/fitkbaoscale.h $(MYCL)/chisqstats.h $(MYCL)/massfunc.h $(MYCL)/testclass.h
+$(MYCL)/fitkbaoscale.h $(MYCL)/chisqstats.h $(MYCL)/massfunc.h
 
 #$(MYCL)/constcosmo.h
 #$(MYCL)/root_plots.h
+
+
+#LIBO := $(OBJ)/cosmocalcs.o $(OBJ)/geneutils.o $(OBJ)/gftdist.o \
+#$(OBJ)/schechter.o $(OBJ)/sinterp.o $(OBJ)/simdata.o $(OBJ)/reddening.o \
+#$(OBJ)/sedfilter.o $(OBJ)/genefluct3d.o  $(OBJ)/pkspectrum.o $(OBJ)/mass2gal.o \
+#$(OBJ)/powerspec.o $(OBJ)/matrix.o $(OBJ)/igm.o $(OBJ)/hpoly.o $(OBJ)/shapelets.o\
+#$(OBJ)/em.o $(OBJ)/igmstatistics.o $(OBJ)/cat2grid.o $(OBJ)/fitkbaoscale.o $(OBJ)/chisqstats.o \
+#$(OBJ)/massfunc.o
 
 LIBO := $(OBJ)/cosmocalcs.o $(OBJ)/geneutils.o $(OBJ)/gftdist.o \
 $(OBJ)/schechter.o $(OBJ)/sinterp.o $(OBJ)/simdata.o $(OBJ)/reddening.o \
@@ -46,20 +56,21 @@ $(OBJ)/powerspec.o $(OBJ)/matrix.o $(OBJ)/igm.o $(OBJ)/hpoly.o $(OBJ)/shapelets.
 $(OBJ)/em.o $(OBJ)/igmstatistics.o $(OBJ)/cat2grid.o $(OBJ)/fitkbaoscale.o $(OBJ)/chisqstats.o \
 $(OBJ)/massfunc.o $(OBJ)/testclass.o
 
+
 #$(OBJ)/root_plots.o
 
 # root libraries
 ROOTLIB   = $(shell root-config --libs)
 ROOTINC = $(shell root-config --incdir)
 
-MYLIB = -lfftw3_threads
+MYLIB = -L $(SOFT)/fftw-3.3.2/.libs -lfftw3
 MINUIT = -lMinuit
 
 
 ################################################################################
 
-all : progs tests 
-#bao
+
+all : testsimulateIGM
 
 progs : addIGMToSED analyzeBPZ baseSimulation calculateKcorrections cfhtColors \
 colorDistributions convertSEDS fitLSSTspectra lineOfSightLymanAlpha lineOfSightMagnitude \
@@ -891,16 +902,16 @@ $(OBJ)/testSimReadKcorr.o : $(PROGS)/testSimReadKcorr.cc $(LIBH)
 	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/testSimReadKcorr.o $(PROGS)/testSimReadKcorr.cc 
 
 # TEST SIMULATE IGM
-$(EXE)/testsimulateIGM : $(OBJ)/testsimulateIGM.o $(LIBO)
+$(EXE)/testsimulateIGM : $(OBJ)/testsimulateIGM.o $(OBJ)/cosmocalcs.o $(OBJ)/geneutils.o $(OBJ)/igm.o 
 	mkdir -p $(EXE)
 	mkdir -p $(ROOTOUT)
 	mkdir -p $(TESTS)
-	$(CXXLINK) -o $(EXE)/testsimulateIGM $(OBJ)/testsimulateIGM.o $(LIBO) \
+	$(CXXLINK) -o $(EXE)/testsimulateIGM $(OBJ)/testsimulateIGM.o $(OBJ)/cosmocalcs.o $(OBJ)/geneutils.o $(OBJ)/igm.o \
 	$(SOPHYAEXTSLBLIST) $(MYLIB) $(ROOTLIB) 
 
 $(OBJ)/testsimulateIGM.o : $(PROGS)/testsimulateIGM.cc $(LIBH)
 	mkdir -p $(OBJ)
-	$(CXXCOMPILE) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/testsimulateIGM.o $(PROGS)/testsimulateIGM.cc 
+	$(CXXCOMPILE) $(COMPFLAGS) -I$(MYCL) -I$(ROOTINC) -o $(OBJ)/testsimulateIGM.o $(PROGS)/testsimulateIGM.cc 
 	
 # TEST SIMULATION
 $(EXE)/testSimulation : $(OBJ)/testSimulation.o $(LIBO)
@@ -984,7 +995,7 @@ $(OBJ)/testsimdensity.o : $(PROGS)/testsimdensity.cc $(LIBH)
 $(OBJ)/%.o : $(MYCL)/%.cc $(MYCL)/%.h 
 	mkdir -p $(OBJ)
 	mkdir -p $(TESTS)
-	$(CXXCOMPILE) -I$(ROOTINC) -I$(MYCL) -o $@ $<
+	$(CXXCOMPILE) $(COMPFLAGS) -I$(ROOTINC) -I$(MYCL)  -o $@ $<
 
 #$(OBJ)genefluct3df.o: $(MYCL)genefluct3d.cc $(MYCL)genefluct3d.h
 #	$(CXXCOMPILE) -I$(MYCL) -DGEN3D_FLOAT -o $@ $(MYCL)genefluct3d.cc

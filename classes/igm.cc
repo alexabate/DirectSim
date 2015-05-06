@@ -1,10 +1,20 @@
 #include "igm.h"
-//#include <string>
-//#include <cmath>
 
+
+/*  */
+
+/******* AtomicCalcs **********************************************************/
+
+AtomicCalcs::AtomicCalcs()
+{
+  //    setGammas();
+    //    setOscillatorStrength();
+    setConstants();
+};
 
 /******* AtomicCalcs methods **************************************************/
 
+/*********
 void AtomicCalcs::setGammas()
 {
         // Found in Table 2 of Morton 2003
@@ -59,7 +69,9 @@ void AtomicCalcs::setGammas()
 
     return;
 };
+**********/
 
+/***********
 void AtomicCalcs::setOscillatorStrength()
 {
     // Absorption oscillator strength of ith Lyman line (unitless)
@@ -115,6 +127,7 @@ void AtomicCalcs::setOscillatorStrength()
 
     return;
 };
+****/
 
 void AtomicCalcs::setConstants()
 {
@@ -122,10 +135,158 @@ void AtomicCalcs::setConstants()
     freqLymanLimitInvSec_ = SPEED_OF_LIGHT_MS/WAVE_LYMANLIM_METERS;
     nLymanAlpha_ = 2;
     nLineMaxMax_ = 32;
+    nGammaMax_ = 24; 
 
     return;
 };
 
+
+double AtomicCalcs::returnWavelengthLymanSeries(int n)
+{
+  static std::vector<double> wavelength_lyman_;
+  static int init = 1;
+
+  // initialize lookup table
+  if (init) {
+    init = 0;
+    for (int i=0; i<nLineMaxMax_; i++) {
+      int k = i+1;
+      if (i==0) 
+	wavelength_lyman_.push_back(0);
+      else
+	wavelength_lyman_.push_back(WAVE_LYMANLIM_METERS/(1.-1./(k*k)));
+    }
+  }
+  
+  //  return WAVE_LYMANLIM_METERS/(1.-1./(n*n));
+  return wavelength_lyman_[n-1];
+};
+
+/********
+double AtomicCalcs::returnWavelengthAngstrLymanSeries(int n)
+{
+    return WAVE_LYMANLIM_ANGSTR/(1.-1./(n*n));
+};
+
+double AtomicCalcs::returnFrequencyLymanSeries(int n)
+{
+    double wl = returnWavelengthLymanSeries(n);
+    return SPEED_OF_LIGHT_MS/wl;
+};
+
+double AtomicCalcs::returnDopplerWidthWL(int nLine, double dopplerParamKMS)
+{
+    double ratio = dopplerParamKMS/SPEED_OF_LIGHT_KMS;
+    return returnWavelengthLymanSeries(nLine)*ratio;
+};
+
+double AtomicCalcs::returnDopplerWidthFreq(int nLine, double dopplerParamKMS)
+{
+    double ratio = dopplerParamKMS/SPEED_OF_LIGHT_KMS;
+    return returnFrequencyLymanSeries(nLine)*ratio;
+};
+
+double AtomicCalcs::returnX(double lambda, int nLine, double dopplerParam)
+{
+    double dl = (lambda - returnWavelengthLymanSeries(nLine));
+    double dw = returnDopplerWidthWL(nLine, dopplerParam);
+
+    return dl/dw;
+};
+**********/
+
+double AtomicCalcs::returnGamma(int nLine)
+{
+  static double gammaSeries_[] = {
+    6.265e8,
+    1.897e8,
+    8.127e7,
+    4.204e7,
+    2.450e7,
+    1.236e7,
+    8.252e6,
+    5.781e6,
+    4.209e6,
+    3.159e6,
+    2.431e6,
+    1.91e6, 
+    4.522e5,
+    3.932e5,
+    3.442e5,
+    3.029e5,
+    2.678e5,
+    2.381e5,
+    2.127e5,
+    1.906e5,
+    1.716e5,
+    1.549e5,
+    1.405e5,
+    1.277e5
+  };
+    int iSeries = nLine-2;
+    return gammaSeries_[iSeries];
+};
+
+double AtomicCalcs::returnOscillatorStrength(int nLine)
+{
+  static double fSeries_[] = {
+    0.4162, 
+    7.910e-2,  
+    2.899e-2,  
+    1.394e-2,
+    7.799e-3,
+    4.814e-3,
+    3.183e-3,
+    2.216e-3,
+    1.605e-3,
+    1.201e-3,
+    9.214e-4,
+    7.227e-4,
+    5.774e-4,
+    4.686e-4,
+    3.856e-4,
+    3.211e-4,
+    2.702e-4,
+    2.296e-4,
+    1.967e-4,
+    1.698e-4,
+    1.476e-4,
+    1.291e-4,
+    1.136e-4,
+    1.005e-4,
+    8.928e-5,
+    7.970e-5,
+    7.144e-5,
+    6.429e-5,
+    5.806e-5,
+    5.261e-5,
+    4.782e-5,
+    4.360e-5,
+    3.986e-5,
+    3.653e-5,
+    3.357e-5,
+    3.092e-5,
+    2.854e-5,
+    2.640e-5,
+    2.446e-5};
+
+    int iSeries = nLine-2;
+    return fSeries_[iSeries];
+};
+
+/****************
+double AtomicCalcs::returnDampingParameter(int nLine, double dopplerParamKMS)
+{
+    double li = returnWavelengthLymanSeries(nLine);
+    double gammai = returnGamma(nLine);
+    double ld = returnDopplerWidthWL(nLine, dopplerParamKMS);
+
+    double numer = li*li*gammai;
+    double denom = 4*PI*SPEED_OF_LIGHT_MS*ld;
+
+    return numer/denom;
+};
+*************/
 
 void AtomicCalcs::printEverything(int nLine, double dopplerPar)
 {
@@ -619,7 +780,8 @@ void ProbabilityDistAbsorbers::simulateAbsorber(double zCurrent, double& zNext,
 VoigtProfile::VoigtProfile(double dopplerPar, int nLine)
 : dopplerPar_(dopplerPar), nLine_(nLine)
 {
-    double nGammaMax = gammaSeries_.size() + 1;
+  //    double nGammaMax = gammaSeries_.size() + 1;
+    double nGammaMax = nGammaMax_ + 1;
     if(nLine > nGammaMax) {
         cout << "STARTING LINE IS TOO LARGE, NO GAMMA VALUES FOR THAT TRANSITION"
                 << endl;

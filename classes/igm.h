@@ -48,15 +48,13 @@ class AtomicCalcs
 {
 public:
     /** Constructor (sets constants) */
-    AtomicCalcs() { setGammas(); setOscillatorStrength(); setConstants(); };
+    //AtomicCalcs() { setGammas(); setOscillatorStrength(); setConstants(); };
+    AtomicCalcs();
 
 
     /** Return the Lyman Series wavelength in meters
         @param    n is the starting energy level for a Lyman transition (down to n=1) (so minimum n is 2)   */
-    double returnWavelengthLymanSeries(int n) {
-        if (n<2) throw ParmError("ERROR! Lyman transition cannot start at n<2");
-        return WAVE_LYMANLIM_METERS/(1.-1./(n*n));
-        };
+    double returnWavelengthLymanSeries(int n) ;
         
     
     /** Return the Lyman Series wavelength in Angstroms
@@ -109,26 +107,12 @@ public:
 
     /** Return the damping constant for the Lyman line beginning at n     
         @param n             starting energy level of the Lyman line transition                             */
-    double returnGamma(int n) {
-        if (n<2 || n>=gammaSeries_.size()+2) {
-            cout <<"ERROR! n = "<< n << endl;
-            throw ParmError("ERROR! Cannot return gammaSeries for this Lyman line number");
-            }
-        int iSeries = n-2;
-        return gammaSeries_[iSeries];
-        };
+    double returnGamma(int nLine);
 
 
     /** Return the Oscillator Strength for the Lyman line beginning at n  
         @param n             starting energy level of the Lyman line transition                             */
-    double returnOscillatorStrength(int n) {
-        if (n<2 || n>=fSeries_.size()+2) {
-            cout <<"ERROR! n = "<< n << endl;
-            throw ParmError("ERROR! Cannot return oscillator strength for this Lyman line number");
-            }
-        int iSeries = n-2;
-        return fSeries_[iSeries];
-        };
+    double returnOscillatorStrength(int nLine);
 
 
     /** Return (unitless) damping parameter a 
@@ -155,18 +139,18 @@ public:
     /** Return the maximum energy level allowed for a Lyman line transition calculation                     */
     int returnnLineMax() { return nLineMaxMax_; };
 
-protected:
-    void setGammas();
-    void setOscillatorStrength();
+    //    void setGammas();
+    //    void setOscillatorStrength();
     void setConstants();
 
 protected:
     std::vector<double> gammaSeries_;   /**< damping constant of the Lyman series in s^-1 */
-    std::vector<double> fSeries_;       /**< oscillator strength of the Lyman series      */
+    //    std::vector<double> fSeries_;       /**< oscillator strength of the Lyman series      */
     double sigmaLymanLimitCM2_;         /**< cross-section at the lyman limit in cm^2     */
     double freqLymanLimitInvSec_;       /**< frequency of the lyman limit in s^-1         */
     int nLymanAlpha_;                   /**< starting level of a lyman alpha transition   */
     int nLineMaxMax_;                   /**< maximum Lyman series line possible to use    */
+    int nGammaMax_;
 };
 
 
