@@ -1,0 +1,4 @@
+#! /bin/bash
+
+g++ -o symmetrize symmetrize.cc
+./symmetrize
