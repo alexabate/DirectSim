@@ -75,24 +75,38 @@ int main(int narg, char* arg[])
     
     //--- decoding command line arguments 
 
-//for general use 
+//LC: for general use 
 //    string outloc; 
 //    string FILTLOC="./filters/";
 //    string SEDLOC="./SEDs/";
 //    string TRANSLOC="./transmission/";
 
-//hard coded in the subdirectories as I'm working through this 
-    string outloc= "/home/lidenscheng/MK_DirectSim/testfiles/StarburstLOS1Yr/";
+
+
+//LC: hard coded in the subdirectories as I'm working through this 
+//    string outloc= "/home/lidenscheng/MK_DirectSim/newTransmissions/meanTrans_1YrErrors/";
+//    string outloc= "/home/lidenscheng/MK_DirectSim/newTransmissions/meanTrans_10YrErrors/";
+
+      string outloc ="/home/lidenscheng/MK_DirectSim/"; 
+
+//    string outloc= "/home/lidenscheng/MK_DirectSim/testfiles/StarburstLOS1Yr/";
 //    string outloc= "/home/lidenscheng/MK_DirectSim/testfiles/StarburstLOS10Yr/";
+
     string FILTLOC= "/home/lidenscheng/MK_DirectSim/filters/";
 //    string SEDLOC= "/home/lidenscheng/MK_DirectSim/SEDs/";
     string SEDLOC= "/home/lidenscheng/DirectSim/SEDs/"; 
-    string TRANSLOC= "/home/lidenscheng/MK_DirectSim/transmission/";
+
+//    string TRANSLOC= "/home/lidenscheng/MK_DirectSim/transmission/";
 //    string TRANSLOC= "/home/lidenscheng/MK_DirectSim/meanIGMTransmissions/";
 
+    string TRANSLOC= "/home/lidenscheng/MK_DirectSim/newTransmissions/meanTransmissions/";
+//    string TRANSLOC= "/home/lidenscheng/MK_DirectSim/newTransmissions/";
+
     string locs;
-    int nz = 400;    //number of lines of sight 
-    double z = 1.8; //constant redshift 
+//3 program arguments: 
+    int nz;    //number of lines of sight 
+    double z; //constant redshift 
+    int nYear; //photometric errors year 
 
 	char c;
     while((c = getopt(narg,arg,"ho:l:z:n:")) != -1) {
@@ -111,7 +125,10 @@ int main(int narg, char* arg[])
 	            }
 	            break;
 	        case 'z' :
-	            sscanf(optarg,"%lf",&z);
+//	            sscanf(optarg,"%lf",&z);
+	  	    z= atof(arg[2]);
+	            nz= atof(arg[3]); 
+	            nYear= atof(arg[4]); 
 	            break;
 	        case 'n' :
 	            sscanf(optarg,"%d",&nz);
@@ -155,6 +172,8 @@ int main(int narg, char* arg[])
     char *c1,*c2,*c3;
     
     tmp1 = "FILTLOC=" + FILTLOC; 
+//    tmp1 = FILTLOC;
+
     c1 = &tmp1[0];
     putenv(c1);
     
@@ -173,16 +192,17 @@ int main(int narg, char* arg[])
     ss << z;
     vector<string> outfiles;
 
-    outfiles.push_back(outloc + "SB3_B2004a_" + ss.str() + "z_Mags.txt");
-    outfiles.push_back(outloc + "SB2_B2004a_" + ss.str() + "z_Mags.txt");
-    outfiles.push_back(outloc + "ssp_25Myr_z008_" + ss.str() + "z_Mags.txt");
-    outfiles.push_back(outloc + "ssp_5Myr_z008_" + ss.str() + "z_Mags.txt");
+//output names when using all the LOS transmission files 
+//    outfiles.push_back(outloc + "SB3_B2004a_" + ss.str() + "z_Mags.txt");
+//    outfiles.push_back(outloc + "SB2_B2004a_" + ss.str() + "z_Mags.txt");
+//    outfiles.push_back(outloc + "ssp_25Myr_z008_" + ss.str() + "z_Mags.txt");
+//    outfiles.push_back(outloc + "ssp_5Myr_z008_" + ss.str() + "z_Mags.txt");
 
-//meanIGM files use constant IGM (IGM averaged over 400LOS)
-//    outfiles.push_back(outloc + "meanIGM_SB3_B2004a_1%_" + ss.str() + "z_Mags.txt");
-//    outfiles.push_back(outloc + "meanIGM_SB2_B2004a_1%_" + ss.str() + "z_Mags.txt");
-//    outfiles.push_back(outloc + "meanIGM_ssp_25Myr_z008_1%_" + ss.str() + "z_Mags.txt");
-//    outfiles.push_back(outloc + "meanIGM_ssp_5Myr_z008_1%_" + ss.str() + "z_Mags.txt");
+//output names when using average tranmission over 9000 LOS
+    outfiles.push_back(outloc + "meanIGM_SB3_B2004a_" + ss.str() + "z_Mags.txt");
+    outfiles.push_back(outloc + "meanIGM_SB2_B2004a_" + ss.str() + "z_Mags.txt");
+    outfiles.push_back(outloc + "meanIGM_ssp_25Myr_z008_" + ss.str() + "z_Mags.txt");
+    outfiles.push_back(outloc + "meanIGM_ssp_5Myr_z008_" + ss.str() + "z_Mags.txt");
 
     /*************************************
     *     Initialise main calc class     *
@@ -198,7 +218,9 @@ int main(int narg, char* arg[])
     *************************************/
 
 
-    string filterFile = "LSST.filters";
+    string filterFile = "LSST.filters"; //list of updated LSST filters 
+//    string filterFile = "testing.filters"; //list of old LSST filters
+
     ReadFilterList lsstFilters(filterFile);
     lsstFilters.readFilters(lmin, lmax);
     vector<Filter*> filterArray = lsstFilters.getFilterArray();
@@ -236,8 +258,8 @@ int main(int narg, char* arg[])
     *     Read in mean transmission files or LOS transmission files  *
     ******************************************************************/
 
-    string transFile = "Transmission_" + ss.str() + "z.list";
-//    string transFile = "meanTransmission_" + ss.str() + "z.list";
+//    string transFile = "Transmissions_" + ss.str() + "z.list";
+    string transFile = "meanTransmissions_" + ss.str() + "z.list";
     vector<string> transFileList = returnFileList(transFile);
     
     // AA notes:
@@ -409,8 +431,8 @@ int main(int narg, char* arg[])
     TVector<r_8> CugR(nz), CgrR(nz), CriR(nz), CizR(nz), CzyR(nz), CyuR(nz);
 
 // Either 1Yr or 10Yr LSST photometric errors
-//    int nYear = 10; // could as as prog arg
-    int nYear = 1;
+//    int nYear = 10; // could be prog arg
+//    int nYear = 1;
     
     // AA: No longer needs these numbers (they are coded within SimData class)
     // Number of visits per year (Table 1, Ivezic et al 2008)
