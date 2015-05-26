@@ -597,7 +597,9 @@ void Filter::readFilter(string& fname, double lmin, double lmax, int npt, int nC
 		cout <<"    Location of filter files are "<< Fplace <<endl;
 		}
 
-	string filename = Fplace + fname;
+//	string filename = Fplace + fname;
+      string filename = fname;
+
 	// zero_outside = true: then interpolation sets stuff to zero outside xmin,xmax
 	// definitely want this to be true for the filter
     ReadXYFromFile(filename, lmin, lmax, npt, nComments, zero_outside);
