@@ -54,7 +54,7 @@ $(OBJ)/schechter.o $(OBJ)/sinterp.o $(OBJ)/simdata.o $(OBJ)/reddening.o \
 $(OBJ)/sedfilter.o $(OBJ)/genefluct3d.o  $(OBJ)/pkspectrum.o $(OBJ)/mass2gal.o \
 $(OBJ)/powerspec.o $(OBJ)/matrix.o $(OBJ)/igm.o $(OBJ)/hpoly.o $(OBJ)/shapelets.o\
 $(OBJ)/em.o $(OBJ)/igmstatistics.o $(OBJ)/cat2grid.o $(OBJ)/fitkbaoscale.o $(OBJ)/chisqstats.o \
-$(OBJ)/massfunc.o $(OBJ)/testclass.o
+$(OBJ)/massfunc.o
 
 
 #$(OBJ)/root_plots.o
