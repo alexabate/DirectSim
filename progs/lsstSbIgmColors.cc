@@ -85,9 +85,7 @@ int main(int narg, char* arg[])
 
 //LC: hard coded in the subdirectories as I'm working through this 
 //    string outloc= "/home/lidenscheng/MK_DirectSim/newTransmissions/meanTrans_1YrErrors/";
-//    string outloc= "/home/lidenscheng/MK_DirectSim/newTransmissions/meanTrans_10YrErrors/";
-
-      string outloc ="/home/lidenscheng/MK_DirectSim/"; 
+    string outloc= "/home/lidenscheng/MK_DirectSim/newTransmissions/meanTrans_10YrErrors/";
 
 //    string outloc= "/home/lidenscheng/MK_DirectSim/testfiles/StarburstLOS1Yr/";
 //    string outloc= "/home/lidenscheng/MK_DirectSim/testfiles/StarburstLOS10Yr/";
