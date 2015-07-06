@@ -82,23 +82,18 @@ int main(int narg, char* arg[])
 //    string TRANSLOC="./transmission/";
 
 
-
 //LC: hard coded in the subdirectories as I'm working through this 
 //    string outloc= "/home/lidenscheng/MK_DirectSim/newTransmissions/meanTrans_1YrErrors/";
-    string outloc= "/home/lidenscheng/MK_DirectSim/newTransmissions/meanTrans_10YrErrors/";
-
-//    string outloc= "/home/lidenscheng/MK_DirectSim/testfiles/StarburstLOS1Yr/";
-//    string outloc= "/home/lidenscheng/MK_DirectSim/testfiles/StarburstLOS10Yr/";
+//    string outloc= "/home/lidenscheng/MK_DirectSim/newTransmissions/meanTrans_10YrErrors/";
+    string outloc= "/home/lidenscheng/MK_DirectSim/newTransmissions/LOS/";
 
     string FILTLOC= "/home/lidenscheng/MK_DirectSim/filters/";
-//    string SEDLOC= "/home/lidenscheng/MK_DirectSim/SEDs/";
+
     string SEDLOC= "/home/lidenscheng/DirectSim/SEDs/"; 
 
-//    string TRANSLOC= "/home/lidenscheng/MK_DirectSim/transmission/";
-//    string TRANSLOC= "/home/lidenscheng/MK_DirectSim/meanIGMTransmissions/";
+//    string TRANSLOC= "/raid00/lidenscheng/newTransmissions/meanTransmissions/";
+    string TRANSLOC= "/raid00/lidenscheng/newTransmissions/";
 
-    string TRANSLOC= "/home/lidenscheng/MK_DirectSim/newTransmissions/meanTransmissions/";
-//    string TRANSLOC= "/home/lidenscheng/MK_DirectSim/newTransmissions/";
 
     string locs;
 //3 program arguments: 
@@ -191,16 +186,16 @@ int main(int narg, char* arg[])
     vector<string> outfiles;
 
 //output names when using all the LOS transmission files 
-//    outfiles.push_back(outloc + "SB3_B2004a_" + ss.str() + "z_Mags.txt");
-//    outfiles.push_back(outloc + "SB2_B2004a_" + ss.str() + "z_Mags.txt");
-//    outfiles.push_back(outloc + "ssp_25Myr_z008_" + ss.str() + "z_Mags.txt");
-//    outfiles.push_back(outloc + "ssp_5Myr_z008_" + ss.str() + "z_Mags.txt");
+    outfiles.push_back(outloc + "SB3_B2004a_" + ss.str() + "z_Mags.txt");
+    outfiles.push_back(outloc + "SB2_B2004a_" + ss.str() + "z_Mags.txt");
+    outfiles.push_back(outloc + "ssp_25Myr_z008_" + ss.str() + "z_Mags.txt");
+    outfiles.push_back(outloc + "ssp_5Myr_z008_" + ss.str() + "z_Mags.txt");
 
 //output names when using average tranmission over 9000 LOS
-    outfiles.push_back(outloc + "meanIGM_SB3_B2004a_" + ss.str() + "z_Mags.txt");
-    outfiles.push_back(outloc + "meanIGM_SB2_B2004a_" + ss.str() + "z_Mags.txt");
-    outfiles.push_back(outloc + "meanIGM_ssp_25Myr_z008_" + ss.str() + "z_Mags.txt");
-    outfiles.push_back(outloc + "meanIGM_ssp_5Myr_z008_" + ss.str() + "z_Mags.txt");
+//    outfiles.push_back(outloc + "meanIGM_SB3_B2004a_" + ss.str() + "z_Mags.txt");
+//    outfiles.push_back(outloc + "meanIGM_SB2_B2004a_" + ss.str() + "z_Mags.txt");
+//    outfiles.push_back(outloc + "meanIGM_ssp_25Myr_z008_" + ss.str() + "z_Mags.txt");
+//    outfiles.push_back(outloc + "meanIGM_ssp_5Myr_z008_" + ss.str() + "z_Mags.txt");
 
     /*************************************
     *     Initialise main calc class     *
@@ -256,8 +251,8 @@ int main(int narg, char* arg[])
     *     Read in mean transmission files or LOS transmission files  *
     ******************************************************************/
 
-//    string transFile = "Transmissions_" + ss.str() + "z.list";
-    string transFile = "meanTransmissions_" + ss.str() + "z.list";
+    string transFile = "Transmissions_" + ss.str() + "z.list";
+//    string transFile = "meanTransmissions_" + ss.str() + "z.list";
     vector<string> transFileList = returnFileList(transFile);
     
     // AA notes:
@@ -453,7 +448,7 @@ int main(int narg, char* arg[])
     RandomGenerator rg;
     
     // AA: code m_i=24. so we know what it is
-    double imag_fixed = 24.; // can make this prog arg
+    double imag_fixed = 25.; // can make this prog arg
 
     // AA: this class no longer simulates magnitude errors (just the true magnitudes)
     //SimData simData(sedArray, filterArray, su, rg);
