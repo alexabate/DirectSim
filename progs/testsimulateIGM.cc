@@ -6,6 +6,7 @@
 #include <math.h>
 #include <typeinfo>
 #include <sstream>
+#include <algorithm>
 
 #include "fiosinit.h"
 #include "mydefrg.h"
@@ -17,7 +18,6 @@
 #include "time.h"
 #include "igm.h"
 #include <vector>
-
 
 //class ACalcs {
 //    static double sigmaLymanLimitCM2;         /**< cross-section at the lyman limit in cm^2     */
@@ -54,21 +54,26 @@ int main(int narg, char* arg[]) {
     // ********************************
 
     cout << "       Initializing the Distributions" << endl;
-    HIColumnDensity colDensityDist;
-    AbsorberRedshiftDistribution zDist;
+
+    HIColumnDensityLAF colDensityDistLAF;
+    HIColumnDensityDLA colDensityDistDLA;
+
+    AbsorberRedshiftDistributionLAF zDistLAF;
+    AbsorberRedshiftDistributionDLA zDistDLA;
+
     DopplerParDistribution bDist;
 
-    ProbabilityDistAbsorbers pdist(rg, zDist, colDensityDist, bDist);
+    ProbabilityDistAbsorbers pdist(rg, zDistLAF, zDistDLA, colDensityDistLAF, colDensityDistDLA, bDist);
 
 
     // ********************************
     // Create some vectors and other Variables
     // ********************************
 
-    vector<double> redshifts;
-    vector<double> columnDensities;
-    vector<double> dopplerPars;
-    vector<LineOfSightTrans> LoSvector;
+    vector<double> redshiftsLAF, redshiftsDLA;
+    vector<double> columnDensitiesLAF, columnDensitiesDLA;
+    vector<double> dopplerParsLAF, dopplerParsDLA;
+    vector<LineOfSightTrans> LoSvectorLAF, LoSvectorDLA;
     string outfile = "";
 
 
@@ -77,12 +82,13 @@ int main(int narg, char* arg[]) {
     // ********************************
 
     int nmax = 10;                                  //Highest Lyman Line to go to
-    int nLoS = 400;                                 //The number of lines of sight to examine for each source redshift
-    double zSource = 1.8;                           //Starting redshift of the background source
+    int nLoS = 200;                                 //The number of lines of sight to examine for each source redshift
+    double zSource;                           	    //Source galaxy redshift 
     int nSequence = -1;                             //Sequence number for determining multiple runs
 
     string transFileName = "";                      //File name for the Transmission file
-    string LoSFileName = "";                        //File name for file containing LoS info
+    string LoSFileNameLAF = "";                     //File name for file containing LAF LoS (z, NHI, b) 
+    string LoSFileNameDLA = "";                     //File name for file containing DLA LoS (z, NHI, b)
     string outputPath = "./testfiles/";             //Path from pwd to output files
 
     //--- decoding command line arguments 
@@ -112,120 +118,136 @@ int main(int narg, char* arg[]) {
 
     cout << "nSequence: " << nSequence << " nLoS: " << nLoS << " zSource: " << zSource << endl;
 
-    // Modify the wavelength range based upon the galaxy redshift
+    // Modify the wavelength range based upon the source galaxy redshift
     double lambdaMinA = 3000.;                    //Minimum WL in Angstroms (LSST minimum wavelength)
     double lambdaMaxA = 100. + 1250.*(1+zSource); //Maximum WL in Angstroms (About 100A past Lya from an absorber at zSource) (<11,000A)
 
-// Incorrect way for min and max wavelength 
-//    double lambdaMinA = 3000.*(1.+zSource-0.1)/(zSource+1.);         //Minimum WL in Angstroms (LSST minimum wavelength)
-//    double lambdaMaxA = 3000.;                      //Maximum WL in Angstroms (About 100A past Lya from an absorber at zSource) (<11,000A)
+    double lambdaResA = 0.1;                      //WL Resolution in Angstroms
 
-    double lambdaResA = 0.1;                        //WL Resolution in Angstroms
-//    double lambdaResA = 0.125;                        //WL Resolution in Angstroms
-
-    double zAbsorberMax = zSource;// + zSource*0.1;    //Maximum absorber redshift
-    double zAbsorberStart = 0.0;                    //Starting absorber redshift   
+    double zAbsorberMax = zSource;                //Maximum absorber redshift
+    double zAbsorberStart = 0.0;                  //Starting absorber redshift   
 
     stringstream ss;
     ss << zSource << "zSource_" << nLoS << "nLos_" << nmax << "LynMax";
     if (nSequence>0) ss << "_" << nSequence;
     ss << ".dat";
     transFileName = outputPath + "Transmission_" + ss.str();
-    LoSFileName = outputPath + "LineOfSightData_" + ss.str();
+    LoSFileNameLAF = outputPath + "LineOfSightData_LAF_" + ss.str();
+    LoSFileNameDLA = outputPath + "LineOfSightData_DLA_" + ss.str();
 
     string avgNAbsorbsOutFile = outputPath + "avgNAbsorbers.out";
 
-    // ********************************
-    // Initialize Clock
-    // ********************************
-
-/*
-    clock_t starttime, endtime;
-    starttime = clock();
-*/
 
     // ********************************
-    // Count number of Absorbers per redshift
-    // ********************************
-/*
-    ofstream countAbsorbs;
-    countAbsorbs.open(avgNAbsorbsOutFile.c_str());
-
-    int totalAbs = 0;
-
-    for(int j=0; j<16; j++) {
-        for(int i=0; i<nLoS; i++) {
-            pdist.simulateLineOfSight(zAbsorberStart, zAbsorberMax+j*0.1, redshifts, dopplerPars,
-                                      columnDensities, outfile);
-
-            totalAbs += columnDensities.size();
-
-            redshifts.clear();
-            dopplerPars.clear();
-            columnDensities.clear();
-        }
-
-        countAbsorbs << zAbsorberMax+j*0.1 << "     " << totalAbs/400. << endl;
-        totalAbs = 0;
-    }
-
-    countAbsorbs.close();
-// */
-
-    // ********************************
-    // Simulate nLoS lines of sight and record them to a file
+    // Simulate nLoS for LAF absorbers AND nLoS for DLA absorbers
+    // simulate as 2 sets of lines of sight
+    // record absorbers info to 2 files  
     // ********************************
 
-// /*
-    ofstream LoSData;
-    LoSData.open(LoSFileName.c_str(),ios::out | ios::binary);
+    ofstream LoSDataLAF, LoSDataDLA;
 
-    LoSData.write((char*)&zSource, sizeof(double));
-    LoSData.write((char*)&nLoS, sizeof(int));
+//    LoSDataLAF.open(LoSFileNameLAF.c_str(),ios::out | ios::binary);
+//    LoSDataDLA.open(LoSFileNameDLA.c_str(),ios::out | ios::binary);
+
+    LoSDataLAF.open(LoSFileNameLAF.c_str(), ofstream::out);
+    LoSDataDLA.open(LoSFileNameDLA.c_str(), ofstream::out);
+
+    LoSDataLAF.write((char*)&zSource, sizeof(double));
+    LoSDataDLA.write((char*)&zSource, sizeof(double));
+
+    LoSDataLAF.write((char*)&nLoS, sizeof(int));
+    LoSDataDLA.write((char*)&nLoS, sizeof(int));
+
+  
+
+    // ********************************
+    //loop to simulate LAF absorbers for nLoS
+    // ********************************
 
     for(int i=0; i<nLoS; i++) {
 
-      if (i%100 == 0 ) 	cout << "nSequence: " << nSequence << ". Line of Sight: " << i << endl;
+//      if (i%100 == 0 ) 	cout << "nSequence: " << nSequence << ". Line of Sight: " << i << endl;
 
-        pdist.simulateLineOfSight(zAbsorberStart, zAbsorberMax, redshifts, dopplerPars,
-                                  columnDensities, outfile);
+        pdist.simulateLineOfSightLAF(zAbsorberStart, zAbsorberMax, redshiftsLAF, dopplerParsLAF,
+                                  columnDensitiesLAF, outfile);
 
-        LineOfSightTrans lineOfSight(redshifts, dopplerPars, columnDensities);
+        LineOfSightTrans lineOfSight(redshiftsLAF, dopplerParsLAF, columnDensitiesLAF);
         lineOfSight.setMaxLine(nmax);
         lineOfSight.setLymanAll();
 
-	int nredshifts = redshifts.size();
-	LoSData.write((char*)&nredshifts, sizeof(int));
-        for(int j=0; j<redshifts.size(); j++)
-	  LoSData.write((char*)&redshifts[j],sizeof(double));
+	int nredshifts = redshiftsLAF.size();
+	LoSDataLAF.write((char*)&nredshifts, sizeof(int));
+        for(int j=0; j<redshiftsLAF.size(); j++)
+	  LoSDataLAF.write((char*)&redshiftsLAF[j],sizeof(double));
 
-	int ndopplers = dopplerPars.size();
-	LoSData.write((char*)&ndopplers, sizeof(int));
-        for(int j=0; j<dopplerPars.size(); j++)
-	  LoSData.write((char*)&dopplerPars[j],sizeof(double));
+	int ndopplers = dopplerParsLAF.size();
+	LoSDataLAF.write((char*)&ndopplers, sizeof(int));
+        for(int j=0; j<dopplerParsLAF.size(); j++)
+	  LoSDataLAF.write((char*)&dopplerParsLAF[j],sizeof(double));
 
-	int ncoldens = columnDensities.size();
-	LoSData.write((char*)&ncoldens, sizeof(int));
-        for(int j=0; j<columnDensities.size(); j++)
-	  LoSData.write((char*)&columnDensities[j], sizeof(double));
+	int ncoldens = columnDensitiesLAF.size();
+	LoSDataLAF.write((char*)&ncoldens, sizeof(int));
+        for(int j=0; j<columnDensitiesLAF.size(); j++)
+	  LoSDataLAF.write((char*)&columnDensitiesLAF[j], sizeof(double));
 
 
-        LoSvector.push_back(lineOfSight);
-        redshifts.clear();
-        dopplerPars.clear();
-        columnDensities.clear();
+        LoSvectorLAF.push_back(lineOfSight);
+        redshiftsLAF.clear();
+        dopplerParsLAF.clear();
+        columnDensitiesLAF.clear();
     }
     cout << "nSequence: " << nSequence << ". End Line of Sight simulations." << endl;
 
-    LoSData.close();
+    LoSDataLAF.close();
 
-// */
+
+
+    // ********************************
+    //loop to simulate DLA absorbers for nLoS
+    // ********************************
+
+
+    for(int i=0; i<nLoS; i++) {
+
+//      if (i%100 == 0 ) 	cout << "nSequence: " << nSequence << ". Line of Sight: " << i << endl;
+
+        pdist.simulateLineOfSightDLA(zAbsorberStart, zAbsorberMax, redshiftsDLA, dopplerParsDLA,
+                                  columnDensitiesDLA, outfile);
+
+        LineOfSightTrans lineOfSight(redshiftsDLA, dopplerParsDLA, columnDensitiesDLA);
+        lineOfSight.setMaxLine(nmax);
+        lineOfSight.setLymanAll();
+
+	int nredshifts = redshiftsDLA.size();
+	LoSDataDLA.write((char*)&nredshifts, sizeof(int));
+        for(int j=0; j<redshiftsDLA.size(); j++)
+	  LoSDataDLA.write((char*)&redshiftsDLA[j],sizeof(double));
+
+	int ndopplers = dopplerParsDLA.size();
+	LoSDataDLA.write((char*)&ndopplers, sizeof(int));
+        for(int j=0; j<dopplerParsDLA.size(); j++)
+	  LoSDataDLA.write((char*)&dopplerParsDLA[j],sizeof(double));
+
+	int ncoldens = columnDensitiesDLA.size();
+	LoSDataDLA.write((char*)&ncoldens, sizeof(int));
+        for(int j=0; j<columnDensitiesDLA.size(); j++)
+	  LoSDataDLA.write((char*)&columnDensitiesDLA[j], sizeof(double));
+
+
+        LoSvectorDLA.push_back(lineOfSight);
+        redshiftsDLA.clear();
+        dopplerParsDLA.clear();
+        columnDensitiesDLA.clear();
+    }
+    cout << "nSequence: " << nSequence << ". End Line of Sight simulations." << endl;
+
+    LoSDataDLA.close();
+
+
 
     // ********************************
     // Make and write the wavelength vector
     // ********************************
-
-// /*
 
     cout << "nSequence: " << nSequence <<  ". Preparing transmission data." << endl;
     ofstream transmissionData;
@@ -252,30 +274,26 @@ int main(int narg, char* arg[]) {
     double endmark = -100.0;
     transmissionData.write((char*)&endmark, sizeof(double));
 
-    //    transmissionData << endl;
-//    transmissionData << " ";
-
-// */
 
     // ********************************
     // Calculate the Transmission
+    // Add each LAF line of sight to each DLA line of sight
+    // transmission should then be exp(-tau_LAF)*exp(-tau_DLA)
     // ********************************
 
-// /*
 
     cout << "nSequence: " << nSequence << ". Writing transmission data." << endl;
     int lineLength = 0;
 
     for(int k=0; k<nLoS; k++) {
-      //      cout << "Line of Sight: " << k << endl;
-      if (k%100 == 0 ) 	cout << "nSequence: " << nSequence << ". Line of Sight: " << k << endl;
+//      if (k%100 == 0 ) 	cout << "nSequence: " << nSequence << ". Line of Sight: " << k << endl;
 
       vector<double> transmission;
       for(int i=0; i<wavelengths.size(); i++) {
-	double transWL = LoSvector[k].returnTransmission(wavelengths[i], zSource);
+
+	double transWL = LoSvectorLAF[k].returnTransmission(wavelengths[i], zSource) * LoSvectorDLA[k].returnTransmission(wavelengths[i], zSource);
 	transmission.push_back(transWL);
       }
-      //      cout << "  Obtained transmission." << endl;
 
       for(int i=0; i<transmission.size(); i++) {
 	//	transmissionData << transmission[i] << " ";
@@ -287,36 +305,13 @@ int main(int narg, char* arg[]) {
       double endmark = -100;
       transmissionData.write((char*)&endmark, sizeof(double));
 
-      //      transmissionData << endl;
-      //      cout << "  Wrote transmission." << endl;
-//	transmissionData << " ";
-      
-//      cout << "Transmission size: " << transmission.size() << endl;
     }
 
     transmissionData.close();
 
     cout << "nSequence: " << nSequence << ". Finished IGM transmission simulations." << endl;
-// */
 
-
-    // ********************************
-    // End clock and output time
-    // ********************************
-/*
-    endtime = clock();
-    float runTimeTicks = ((float)endtime - (float)starttime);
-    float runTimeSeconds = runTimeTicks / CLOCKS_PER_SEC;
-
-    string clockFileName = outputPath + "clock_" + ss.str();
-    ofstream clockOutput;
-    clockOutput.open(clockFileName.c_str());
-    clockOutput << "Run time was " << runTimeSeconds << " for " << nLoS
-                << " lines of sight." << endl;
-    clockOutput.close();
-    
-
-*/
     return 0;
 };
+
 
