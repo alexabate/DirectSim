@@ -1,6 +1,8 @@
 /**
  * @file  igm.h
  * @brief Contains classes that provide functions to Monte Carlo simulate the IGM
+ * 
+ * LC: Contains Inoue and Iwata 2014 method, Madau method, and Meiksin method 
  *
  * Could add more information here I think
  *
@@ -21,6 +23,7 @@
 #include <fstream>
 #include <vector>
 #include <string>
+#include <algorithm> 
 
 // sophya
 // Sophya update v2.3 June 2013 replaces genericfunc with classfunc
@@ -34,7 +37,6 @@
 #include "constcosmo.h"
 #include "geneutils.h"
 #include "sinterp.h"
-
 
 
 /** @class AtomicCalcs
@@ -154,81 +156,84 @@ protected:
 };
 
 
-/** HIColumnDensity
- *
- * Class to calculate the HI column density distribution function
- * Based on Inoue & Iwata 2008 eqn 4 g(N_HI)
+
+
+/** HIColumnDensityLAF 
+ * Inoue 2014 
+ * class currently just holds values of constants
+ * no normalization because not normalizing like paper for now 
  *
  */
-class HIColumnDensity
+class HIColumnDensityLAF
 {
 public:
-    HIColumnDensity();
+    HIColumnDensityLAF();
 
-    /** Calculate the normalization factor for the column density dist */
-    void normalizeDist();
-
-    /** Given upper and lower bounds, numerically integrate a power law
-        @param low      The lower bound on the distribution
-        @param high     The upper bound on the distribution
-        @param power    The power of the power law to integate          */
-    double integratePowerLaw(double low, double high, double power);
-
-    /** Given a column density, return the probability of encountering a
-        absorber with that column density                               */
-    double returnColDensityDist(double NHI);
-
-    /** Return probability for the case when the column density is less
-        than Nc_                                                        */
-    double returnFirstPowerLaw(double NHI);
-
-    /** Return probability for the case when the column density is 
-        larger than Nc_                                                 */
-    double returnSecondPowerLaw(double NHI);
-
-    /** Return the value obtained for the normalization constant        */
-    double returnNormB();
+//    void normalizeDist();
 
     /** Functions that pass the various members variables by reference  */
-    void returnPowerLawIndex(double &beta1, double &beta2);
+    void returnPowerLawIndex(double &betaLAF);
     void returnColDensityLimits(double &Nl, double &Nu);
     void returnColDensityBreak(double &Nc);
-
-    /** Overload the function call operator to return the probability
-        of encountering a cloud with a specific column density          */
-    virtual double operator()(double NHI)
-        { return returnColDensityDist(NHI); }
-
-    /** Write the column density distribution to a file, log-spaced
-        @param outfile Name of file to write to
-        @param dLog    Log of step in column density values
-        @param nStep   Number of column density values
-     */
-    //Copied from Alex's version
-    void writeToFile(std::string outfile, double dLog, int nStep);
 
     void testClass();
 
 protected:
-    double beta1_;      /**< Power for the lower power law          */
-    double beta2_;      /**< Power for the upper power law          */
+    double betaLAF_;      /**< Power for the LAF power law          */
     double Nl_;         /**< Low bound for the column densities     */
     double Nc_;         /**< Upper bound for the column densities   */
     double Nu_;         /**< The central distrbution break density  */
-    double normB_;      /**< The normalization constant             */
+//    double normB_;      /**< The normalization constant             */
 };
 
-/** AbsorberRedshiftDistribution
- *
- * Class to calculate the absorber redshift distribution function
- * Based on Inoue & Iwata 2008 eqn 5 f(z)
+
+
+
+
+/** HIColumnDensityDLA 
+ * Inoue 2014 
+ * class currently just holds values of constants
+ * no normalization because not normalizing like paper for now 
  *
  */
-class AbsorberRedshiftDistribution
+class HIColumnDensityDLA
+{
+public:
+    HIColumnDensityDLA();
+
+//    void normalizeDist();
+
+    /** Functions that pass the various members variables by reference  */
+    void returnPowerLawIndex(double &betaDLA);
+    void returnColDensityLimits(double &Nl, double &Nu);
+    void returnColDensityBreak(double &Nc);
+
+    void testClass();
+
+protected:
+    double betaDLA_;      /**< Power for the DLA power law          */
+    double Nl_;         /**< Low bound for the column densities     */
+    double Nc_;         /**< Upper bound for the column densities   */
+    double Nu_;         /**< The central distrbution break density  */
+//    double normB_;      /**< The normalization constant             */
+};
+
+
+
+
+
+
+/** AbsorberRedshiftDistributionLAF
+ *
+ * Class to calculate the absorber redshift distribution function for LAF
+ * Based on Inoue 2014 eqn 6 f(z)
+ *
+ */
+class AbsorberRedshiftDistributionLAF 
 {
 public:
     /** Constructor */
-    AbsorberRedshiftDistribution();
+    AbsorberRedshiftDistributionLAF();
 
     /** Return redshift distribution at value given */
     double returnRedshiftDist(double z);
@@ -243,10 +248,10 @@ public:
     double returnThirdPowerLaw(double z);
 
     /** Return the power law indices */
-    void returnPowerLawIndex(double &g1, double &g2, double &g3);
+    void returnPowerLawIndex(double &g1LAF, double &g2LAF, double &g3LAF);
 
     /** Return the redshift at the breaks */
-    void returnRedshiftBreaks(double &z1, double &z2);
+    void returnRedshiftBreaks(double &z1LAF, double &z2LAF);
 
     /** Return the normalization constant */
     double returnNormalization();
@@ -258,19 +263,69 @@ public:
     void testClass();
 
 protected:
-    double A_;          /**< (Normalization) Total number of absorber z=z1 with a column density 1e12<=NHI<=1e22 cm^-2 */
-    double z1_;         /**< Redshift value at first break */
-    double z2_;         /**< Redshift value at second break */
-    double gamma1_;     /**< Power law index */
-    double gamma2_;     /**< Power law index */
-    double gamma3_;     /**< Power law index */
+    double ALAF_;          /**< (Normalization) Total number of absorber z=z1 with a column density 1e12<=NHI<=1e23 cm^-2 */
+    double z1LAF_;         /**< Redshift value at first break */
+    double z2LAF_;         /**< Redshift value at second break */
+    double gamma1LAF_;     /**< Power law index */
+    double gamma2LAF_;     /**< Power law index */
+    double gamma3LAF_;     /**< Power law index */
 };
+
+
+
+
+
+/** AbsorberRedshiftDistributionDLA
+ *
+ * Class to calculate the absorber redshift distribution function for DLA
+ * Based on Inoue 2014 eqn 7 f(z)
+ *
+ */
+class AbsorberRedshiftDistributionDLA 
+{
+public:
+    /** Constructor */
+    AbsorberRedshiftDistributionDLA();
+
+    /** Return redshift distribution at value given */
+    double returnRedshiftDist(double z);
+    
+    /** Return power law at z value given */
+    double returnFirstPowerLaw(double z);
+
+    /** Return power law at z value given */
+    double returnSecondPowerLaw(double z);
+
+    /** Return the power law indices */
+    void returnPowerLawIndex(double &g1DLA, double &g2DLA);
+
+    /** Return the redshift at the breaks */
+    void returnRedshiftBreaks(double &zDLA);
+
+    /** Return the normalization constant */
+    double returnNormalization();
+
+    /** Return redshift distribution at z value given */
+    virtual double operator()(double z)
+        { return returnRedshiftDist(z); }
+
+    void testClass();
+
+protected:
+    double ADLA_;          /**< (Normalization) Total number of absorber z=z1 with a column density 1e12<=NHI<=1e23 cm^-2 */
+    double zDLA_;         /**< Redshift value at the only break */
+    double gamma1DLA_;     /**< Power law index */
+    double gamma2DLA_;     /**< Power law index */
+};
+
+
+
 
 /** DopperParDistribution
  *
  * Class to calculate the doppler parameter b distribution
  * Based on Inoue & Iwata 2008 and Hui & Rutledge 1999
- *
+ * We're assuming it's the same for Inoue 2014 
  */
 class DopplerParDistribution
 {
@@ -287,41 +342,35 @@ protected:
     double bsigma_;
 };
 
+
+
+
+/** ProbabilityDistAbsorbers
+ *
+ * Simulates a line of sight
+ * Simulates some number of absorbers along this line of sight 
+ * For each absorber, draws column density, redshift, and doppler parameter
+ * Draws deltaZ of the next absorber 
+ * Repeats until last absorber is at the set source redshift 
+ * 
+ */
 class ProbabilityDistAbsorbers
 {
 public:
     ProbabilityDistAbsorbers(RandomGeneratorInterface& rg,
-// AA: I think the below conflict should be removed? Left in just in case
-/*<<<<<<< HEAD
-                            AbsorberRedshiftDistribution& absorberZDist,
-                            HIColumnDensity& hiColumnDensity,
-                            DopplerParDistribution& dopplerParDist
-        );
-    
-    /** Simulate a line of sight distribution of absorbers, returns number of 
-        absorbers
-        @param zStart           Starting redshift of line of sight distribution
-        @param zMax             Max redshift along line of sight
-        @param redshifts        Vector of absorber redshifts (sorted in ascending order)
-        @param dopplerPars      Vector of absorber doppler parameters 
-        @param columnDensity    Vector of absorber column densities 
-    int simulateLineOfSight(double zStart,double zMax, 
-                    vector<double>& redshifts, vector<double>& dopplerPars,
-                               vector<double>& columnDensities, string outfile);
-            
-    void simulateAbsorber(double zCurrent, double& redshift, double& dopplerPar,
-                                                    double& columnDensity);
-    /** Draw deltaZ of next absorber (next absorber is at zLast+deltaZ).  This 
-        uses the "Inverse Transformation method"
-        @param zLast Redshift of last absorber                                  
-=======*/
-                             AbsorberRedshiftDistribution& absorberZDist,
-                             HIColumnDensity& hiColumnDensity,
-                             DopplerParDistribution& dopplerParDist);
+ 			     AbsorberRedshiftDistributionLAF& absorberZDistLAF,
+                             AbsorberRedshiftDistributionDLA& absorberZDistDLA,
+                             HIColumnDensityLAF& hiColumnDensityLAF,
+                             HIColumnDensityDLA& hiColumnDensityDLA,
+                             DopplerParDistribution& dopplerParDist); 
+
+
 
     // Define the min and max values for the column density and
     // the density distribution
-    void setNHiDistribution(int nStep);
+//    void setNHiDistribution(int nStep);  //doesn't seem to do anything in old class 
+
+
     // Define the min and max values for the doppler parameter 
     // and the doppler param distribution
     void setDopplerDistribution(int nStep);
@@ -329,10 +378,17 @@ public:
     /** Using the inverse transform method and equation 7 in 
         Inoue & Iwata 2008      */
 //>>>>>>> b174eb658571fc61c81d79c7fa2a0db330092148
-    double drawDeltaZ(double zLast);
+    double drawDeltaZLAF(double zLast);
+
+    double drawDeltaZDLA(double zLast);
+
+
     /** Draw a column density from the distribution given in 
-       Inoue & Iwata 2008 equation 4        */
-    double drawHIColumnDensity();
+       Inoue & Iwata 2014 equation 5; done by numerical integration       */
+    double drawHIColumnDensityLAF();
+    double drawHIColumnDensityDLA();
+
+
     /** Draw a doppler parameter from the distribution given in
        Inoue & Iwata 2008 equation 6        */
     double drawDoppler();
@@ -343,7 +399,8 @@ public:
         @param bdopp        the doppler param of the absorber being simulated
         @param NHI          the HI column density of the absorber being simulated
     */
-    void simulateAbsorber(double zCurrent, double& zNext, double& bdopp, double& NHI);
+    void simulateAbsorberLAF(double zCurrent, double& zNext, double& bdopp, double& NHI);
+    void simulateAbsorberDLA(double zCurrent, double& zNext, double& bdopp, double& NHI);
 
     /** Simulate a line of sight 
         @param zStart           the redshift to begin at
@@ -352,23 +409,29 @@ public:
         @param dopplerPars      the vector to hold the doppler parameter of each absorber
         @param columnDensities  the vector to hold the column density of each absorber
     */
-    void simulateLineOfSight(double zStart, double zMax, vector<double>& redshifts,
-                             vector<double>& dopplerPars, vector<double>& columnDensities,
-                             string outfile);
 
+   void simulateLineOfSightLAF(double zStart, double zMax,
+                    vector<double>& redshiftsLAF, vector<double>& dopplerParsLAF,
+                    vector<double>& columnDensitiesLAF, string outfile); 
+
+  void simulateLineOfSightDLA(double zStart, double zMax,
+                    vector<double>& redshiftsDLA, vector<double>& dopplerParsDLA,
+                    vector<double>& columnDensitiesDLA, string outfile); 
 
 protected:
     RandomGeneratorInterface&       rg_;
-    AbsorberRedshiftDistribution&   absorberZDist_;
-    HIColumnDensity&                hiColumnDensity_;
+    AbsorberRedshiftDistributionLAF&   absorberZDistLAF_;
+    AbsorberRedshiftDistributionDLA&   absorberZDistDLA_;
+    HIColumnDensityLAF&                hiColumnDensityLAF_;
+    HIColumnDensityDLA&                hiColumnDensityDLA_;
     DopplerParDistribution&         dopplerParDist_;
 
-    double log10Nl_;
-    double log10Nu_;
-    vector<double> log10NHIvals_;
-    vector<double> log10gvals_;
-    double log10gmin_;
-    double log10gmax_;
+//    double log10Nl_;
+//    double log10Nu_;
+//    vector<double> log10NHIvals_;
+//    vector<double> log10gvals_;
+//    double log10gmin_;
+//    double log10gmax_;
 
 //    SInterp1D colDensityFunc_;
 
@@ -378,9 +441,13 @@ protected:
     double bmax_;
     double hmin_;
     double hmax_;
-
+    vector<double> randomVectorLAF, columndensityVectorLAF;
+    vector<double> randomVectorDLA, columndensityVectorDLA;
 
 };
+                                                  
+
+
 
 class VoigtProfile:
     public AtomicCalcs
@@ -403,6 +470,9 @@ protected:
 };
 
 
+
+
+/*Class is kept exactly the same from Inoue 2008*/
 class OpticalDepth:
     public AtomicCalcs
 {
@@ -454,6 +524,10 @@ protected:
 };
 
 
+
+
+
+
 class LineOfSightTrans
 : public OpticalDepth
 {
@@ -485,6 +559,12 @@ protected:
     vector<double> columnDensities_;
     bool isOpticalDepth_;
 };
+
+
+
+
+
+
 
 
 /** Madau class

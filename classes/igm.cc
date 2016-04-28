@@ -12,123 +12,6 @@ AtomicCalcs::AtomicCalcs()
     setConstants();
 };
 
-/******* AtomicCalcs methods **************************************************/
-
-/*********
-void AtomicCalcs::setGammas()
-{
-        // Found in Table 2 of Morton 2003
-    gammaSeries_.push_back(6.265e8);// 2
-    gammaSeries_.push_back(1.897e8);// 3
-    gammaSeries_.push_back(8.127e7);// 4
-    gammaSeries_.push_back(4.204e7);// 5
-    gammaSeries_.push_back(2.450e7);// 6
-    
-    // Backed out of a file containing values of the damping parameter 'a' assuming 
-    // b=36km/s from Tepper-Garcia.  See Fig 1 in Tepper-Garcia 2006
-    gammaSeries_.push_back(1.236e7);// 7
-    gammaSeries_.push_back(8.252e6);// 8
-    gammaSeries_.push_back(5.781e6);// 9
-    gammaSeries_.push_back(4.209e6);// 10
-    gammaSeries_.push_back(3.159e6);// 11
-    
-    gammaSeries_.push_back(2.431e6);// 12
-    gammaSeries_.push_back(1.91e6); // 13
-    
-    // the following gammas for line transitions 14->1 up to 20->1 went missing sometime between AA's commit
-    // on 22 Aug 2013 and MK's commit on 17 Dec 2013
-    // from then up to now (16 Mar 2015 any calcs for line transitions >=14, <21 would be wrong)
-    // This involves: VoigtProfile, OpticalDepth, LineOfSightTrans, Madau, LAFMeiksin classes
-    gammaSeries_.push_back(1.528e6);// 14
-    gammaSeries_.push_back(1.242e6);// 15
-    gammaSeries_.push_back(1.024e6);// 16
-    
-    gammaSeries_.push_back(8.532e5);// 17
-    gammaSeries_.push_back(7.185e5);// 18
-    gammaSeries_.push_back(6.109e5);// 19 
-    gammaSeries_.push_back(5.235e5);// 20
-    // end was missing
-    
-
-    gammaSeries_.push_back(4.522e5);// 21 
-    
-    gammaSeries_.push_back(3.932e5);// 22
-    gammaSeries_.push_back(3.442e5);// 23
-    gammaSeries_.push_back(3.029e5);// 24
-    gammaSeries_.push_back(2.678e5);// 25
-    gammaSeries_.push_back(2.381e5);// 26
-    
-    gammaSeries_.push_back(2.127e5);// 27
-    gammaSeries_.push_back(1.906e5);// 28
-    gammaSeries_.push_back(1.716e5);// 29
-    gammaSeries_.push_back(1.549e5);// 30
-    gammaSeries_.push_back(1.405e5);// 31
-
-    gammaSeries_.push_back(1.277e5);// 32
-    // size of gammaSeries =  31
-
-    return;
-};
-**********/
-
-/***********
-void AtomicCalcs::setOscillatorStrength()
-{
-    // Absorption oscillator strength of ith Lyman line (unitless)
-    // Taken from Wiese et al 1966
-    fSeries_.push_back(0.4162); 
-    fSeries_.push_back(7.910e-2);  
-    fSeries_.push_back(2.899e-2);  
-    fSeries_.push_back(1.394e-2);
-    fSeries_.push_back(7.799e-3);
-    
-    fSeries_.push_back(4.814e-3);
-    fSeries_.push_back(3.183e-3);
-    fSeries_.push_back(2.216e-3);
-    fSeries_.push_back(1.605e-3);
-    fSeries_.push_back(1.201e-3);
-    
-    fSeries_.push_back(9.214e-4);
-    fSeries_.push_back(7.227e-4);
-    fSeries_.push_back(5.774e-4);
-    fSeries_.push_back(4.686e-4);
-    fSeries_.push_back(3.856e-4);
-    
-    fSeries_.push_back(3.211e-4);
-    fSeries_.push_back(2.702e-4);
-    fSeries_.push_back(2.296e-4);
-    fSeries_.push_back(1.967e-4);
-    fSeries_.push_back(1.698e-4);
-    
-    fSeries_.push_back(1.476e-4);
-    fSeries_.push_back(1.291e-4);
-    fSeries_.push_back(1.136e-4);
-    fSeries_.push_back(1.005e-4);
-    fSeries_.push_back(8.928e-5);
-    
-    fSeries_.push_back(7.970e-5);
-    fSeries_.push_back(7.144e-5);
-    fSeries_.push_back(6.429e-5);
-    fSeries_.push_back(5.806e-5);
-    fSeries_.push_back(5.261e-5);
-    
-    fSeries_.push_back(4.782e-5);
-    fSeries_.push_back(4.360e-5);
-    fSeries_.push_back(3.986e-5);
-    fSeries_.push_back(3.653e-5);
-    fSeries_.push_back(3.357e-5);
-    
-    fSeries_.push_back(3.092e-5);
-    fSeries_.push_back(2.854e-5);
-    fSeries_.push_back(2.640e-5);
-    fSeries_.push_back(2.446e-5);
-    
-    // size of fSeries = 39
-
-    return;
-};
-****/
-
 void AtomicCalcs::setConstants()
 {
     sigmaLymanLimitCM2_ = 6.30e-18;              //In cm^2
@@ -162,38 +45,6 @@ double AtomicCalcs::returnWavelengthLymanSeries(int n)
   return wavelength_lyman_[n-1];
 };
 
-/********
-double AtomicCalcs::returnWavelengthAngstrLymanSeries(int n)
-{
-    return WAVE_LYMANLIM_ANGSTR/(1.-1./(n*n));
-};
-
-double AtomicCalcs::returnFrequencyLymanSeries(int n)
-{
-    double wl = returnWavelengthLymanSeries(n);
-    return SPEED_OF_LIGHT_MS/wl;
-};
-
-double AtomicCalcs::returnDopplerWidthWL(int nLine, double dopplerParamKMS)
-{
-    double ratio = dopplerParamKMS/SPEED_OF_LIGHT_KMS;
-    return returnWavelengthLymanSeries(nLine)*ratio;
-};
-
-double AtomicCalcs::returnDopplerWidthFreq(int nLine, double dopplerParamKMS)
-{
-    double ratio = dopplerParamKMS/SPEED_OF_LIGHT_KMS;
-    return returnFrequencyLymanSeries(nLine)*ratio;
-};
-
-double AtomicCalcs::returnX(double lambda, int nLine, double dopplerParam)
-{
-    double dl = (lambda - returnWavelengthLymanSeries(nLine));
-    double dw = returnDopplerWidthWL(nLine, dopplerParam);
-
-    return dl/dw;
-};
-**********/
 
 double AtomicCalcs::returnGamma(int nLine)
 {
@@ -309,188 +160,118 @@ void AtomicCalcs::printEverything(int nLine, double dopplerPar)
 };
 
 
-/******* HIColumnDensity **********************************************************/
+/******* HIColumnDensityLAF **********************************************************/
 
-HIColumnDensity::HIColumnDensity() 
-: beta1_(1.6), beta2_(1.3), Nl_(1e12), Nc_(1.6e17), Nu_(1e22)
+HIColumnDensityLAF::HIColumnDensityLAF() 
+: betaLAF_(1.7), Nl_(1e12), Nc_(1e21), Nu_(1e23)
 {
-    normB_ = 1;
-    normalizeDist();
-    std::cout << "Normalization constant:    " << normB_ << std::endl;
-    //checkNormalize();
-
+//put normalization here if needed
 };
 
-/******* HIColumnDensity Methods **************************************************/
-
-void HIColumnDensity::normalizeDist()
+void HIColumnDensityLAF::returnPowerLawIndex(double &betaLAF)
 {
-    double term1 = pow(Nc_, beta1_)*integratePowerLaw(Nl_, Nc_, -beta1_);
-    double term2 = pow(Nc_, beta2_)*integratePowerLaw(Nc_, Nu_, -beta2_);
-    double sumTerms = term1+term2;
-    normB_ = 1/sumTerms;
+    betaLAF = betaLAF_;
     return;
 };
 
-double HIColumnDensity::integratePowerLaw(double low, double high, double power)
-{
-    double constant = 1/(1+power);
-    double integratedTerm = pow(high, 1+power) - pow(low, 1+power);
-    return constant*integratedTerm;
-};
-
-double HIColumnDensity::returnColDensityDist(double NHI)
-{
-    double dist = 0.0; 
-    if(NHI < Nc_) {
-        dist = returnFirstPowerLaw(NHI);
-    }
-    else if(NHI >= Nc_) {
-        dist = returnSecondPowerLaw(NHI);        
-    }
-    else {
-        std::cout << "Column Density value not recognized!" << std::endl;
-    }
-
-    return dist;
-};
-
-double HIColumnDensity::returnFirstPowerLaw(double NHI)
-{
-    double ratio = NHI/Nc_;
-    return returnNormB()*pow(ratio,-beta1_);
-};
-
-double HIColumnDensity::returnSecondPowerLaw(double NHI)
-{
-        double logb, logN, logNc, logg;
-        logb = log(returnNormB());
-        logN = log(NHI);
-        logNc = log(Nc_);
-        logg = logb-(beta2_*logN)+(beta2_*logNc);
-        return exp(logg);
-};
-
-double HIColumnDensity::returnNormB()
-{
-    return normB_;
-};
-
-void HIColumnDensity::returnPowerLawIndex(double &beta1, double &beta2)
-{
-    beta1 = beta1_;
-    beta2 = beta2_;
-    return;
-};
-
-void HIColumnDensity::returnColDensityLimits(double &Nl, double &Nu)
+void HIColumnDensityLAF::returnColDensityLimits(double &Nl, double &Nu)
 {
     Nl = Nl_;
     Nu = Nu_;
     return;
 };
 
-void HIColumnDensity::returnColDensityBreak(double &Nc)
+void HIColumnDensityLAF::returnColDensityBreak(double &Nc)
 {
     Nc = Nc_;
     return;
 };
 
-void HIColumnDensity::writeToFile(std::string outfile, double dLog, int nStep)
-{
-
-    double logNl = log(Nl_);
-
-    std::ifstream inp;
-	std::ofstream outp;
-	inp.open(outfile.c_str(), std::ifstream::in);
-	inp.close();
-	if(inp.fail()) {
-		
-		inp.clear(std::ios::failbit);
-		std::cout << "     Writing HI column density distribution to file ...";
-		std::cout << outfile.c_str() << std::endl;
-		outp.open(outfile.c_str(), std::ofstream::out);
-		
-	    for (int i=0; i<nStep; i++) {
-	    
-			double logNh=logNl+i*dLog;
-			double Nh=exp(logNh);
-			outp << Nh <<"  "<< returnColDensityDist(Nh) << std::endl;
-            }
-            
-		outp.close();
-	    }
-	else
-		std::cout << "Error...file " << outfile.c_str() << " exists" << std::endl;
-
-};
-
-void HIColumnDensity::testClass()
+void HIColumnDensityLAF::testClass()
 {
     std::cout << "Confirming calculations in HIColumnDensity..." << std::endl;
-    std::cout << "Normalization constant should be:         " << "2.82654e-21" << std::endl;
+    std::cout << "Normalization constant should be:         " << "something I've haven't yet decided to include or not" << std::endl;
 
-    double b1,b2,nl,nc,nu;
-    returnPowerLawIndex(b1,b2);
+    double bLAF, nl,nc,nu;
+    returnPowerLawIndex(bLAF);
     returnColDensityLimits(nl,nu);
     returnColDensityBreak(nc);
 
-    std::cout << "beta1: " << b1 << std::endl << "beta2: " << b2 << std::endl
+    std::cout << "betaLAF: " << bLAF << std::endl
                 << "Nl: " << nl << std::endl << "Nc: " << nc << std::endl << "Nu: " << nu << std::endl;
 
     return;
 };
 
-// AA: I think the below conflict should be removed? Left in just in case
-/*<<<<<<< HEAD
-int ProbabilityDistAbsorbers::simulateLineOfSight(double zStart,double zMax,
-    vector<double>& redshifts, vector<double>& dopplerPars,
-                                  vector<double>& columnDensities, string outfile)
+
+
+
+/******* HIColumnDensityDLA **********************************************************/
+
+HIColumnDensityDLA::HIColumnDensityDLA() 
+: betaDLA_(0.9), Nl_(1e12), Nc_(1e21), Nu_(1e23)
 {
+//put normalization here if needed
+};
 
-    double zCurrent = zStart;
-    int iAbsorber = 0;
-    
-    while ( zCurrent < zMax ) {
-	    //cout <<"     On absorber "<<iAbsorber+1<<endl;
-	    double zDraw, bdopp, NHI;
-	    simulateAbsorber(zCurrent,zDraw,bdopp,NHI);
-	    
-	    redshifts.push_back(zDraw);
-	    dopplerPars.push_back(bdopp);
-	    columnDensities.push_back(NHI);	    
-	    
-	    zCurrent = zDraw;
-	    iAbsorber++;
-	    }
-	int nAbsorbers = columnDensities.size();
-    cout <<"     Total number of absorbers along line of sight = "<<nAbsorbers<<".";
-	cout <<" Max redshift = "<<redshifts[redshifts.size()-1]<<endl;
-	
-	writeToFile(outfile, redshifts, dopplerPars, columnDensities);
+void HIColumnDensityDLA::returnPowerLawIndex(double &betaDLA)
+{
+    betaDLA = betaDLA_;
+    return;
+};
 
-    return nAbsorbers;
-=======*/
-/******* AbsorberRedshiftDistribution *********************************************/
-AbsorberRedshiftDistribution::AbsorberRedshiftDistribution() 
-: A_(400.), z1_(1.2), z2_(4.0), gamma1_(0.2), gamma2_(2.5), gamma3_(4.0)
+void HIColumnDensityDLA::returnColDensityLimits(double &Nl, double &Nu)
+{
+    Nl = Nl_;
+    Nu = Nu_;
+    return;
+};
+
+void HIColumnDensityDLA::returnColDensityBreak(double &Nc)
+{
+    Nc = Nc_;
+    return;
+};
+
+void HIColumnDensityDLA::testClass()
+{
+    std::cout << "Confirming calculations in HIColumnDensity..." << std::endl;
+    std::cout << "Normalization constant should be:         " << "something I've haven't yet decided to include or not" << std::endl;
+
+    double bDLA, nl,nc,nu;
+    returnPowerLawIndex(bDLA);
+    returnColDensityLimits(nl,nu);
+    returnColDensityBreak(nc);
+
+    std::cout << "betaDLA: " << bDLA << std::endl
+                << "Nl: " << nl << std::endl << "Nc: " << nc << std::endl << "Nu: " << nu << std::endl;
+
+    return;
+};
+
+
+
+
+
+/******* AbsorberRedshiftDistributionLAF *********************************************/
+AbsorberRedshiftDistributionLAF::AbsorberRedshiftDistributionLAF() 
+: ALAF_(500.), z1LAF_(1.2), z2LAF_(4.7), gamma1LAF_(0.2), gamma2LAF_(2.7), gamma3LAF_(4.5)
 {
 
 //>>>>>>> b174eb658571fc61c81d79c7fa2a0db330092148
 };
 
-/******* AbsorberRedshiftDistribution methods *************************************/
-double AbsorberRedshiftDistribution::returnRedshiftDist(double z)
+/******* AbsorberRedshiftDistributionLAF methods *************************************/
+double AbsorberRedshiftDistributionLAF::returnRedshiftDist(double z)
 {
     double dist = 0.0;
-    if(z <= z1_) {
+    if(z < z1LAF_) {
         dist = returnNormalization()*returnFirstPowerLaw(z);
     }
-    else if(z <= z2_ && z > z1_) {
+    else if(z < z2LAF_ && z >= z1LAF_) {
         dist = returnNormalization()*returnSecondPowerLaw(z);
     }
-    else if(z > z2_) {
+    else if(z >= z2LAF_) {
         dist = returnNormalization()*returnThirdPowerLaw(z);
     }
     else {
@@ -500,69 +281,149 @@ double AbsorberRedshiftDistribution::returnRedshiftDist(double z)
     return dist;
 };
 
-double AbsorberRedshiftDistribution::returnFirstPowerLaw(double z)
+double AbsorberRedshiftDistributionLAF::returnFirstPowerLaw(double z)
 {
     double ratio = 0.0;
-    ratio = (1+z)/(1+z1_);
-    return pow(ratio, gamma1_);
+    ratio = (1+z)/(1+z1LAF_);
+    return pow(ratio, gamma1LAF_);
 };
 
-double AbsorberRedshiftDistribution::returnSecondPowerLaw(double z)
+double AbsorberRedshiftDistributionLAF::returnSecondPowerLaw(double z)
 {
     double ratio = 0.0;
-    ratio = (1+z)/(1+z1_);
-    return pow(ratio, gamma2_);
+    ratio = (1+z)/(1+z1LAF_);
+    return pow(ratio, gamma2LAF_);
 };
 
-double AbsorberRedshiftDistribution::returnThirdPowerLaw(double z)
+double AbsorberRedshiftDistributionLAF::returnThirdPowerLaw(double z)
 {
     double ratio2 = 0.0, ratio3 = 0.0;
-    ratio2 = (1+z2_)/(1+z1_);
-    ratio3 = (1+z)/(1+z2_);
-    return pow(ratio2,gamma2_)*pow(ratio3,gamma3_);
+    ratio2 = (1+z2LAF_)/(1+z1LAF_);
+    ratio3 = (1+z)/(1+z2LAF_);
+    return pow(ratio2,gamma2LAF_)*pow(ratio3,gamma3LAF_);
 };
 
-void AbsorberRedshiftDistribution::returnPowerLawIndex(double &g1, double &g2, double &g3)
+
+void AbsorberRedshiftDistributionLAF::returnPowerLawIndex(double &g1LAF, double &g2LAF, double &g3LAF)
 {
-    g1 = gamma1_;
-    g2 = gamma2_;
-    g3 = gamma3_;
+    g1LAF = gamma1LAF_;
+    g2LAF = gamma2LAF_;
+    g3LAF = gamma3LAF_;
     return;
 };
 
-void AbsorberRedshiftDistribution::returnRedshiftBreaks(double &z1, double &z2)
+void AbsorberRedshiftDistributionLAF::returnRedshiftBreaks(double &z1LAF, double &z2LAF)
 {
-    z1 = z1_;
-    z2 = z2_;
+    z1LAF = z1LAF_;
+    z2LAF = z2LAF_;
     return;
 };
 
-double AbsorberRedshiftDistribution::returnNormalization()
+double AbsorberRedshiftDistributionLAF::returnNormalization()
 {
-    return A_;
+    return ALAF_;
 };
 
-void AbsorberRedshiftDistribution::testClass()
+void AbsorberRedshiftDistributionLAF::testClass()
 {
-    double g1, g2, g3, z1, z2, A;
-    returnPowerLawIndex(g1,g2,g3);
-    returnRedshiftBreaks(z1,z2);
-    A = returnNormalization();
+    double g1LAF, g2LAF, g3LAF, z1LAF, z2LAF, ALAF;
+    returnPowerLawIndex(g1LAF,g2LAF,g3LAF);
+    returnRedshiftBreaks(z1LAF,z2LAF);
+    ALAF = returnNormalization();
 
-    std::cout << "gamma1 " << g1 << std::endl
-                << "gamma2 " << g2 << std::endl
-                << "gamma3 " << g3 << std::endl
-                << "z1     " << z1 << std::endl
-                << "z2     " << z2 << std::endl
-                << "A      " << A  << std::endl;
+    std::cout << "gamma1LAF " << g1LAF << std::endl
+                << "gamma2LAF " << g2LAF << std::endl
+                << "gamma3LAF " << g3LAF << std::endl
+                << "z1LAF     " << z1LAF << std::endl
+                << "z2LAF     " << z2LAF << std::endl
+                << "ALAF      " << ALAF  << std::endl;
     std::cout << std::endl;
 
     return;
 };
 
+
+
+/******* AbsorberRedshiftDistributionDLA *********************************************/
+AbsorberRedshiftDistributionDLA::AbsorberRedshiftDistributionDLA() 
+: ADLA_(1.1), zDLA_(0.75), gamma1DLA_(1.0), gamma2DLA_(2.0)
+{
+
+//>>>>>>> b174eb658571fc61c81d79c7fa2a0db330092148
+};
+
+/******* AbsorberRedshiftDistributionDLA methods *************************************/
+double AbsorberRedshiftDistributionDLA::returnRedshiftDist(double z)
+{
+    double dist = 0.0;
+    if(z < zDLA_) {
+        dist = returnNormalization()*returnFirstPowerLaw(z);
+    }
+
+    else if(z >= zDLA_) {
+        dist = returnNormalization()*returnSecondPowerLaw(z);
+    }
+    else {
+        std::cout << "Redshift not recognized!" << std::endl;
+    }
+
+    return dist;
+};
+
+double AbsorberRedshiftDistributionDLA::returnFirstPowerLaw(double z)
+{
+    double ratio = 0.0;
+    ratio = (1+z)/(1+zDLA_);
+    return pow(ratio, gamma1DLA_);
+};
+
+double AbsorberRedshiftDistributionDLA::returnSecondPowerLaw(double z)
+{
+    double ratio = 0.0;
+    ratio = (1+z)/(1+zDLA_);
+    return pow(ratio, gamma2DLA_);
+};
+
+void AbsorberRedshiftDistributionDLA::returnPowerLawIndex(double &g1DLA, double &g2DLA)
+{
+    g1DLA = gamma1DLA_;
+    g2DLA = gamma2DLA_;
+    return;
+};
+
+void AbsorberRedshiftDistributionDLA::returnRedshiftBreaks(double &zDLA)
+{
+    zDLA = zDLA_;
+    return;
+};
+
+double AbsorberRedshiftDistributionDLA::returnNormalization()
+{
+    return ADLA_;
+};
+
+void AbsorberRedshiftDistributionDLA::testClass()
+{
+    double g1DLA, g2DLA, zDLA, ADLA;
+    returnPowerLawIndex(g1DLA,g2DLA);
+    returnRedshiftBreaks(zDLA);
+    ADLA = returnNormalization();
+
+    std::cout << "gamma1DLA " << g1DLA << std::endl
+                << "gamma2DLA " << g2DLA << std::endl
+                << "zDLA     " << zDLA << std::endl
+                << "ADLA      " << ADLA  << std::endl;
+    std::cout << std::endl;
+
+    return;
+};
+
+
+
+
 /******* DopplerParDistribution ***************************************************/
 DopplerParDistribution::DopplerParDistribution()
-: bsigma_(23)
+: bsigma_(23.0) //II14 says average b=28km/s; 
 {
 
 };
@@ -592,52 +453,48 @@ void DopplerParDistribution::testClass()
 
 /******* ProbabilityDistAbsorbers *************************************************/
 ProbabilityDistAbsorbers::ProbabilityDistAbsorbers(RandomGeneratorInterface& rg,
-                                                   AbsorberRedshiftDistribution& absorberZDist,
-                                                   HIColumnDensity& hiColumnDensity,
+                                                   AbsorberRedshiftDistributionLAF& absorberZDistLAF,
+                                                   AbsorberRedshiftDistributionDLA& absorberZDistDLA,
+                                                   HIColumnDensityLAF& hiColumnDensityLAF,
+                                                   HIColumnDensityDLA& hiColumnDensityDLA,
                                                    DopplerParDistribution& dopplerParDist)
-: rg_(rg), absorberZDist_(absorberZDist), hiColumnDensity_(hiColumnDensity), dopplerParDist_(dopplerParDist)
+: rg_(rg), absorberZDistLAF_(absorberZDistLAF), absorberZDistDLA_(absorberZDistDLA), hiColumnDensityLAF_(hiColumnDensityLAF), hiColumnDensityDLA_(hiColumnDensityDLA), dopplerParDist_(dopplerParDist)
 
 {
     int nStep = 1000;
-    setNHiDistribution(nStep);
     bmin_ = 0.0;
     bmax_ = 200.;
     setDopplerDistribution(nStep);
 
-};
+    string infileLAF= "LookupTableLAF.tbl";  	//Lookup table for LAF column density
+    string infileDLA= "LookupTableDLA.tbl";	//Lookup table for DLA column density 
 
-/******* ProbabilityDistAbsorbers methods *****************************************/
+    ifstream inputLAF; 
+    ifstream inputDLA; 
 
-void ProbabilityDistAbsorbers::setNHiDistribution(int nStep)
-{
-    log10NHIvals_.clear();
-    log10gvals_.clear();
+    inputLAF.open(infileLAF.c_str(), ifstream::in);
+    inputDLA.open(infileDLA.c_str(), ifstream::in);
 
-    double Nl, Nu;
-    hiColumnDensity_.returnColDensityLimits(Nl,Nu);
-    log10Nl_ = log10(Nl);
-    log10Nu_ = log10(Nu);
+    double randomLAF, columnDensityLAF; 
+    double randomDLA, columnDensityDLA; 
 
-    double dlogN = (log10Nu_ - log10Nl_)/(nStep-1);
-
-    for(int i=0; i<nStep; i++) {
-        double log10NHI = log10Nl_ + i*dlogN;
-        log10NHIvals_.push_back(log10NHI);
-
-        double NHI = pow(10., log10NHI);
-        double g = hiColumnDensity_(NHI);
-        log10gvals_.push_back(log10(g));
+    while(inputLAF >> randomLAF >> columnDensityLAF)
+    {
+	randomVectorLAF.push_back(randomLAF);
+	columndensityVectorLAF.push_back(columnDensityLAF);
     }
 
-    log10gmin_ = findMinimum(log10gvals_);
-    log10gmax_ = findMaximum(log10gvals_);
+    while(inputDLA >> randomDLA >> columnDensityDLA)
+    {
+	randomVectorDLA.push_back(randomDLA);
+	columndensityVectorDLA.push_back(columnDensityDLA);
+    }
 
-    // Create interpolation
-//    colDensityFunc_.DefinePoints(log10NHIvals_, log10gvals_);
+    inputLAF.close();
+    inputDLA.close(); 
 
-    return;
-  
 };
+
 
 void ProbabilityDistAbsorbers::setDopplerDistribution(int nStep)
 {
@@ -660,66 +517,70 @@ void ProbabilityDistAbsorbers::setDopplerDistribution(int nStep)
     return;
 };
 
-double ProbabilityDistAbsorbers::drawDeltaZ(double zLast)
+double ProbabilityDistAbsorbers::drawDeltaZLAF(double zLast) 
 {
-    double fz = absorberZDist_(zLast);
+    double fz = absorberZDistLAF_(zLast);
     double rn = rg_.Flat01();
 
     // p(\DeltaZ;z) = f(z)*exp( -f(z)*\DeltaZ )
-    double diff = -log(rn);
+
+    double diff = -log(rn); 
     double deltaZ = diff/fz;
+
+//    cout << fz << endl; 	 
+ 
+    return deltaZ;
+};
+
+double ProbabilityDistAbsorbers::drawDeltaZDLA(double zLast)  
+{
+    double fz = absorberZDistDLA_(zLast);
+    double rn = rg_.Flat01();
+
+    // p(\DeltaZ;z) = f(z)*exp( -f(z)*\DeltaZ )
+
+    double diff = -log(rn); 
+    double deltaZ= diff/fz; 
 
     return deltaZ;
 };
 
-double ProbabilityDistAbsorbers::drawHIColumnDensity()
+
+double ProbabilityDistAbsorbers::drawHIColumnDensityLAF()
 {
-/*    double u1, u2, nhi;
-
-    while(true) {
-        u1 = log10Nl_ + (log10Nu_ - log10Nl_)*rg_.Flat01();
-        u2 = log10gmin_ + (log10gmax_ - log10gmin_)*rg_.Flat01();
-
-        nhi = pow(10.,u1);
-        double gval = hiColumnDensity_(nhi);
-        double log10gval = log10(gval);
-
-        // Use interpolation to draw the number
-        //double log10gval = colDensityFunc_(u1);
-
-        if(u2 <= log10gval) {
-            break;
-        }
-    }
-
-    return pow(10., u1);        */
-
-    //IMPLEMENTING THE TRANSFORMATION PERFORMED IN CODE BY
-    //INOOUE & IWATA FOR THEIR 2008 PUBLICATION
-
-    double beta1, beta2, Nl, Nc, Nu;
-    hiColumnDensity_.returnPowerLawIndex(beta1, beta2);
-    hiColumnDensity_.returnColDensityLimits(Nl, Nu);
-    hiColumnDensity_.returnColDensityBreak(Nc);
-
     double nhi = 0.0;
-    double index1 = 1.0 / (1.0 - beta1);
-    double index2 = 1.0 / (1.0 - beta2);
-    double Rlc = pow((Nl/Nc),(1.0-beta1));
-    double Ruc = pow((Nu/Nc),(1.0-beta2));
-    double xc = (Rlc - 1.0) / (Rlc - 1.0 + (1.0 - Ruc) * ((beta1 - 1.0) / (beta2 - 1.0)));
-
     double ran = rg_.Flat01();
 
-    if(ran < xc) {
-        nhi = Nc * pow((((xc-ran)*Rlc + ran) / (xc)), index1);
-    } else {
-        nhi = Nc * pow(((1.0 - ran + (ran-xc)*Ruc) / (1.0 - xc)), index2);
-    }
+    vector<double>::iterator low;		
+    low= lower_bound (randomVectorLAF.begin(), randomVectorLAF.end(), ran);   //search through lookup table
+
+    nhi= columndensityVectorLAF[low-randomVectorLAF.begin()]; 
+
+//    cout << ran << "	" << nhi << endl; 
 
     return nhi;
 
-};
+}
+
+
+double ProbabilityDistAbsorbers::drawHIColumnDensityDLA()
+{
+    double nhi=0.0;
+    double ran = rg_.Flat01();
+
+    vector<double>::iterator low;
+    low= lower_bound (randomVectorDLA.begin(), randomVectorDLA.end(), ran);	//search through lookup table
+
+    nhi= columndensityVectorDLA[low-randomVectorDLA.begin()]; 
+
+//    cout << ran << "	" << nhi << endl; 
+
+
+    return nhi;
+
+}
+
+
 
 double ProbabilityDistAbsorbers::drawDoppler()
 {
@@ -739,41 +600,97 @@ double ProbabilityDistAbsorbers::drawDoppler()
     return u1;
 };
 
-void ProbabilityDistAbsorbers::simulateLineOfSight(double zStart, double zMax,
-                    vector<double>& redshifts, vector<double>& dopplerPars,
-                    vector<double>& columnDensities, string outfile)
+
+
+
+
+void ProbabilityDistAbsorbers::simulateLineOfSightLAF(double zStart, double zMax,
+                    vector<double>& redshiftsLAF, vector<double>& dopplerParsLAF,
+                    vector<double>& columnDensitiesLAF, string outfile)
 {
     double zCurrent = zStart;
     int iAbsorber = 0;
 
     while(zCurrent < zMax) {
         double zNext, bdopp, NHI;
-        simulateAbsorber(zCurrent,zNext,bdopp,NHI);
+        simulateAbsorberLAF(zCurrent,zNext,bdopp,NHI);
 
-        redshifts.push_back(zNext);
-        dopplerPars.push_back(bdopp);
-        columnDensities.push_back(NHI);
+        redshiftsLAF.push_back(zNext);
+        dopplerParsLAF.push_back(bdopp);
+        columnDensitiesLAF.push_back(NHI);
 
         zCurrent = zNext;
         iAbsorber++;
     }
 
-    cout << "       The total number of absorbers along the line of sight = "
-            << iAbsorber << endl;
-    cout << "       Max redshift = " << redshifts[iAbsorber-1] << endl;
+//    cout << "       The total number of LAF absorbers along the line of sight = "
+
+//            << iAbsorber << endl;
+//    cout << "       Max redshift = " << redshiftsLAF[iAbsorber-1] << endl;
+
+      cout << iAbsorber << endl;  //counting number of LAF absorbers per line of sight 
 
     return;
 };
 
-void ProbabilityDistAbsorbers::simulateAbsorber(double zCurrent, double& zNext,
+void ProbabilityDistAbsorbers::simulateAbsorberLAF(double zCurrent, double& zNext,
                     double& bdopp, double& NHI)
 {
-    zNext = zCurrent + drawDeltaZ(zCurrent);
+    zNext = zCurrent + drawDeltaZLAF(zCurrent);
     bdopp = drawDoppler();
-    NHI = drawHIColumnDensity();
+    NHI = drawHIColumnDensityLAF();
+
+//    cout << log10(NHI) << endl; 
 
     return;
 };
+
+
+
+
+
+void ProbabilityDistAbsorbers::simulateLineOfSightDLA(double zStart, double zMax,
+                    vector<double>& redshiftsDLA, vector<double>& dopplerParsDLA,
+                    vector<double>& columnDensitiesDLA, string outfile)
+{
+    double zCurrent = zStart;
+    int iAbsorber = 0;
+
+    while(zCurrent < zMax) {
+        double zNext, bdopp, NHI;
+        simulateAbsorberDLA(zCurrent,zNext,bdopp,NHI);
+
+        redshiftsDLA.push_back(zNext);
+        dopplerParsDLA.push_back(bdopp);
+        columnDensitiesDLA.push_back(NHI);
+
+        zCurrent = zNext;
+        iAbsorber++;
+    }
+
+//    cout << "       The total number of DLA absorbers along the line of sight = "
+//            << iAbsorber << endl;
+//    cout << "       Max redshift = " << redshiftsDLA[iAbsorber-1] << endl;
+
+      cout << iAbsorber << endl; //counting number of DLA absorbers per line of sight
+
+    return;
+};
+
+void ProbabilityDistAbsorbers::simulateAbsorberDLA(double zCurrent, double& zNext,
+                    double& bdopp, double& NHI)
+{
+    zNext = zCurrent + drawDeltaZDLA(zCurrent);
+    bdopp = drawDoppler();
+    NHI = drawHIColumnDensityDLA();
+
+//    cout << log10(NHI) << endl; 
+
+    return;
+};
+
+
+
 
 
 /******* VoigtProfile *************************************************************/
@@ -816,6 +733,8 @@ double VoigtProfile::returnHax(double lambda)
 
     return H1;
 };
+
+
 
 
 /******* OpticalDepth *************************************************************/
@@ -861,6 +780,7 @@ void OpticalDepth::setContribution(int option)
 
     return;
 };
+
 
 double OpticalDepth::returnObserverFrameTransmission(double lambda, double zAbsorber,
                     double nhiAbsorber, double bAbsorber)
@@ -954,6 +874,7 @@ void OpticalDepth::setMaxLine(int nLine)
 };
 
 
+
 /******* LineOfSightTrans *********************************************************/
 LineOfSightTrans::LineOfSightTrans(vector<double>& redshifts, vector<double>& dopplerPars,
                                    vector<double>& columnDensities)
@@ -962,6 +883,7 @@ LineOfSightTrans::LineOfSightTrans(vector<double>& redshifts, vector<double>& do
     setLymanAll();
     isOpticalDepth_=false;
 };
+
 
 /******* LineOfSightTrans Methods *************************************************/
 
@@ -1010,6 +932,9 @@ void LineOfSightTrans::setReturnType(bool isOpticalDepth)
     isOpticalDepth_ = isOpticalDepth;
     return;
 };
+
+
+
 
 
 
