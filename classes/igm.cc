@@ -17,8 +17,10 @@ void AtomicCalcs::setConstants()
     sigmaLymanLimitCM2_ = 6.30e-18;              //In cm^2
     freqLymanLimitInvSec_ = SPEED_OF_LIGHT_MS/WAVE_LYMANLIM_METERS;
     nLymanAlpha_ = 2;
-    nLineMaxMax_ = 32;
-    nGammaMax_ = 24; 
+    nLineMaxMax_ = 40;   //changed to 40 from 32
+    nGammaMax_ = 40;     //changed to 40 from 24
+    R= 1.34;
+    s= 2.99;
 
     return;
 };
@@ -49,31 +51,46 @@ double AtomicCalcs::returnWavelengthLymanSeries(int n)
 double AtomicCalcs::returnGamma(int nLine)
 {
   static double gammaSeries_[] = {
-    6.265e8,
-    1.897e8,
-    8.127e7,
-    4.204e7,
-    2.450e7,
-    1.236e7,
-    8.252e6,
-    5.781e6,
-    4.209e6,
-    3.159e6,
-    2.431e6,
-    1.91e6, 
-    4.522e5,
-    3.932e5,
-    3.442e5,
-    3.029e5,
-    2.678e5,
-    2.381e5,
-    2.127e5,
-    1.906e5,
-    1.716e5,
-    1.549e5,
-    1.405e5,
-    1.277e5
-  };
+	4.67e8,   //Taken from Inoue's 2008 MC
+	9.93e7,
+	3.00e7,
+	1.15e7,
+	5.17e6,
+	2.60e6,
+	1.43e6,
+	8.40e5,
+	5.21e5,
+	3.37e5,
+	2.26e5,
+	1.57e5,
+	1.11e5,
+	8.3e4,
+	6.0e4,
+	4.4e4,
+	3.3e4,
+	2.5e4,
+	2.0e4,
+	1.5e4,
+	1.2e4,
+	9.8e3,
+	7.9e3,
+	6.4e3,
+	5.2e3,
+	4.4e3,
+	3.6e3,
+	3.0e3,
+	2.5e3,
+	2.1e3,
+	1.9e3,
+	1.6e3,
+	1.4e3,
+	1.2e3,
+	1.0e3,
+	9.1e2,
+	7.9e2,
+	7.0e2,
+	6.1e2,
+};
     int iSeries = nLine-2;
     return gammaSeries_[iSeries];
 };
@@ -346,7 +363,7 @@ void AbsorberRedshiftDistributionLAF::testClass()
 
 /******* AbsorberRedshiftDistributionDLA *********************************************/
 AbsorberRedshiftDistributionDLA::AbsorberRedshiftDistributionDLA() 
-: ADLA_(1.1), zDLA_(0.75), gamma1DLA_(1.0), gamma2DLA_(2.0)
+: ADLA_(1.1), zDLA_(2.0), gamma1DLA_(1.0), gamma2DLA_(2.0)
 {
 
 //>>>>>>> b174eb658571fc61c81d79c7fa2a0db330092148
@@ -423,7 +440,7 @@ void AbsorberRedshiftDistributionDLA::testClass()
 
 /******* DopplerParDistribution ***************************************************/
 DopplerParDistribution::DopplerParDistribution()
-: bsigma_(23.0) //II14 says average b=28km/s; 
+: bsigma_(23.0) 
 {
 
 };
@@ -452,20 +469,101 @@ void DopplerParDistribution::testClass()
 
 
 /******* ProbabilityDistAbsorbers *************************************************/
-ProbabilityDistAbsorbers::ProbabilityDistAbsorbers(RandomGeneratorInterface& rg,
+ProbabilityDistAbsorbers::ProbabilityDistAbsorbers(RandomGeneratorInterface& rg, double zS, 
                                                    AbsorberRedshiftDistributionLAF& absorberZDistLAF,
                                                    AbsorberRedshiftDistributionDLA& absorberZDistDLA,
                                                    HIColumnDensityLAF& hiColumnDensityLAF,
                                                    HIColumnDensityDLA& hiColumnDensityDLA,
                                                    DopplerParDistribution& dopplerParDist)
-: rg_(rg), absorberZDistLAF_(absorberZDistLAF), absorberZDistDLA_(absorberZDistDLA), hiColumnDensityLAF_(hiColumnDensityLAF), hiColumnDensityDLA_(hiColumnDensityDLA), dopplerParDist_(dopplerParDist)
+: rg_(rg), zS(zS), absorberZDistLAF_(absorberZDistLAF), absorberZDistDLA_(absorberZDistDLA), hiColumnDensityLAF_(hiColumnDensityLAF), hiColumnDensityDLA_(hiColumnDensityDLA), dopplerParDist_(dopplerParDist)
 
 {
-    int nStep = 1000;
+    int nStep = 1000, nMaxLAF=3000, nMaxDLA= 50;
+
+// preparing for MC LAF and DLA generation, redshift distribution part
+	double dz= zS/nStep; 
+	double z, yLAF, yDLA, pLAF, pDLA;
+	zVector.push_back(0.0);
+//	yLAFvector.push_back(0.0);
+	yDLAvector.push_back(0.0);
+	
+	for (int i=1; i<nStep; i++)
+	{
+		z = zVector[i-1] + dz;
+		zVector.push_back(z); 
+
+//		cout << i << "	" << zVector[i] << endl; 
+
+//		yLAF = yLAFvector[i-1] + 0.5*dz*absorberZDistLAF_(zVector[i-1]) + 0.5*dz*absorberZDistLAF_(zVector[i]); 
+//		yLAFvector.push_back(yLAF);
+
+		yDLA = yDLAvector[i-1] + 0.5*dz*absorberZDistDLA_(zVector[i-1]) + 0.5*dz*absorberZDistDLA_(zVector[i]); 
+		yDLAvector.push_back(yDLA); 
+	}
+
+//	double NavgLAF= yLAFvector[nStep-1]; 
+	double NavgDLA= yDLAvector[nStep-1];
+
+//	cout << "LAF avg number " << NavgLAF << endl;
+//	cout << "DLA avg number " << NavgDLA << endl;
+
+//	transform(yLAFvector.begin(), yLAFvector.end(), yLAFvector.begin(), bind1st(divides<double>(), NavgLAF)); //divides the whole vector by const
+//	transform(yDLAvector.begin(), yDLAvector.end(), yDLAvector.begin(), bind1st(divides<double>(), NavgDLA));  //using transform, bind1st, divides
+
+	for(int i=0; i<nStep; i++)
+	{
+//		yLAFvector[i] = yLAFvector[i]/NavgLAF;
+		yDLAvector[i] = yDLAvector[i]/NavgDLA;
+//		cout << i << "	" << yLAFvector[i] << "	" << yDLAvector[i] << endl; 
+	}
+
+/*	for (int i=0; i<nMaxLAF; i++)
+	{
+		if(i==0)
+		{
+			pLAF = exp(-NavgLAF);
+			cppLAFvector.push_back(pLAF);
+
+		}
+		
+		else
+		{
+			pLAF = (pLAF*NavgLAF)/i;
+			cppLAFvector.push_back(cppLAFvector[i-1]+pLAF);
+
+		}
+
+		cout << i << "	" << cppLAFvector[i] << endl; 
+	} 
+*/
+
+	for (int i=0; i<nMaxDLA; i++)
+	{
+		if(i==0)
+		{
+			pDLA = exp(-NavgDLA);
+			cppDLAvector.push_back(pDLA);
+		}
+		
+		else
+		{
+		
+			pDLA = (pDLA*NavgDLA)/i;
+			cppDLAvector.push_back(cppDLAvector[i-1]+pDLA);
+		}
+
+
+//		cout << i << "	" << cppDLAvector[i] << endl; 
+	}
+			
+	
+	//doppler distribution part
     bmin_ = 0.0;
     bmax_ = 200.;
     setDopplerDistribution(nStep);
 
+
+	//column density distribution part 
     string infileLAF= "LookupTableLAF.tbl";  	//Lookup table for LAF column density
     string infileDLA= "LookupTableDLA.tbl";	//Lookup table for DLA column density 
 
@@ -555,9 +653,6 @@ double ProbabilityDistAbsorbers::drawHIColumnDensityLAF()
     low= lower_bound (randomVectorLAF.begin(), randomVectorLAF.end(), ran);   //search through lookup table
 
     nhi= columndensityVectorLAF[low-randomVectorLAF.begin()]; 
-
-//    cout << ran << "	" << nhi << endl; 
-
     return nhi;
 
 }
@@ -572,10 +667,6 @@ double ProbabilityDistAbsorbers::drawHIColumnDensityDLA()
     low= lower_bound (randomVectorDLA.begin(), randomVectorDLA.end(), ran);	//search through lookup table
 
     nhi= columndensityVectorDLA[low-randomVectorDLA.begin()]; 
-
-//    cout << ran << "	" << nhi << endl; 
-
-
     return nhi;
 
 }
@@ -603,7 +694,6 @@ double ProbabilityDistAbsorbers::drawDoppler()
 
 
 
-
 void ProbabilityDistAbsorbers::simulateLineOfSightLAF(double zStart, double zMax,
                     vector<double>& redshiftsLAF, vector<double>& dopplerParsLAF,
                     vector<double>& columnDensitiesLAF, string outfile)
@@ -623,11 +713,6 @@ void ProbabilityDistAbsorbers::simulateLineOfSightLAF(double zStart, double zMax
         iAbsorber++;
     }
 
-//    cout << "       The total number of LAF absorbers along the line of sight = "
-
-//            << iAbsorber << endl;
-//    cout << "       Max redshift = " << redshiftsLAF[iAbsorber-1] << endl;
-
       cout << iAbsorber << endl;  //counting number of LAF absorbers per line of sight 
 
     return;
@@ -639,9 +724,6 @@ void ProbabilityDistAbsorbers::simulateAbsorberLAF(double zCurrent, double& zNex
     zNext = zCurrent + drawDeltaZLAF(zCurrent);
     bdopp = drawDoppler();
     NHI = drawHIColumnDensityLAF();
-
-//    cout << log10(NHI) << endl; 
-
     return;
 };
 
@@ -653,38 +735,79 @@ void ProbabilityDistAbsorbers::simulateLineOfSightDLA(double zStart, double zMax
                     vector<double>& redshiftsDLA, vector<double>& dopplerParsDLA,
                     vector<double>& columnDensitiesDLA, string outfile)
 {
-    double zCurrent = zStart;
-    int iAbsorber = 0;
+//    double zCurrent = zStart;
+//    int iAbsorber = 0;
+	int nMax= 50, NN= 1000;
+	int numDLA, k; 
+    double zNext, bdopp, NHI;
 
-    while(zCurrent < zMax) {
+    double ran = rg_.Flat01();
+
+/*	for(int k=0; k<nMax; k++)
+	{
+		if(ran <= cppDLAvector[k]) 
+			numDLA = k; 
+	}
+*/
+
+    vector<double>::iterator lowNum, lowZ;
+    lowNum= lower_bound(cppDLAvector.begin(), cppDLAvector.end(), ran);	//search through vector 
+    numDLA= (lowNum-cppDLAvector.begin()); 
+
+//	cout << "Number of DLAs in LoS: " << numDLA << endl; 
+
+	for(int j=1; j<=numDLA; j++)
+	{
+		ran = rg_.Flat01();
+
+		lowZ= lower_bound(yDLAvector.begin(), yDLAvector.end(), ran);
+
+		k= (lowZ-yDLAvector.begin());
+
+		zNext = (zVector[k-1]*(ran-yDLAvector[k-1]) + zVector[k]*(yDLAvector[k]-ran))/(yDLAvector[k]-yDLAvector[k-1]); 
+		redshiftsDLA.push_back(zNext); 
+
+/*		for(int k=1; k<NN; k++)
+		{
+			if(ran < yDLAvector[k])
+			{
+				zNext = (zVector[k-1]*(ran-yDLAvector[k-1]) + zVector[k]*(yDLAvector[k]-ran))/(yDLAvector[k]-yDLAvector[k-1]); 
+				redshiftsDLA.push_back(zNext); 
+			}
+
+		}
+*/
+//	   cout << "DLA redshift is " << zNext << endl; 
+
+	   simulateAbsorberDLA(bdopp,NHI);
+       dopplerParsDLA.push_back(bdopp);
+       columnDensitiesDLA.push_back(NHI);
+	}
+
+
+/*    while(zCurrent < zMax) {
         double zNext, bdopp, NHI;
-        simulateAbsorberDLA(zCurrent,zNext,bdopp,NHI);
+        simulateAbsorberLAF(zCurrent,zNext,bdopp,NHI);
 
-        redshiftsDLA.push_back(zNext);
-        dopplerParsDLA.push_back(bdopp);
-        columnDensitiesDLA.push_back(NHI);
+        redshiftsLAF.push_back(zNext);
+        dopplerParsLAF.push_back(bdopp);
+        columnDensitiesLAF.push_back(NHI);
 
         zCurrent = zNext;
         iAbsorber++;
     }
+*/
 
-//    cout << "       The total number of DLA absorbers along the line of sight = "
-//            << iAbsorber << endl;
-//    cout << "       Max redshift = " << redshiftsDLA[iAbsorber-1] << endl;
-
-      cout << iAbsorber << endl; //counting number of DLA absorbers per line of sight
+      cout << numDLA << endl;  //counting number of DLA absorbers per line of sight 
 
     return;
 };
 
-void ProbabilityDistAbsorbers::simulateAbsorberDLA(double zCurrent, double& zNext,
-                    double& bdopp, double& NHI)
+void ProbabilityDistAbsorbers::simulateAbsorberDLA(double& bdopp, double& NHI)
 {
-    zNext = zCurrent + drawDeltaZDLA(zCurrent);
+//    zNext = zCurrent + drawDeltaZDLA(zCurrent);
     bdopp = drawDoppler();
     NHI = drawHIColumnDensityDLA();
-
-//    cout << log10(NHI) << endl; 
 
     return;
 };
@@ -820,10 +943,18 @@ double OpticalDepth::returnLymanContinuumCrossSection(double freq)
 {
     double sigmaLC = 0.0;
 
-    if(freq >= freqLymanLimitInvSec_) {
+    if(freq >= freqLymanLimitInvSec_) 
+	{
         double ratio = freqLymanLimitInvSec_/freq;
-        sigmaLC = sigmaLymanLimitCM2_*ratio*ratio*ratio;
-    } else {
+//        sigmaLC = sigmaLymanLimitCM2_*ratio*ratio*ratio;
+		sigmaLC= sigmaLymanLimitCM2_*(R*pow(ratio,s)+(1.0-R)*pow(ratio,s+1.0)); 
+    } 
+	else if(freq > returnFrequencyLymanSeries(35))
+	{
+		sigmaLC = sigmaLymanLimitCM2_;
+	}
+	else 
+	{
         sigmaLC = 0.0;
     }
 

@@ -153,6 +153,7 @@ protected:
     int nLymanAlpha_;                   /**< starting level of a lyman alpha transition   */
     int nLineMaxMax_;                   /**< maximum Lyman series line possible to use    */
     int nGammaMax_;
+	double R, s; 
 };
 
 
@@ -357,7 +358,7 @@ protected:
 class ProbabilityDistAbsorbers
 {
 public:
-    ProbabilityDistAbsorbers(RandomGeneratorInterface& rg,
+    ProbabilityDistAbsorbers(RandomGeneratorInterface& rg, double zS, 
  			     AbsorberRedshiftDistributionLAF& absorberZDistLAF,
                              AbsorberRedshiftDistributionDLA& absorberZDistDLA,
                              HIColumnDensityLAF& hiColumnDensityLAF,
@@ -400,7 +401,7 @@ public:
         @param NHI          the HI column density of the absorber being simulated
     */
     void simulateAbsorberLAF(double zCurrent, double& zNext, double& bdopp, double& NHI);
-    void simulateAbsorberDLA(double zCurrent, double& zNext, double& bdopp, double& NHI);
+    void simulateAbsorberDLA(double& bdopp, double& NHI);
 
     /** Simulate a line of sight 
         @param zStart           the redshift to begin at
@@ -420,6 +421,7 @@ public:
 
 protected:
     RandomGeneratorInterface&       rg_;
+	double zS; 
     AbsorberRedshiftDistributionLAF&   absorberZDistLAF_;
     AbsorberRedshiftDistributionDLA&   absorberZDistDLA_;
     HIColumnDensityLAF&                hiColumnDensityLAF_;
@@ -443,6 +445,8 @@ protected:
     double hmax_;
     vector<double> randomVectorLAF, columndensityVectorLAF;
     vector<double> randomVectorDLA, columndensityVectorDLA;
+	vector<double> zVector, yLAFvector, yDLAvector; 
+	vector<double> cppLAFvector, cppDLAvector; 
 
 };
                                                   
