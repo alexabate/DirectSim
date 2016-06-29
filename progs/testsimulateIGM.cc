@@ -50,39 +50,11 @@ int main(int narg, char* arg[]) {
 
 
     // ********************************
-    // Initialize the distributions
-    // ********************************
-
-    cout << "       Initializing the Distributions" << endl;
-
-    HIColumnDensityLAF colDensityDistLAF;
-    HIColumnDensityDLA colDensityDistDLA;
-
-    AbsorberRedshiftDistributionLAF zDistLAF;
-    AbsorberRedshiftDistributionDLA zDistDLA;
-
-    DopplerParDistribution bDist;
-
-    ProbabilityDistAbsorbers pdist(rg, zDistLAF, zDistDLA, colDensityDistLAF, colDensityDistDLA, bDist);
-
-
-    // ********************************
-    // Create some vectors and other Variables
-    // ********************************
-
-    vector<double> redshiftsLAF, redshiftsDLA;
-    vector<double> columnDensitiesLAF, columnDensitiesDLA;
-    vector<double> dopplerParsLAF, dopplerParsDLA;
-    vector<LineOfSightTrans> LoSvectorLAF, LoSvectorDLA;
-    string outfile = "";
-
-
-    // ********************************
     // Define the problem
     // ********************************
 
-    int nmax = 10;                                  //Highest Lyman Line to go to
-    int nLoS = 200;                                 //The number of lines of sight to examine for each source redshift
+    int nmax = 40;                                  //Highest Lyman Line to go to
+    int nLoS = 750;                                 //The number of lines of sight to examine for each source redshift
     double zSource;                           	    //Source galaxy redshift 
     int nSequence = -1;                             //Sequence number for determining multiple runs
 
@@ -117,6 +89,34 @@ int main(int narg, char* arg[]) {
   //-- end command line arguments
 
     cout << "nSequence: " << nSequence << " nLoS: " << nLoS << " zSource: " << zSource << endl;
+
+    // ********************************
+    // Initialize the distributions
+    // ********************************
+
+    cout << "       Initializing the Distributions" << endl;
+
+    HIColumnDensityLAF colDensityDistLAF;
+    HIColumnDensityDLA colDensityDistDLA;
+
+    AbsorberRedshiftDistributionLAF zDistLAF;
+    AbsorberRedshiftDistributionDLA zDistDLA;
+
+    DopplerParDistribution bDist;
+
+//    ProbabilityDistAbsorbers pdist(rg, zDistLAF, zDistDLA, colDensityDistLAF, colDensityDistDLA, bDist);
+    ProbabilityDistAbsorbers pdist(rg, zSource, zDistLAF, zDistDLA, colDensityDistLAF, colDensityDistDLA, bDist);
+
+    // ********************************
+    // Create some vectors and other Variables
+    // ********************************
+
+    vector<double> redshiftsLAF, redshiftsDLA;
+    vector<double> columnDensitiesLAF, columnDensitiesDLA;
+    vector<double> dopplerParsLAF, dopplerParsDLA;
+    vector<LineOfSightTrans> LoSvectorLAF, LoSvectorDLA;
+    string outfile = "";
+
 
     // Modify the wavelength range based upon the source galaxy redshift
     double lambdaMinA = 3000.;                    //Minimum WL in Angstroms (LSST minimum wavelength)
@@ -154,9 +154,14 @@ int main(int narg, char* arg[]) {
 
     LoSDataLAF.write((char*)&zSource, sizeof(double));
     LoSDataDLA.write((char*)&zSource, sizeof(double));
+//	LoSDataLAF << zSource << " ";
+//	LoSDataDLA << zSource << " "; 
 
     LoSDataLAF.write((char*)&nLoS, sizeof(int));
     LoSDataDLA.write((char*)&nLoS, sizeof(int));
+
+//	LoSDataLAF << nLoS << endl;
+//	LoSDataDLA << nLoS << endl;
 
   
 
@@ -174,23 +179,43 @@ int main(int narg, char* arg[]) {
         LineOfSightTrans lineOfSight(redshiftsLAF, dopplerParsLAF, columnDensitiesLAF);
         lineOfSight.setMaxLine(nmax);
         lineOfSight.setLymanAll();
+//		lineOfSight.setLymanSeriesOnly();
+
+    double endmarkLAF = -100.0;
 
 	int nredshifts = redshiftsLAF.size();
-	LoSDataLAF.write((char*)&nredshifts, sizeof(int));
-        for(int j=0; j<redshiftsLAF.size(); j++)
-	  LoSDataLAF.write((char*)&redshiftsLAF[j],sizeof(double));
-
 	int ndopplers = dopplerParsLAF.size();
-	LoSDataLAF.write((char*)&ndopplers, sizeof(int));
-        for(int j=0; j<dopplerParsLAF.size(); j++)
-	  LoSDataLAF.write((char*)&dopplerParsLAF[j],sizeof(double));
-
 	int ncoldens = columnDensitiesLAF.size();
+
+	LoSDataLAF.write((char*)&nredshifts, sizeof(int));
+//	LoSDataLAF << i << "	" << nredshifts << "	" << ndopplers << "	" << ncoldens << endl; 
+        for(int j=0; j<redshiftsLAF.size(); j++)
+		  LoSDataLAF.write((char*)&redshiftsLAF[j],sizeof(double));
+//		LoSDataLAF << redshiftsLAF[j] << "	"; 
+//	LoSDataLAF << endl; 
+
+    LoSDataLAF.write((char*)&endmarkLAF, sizeof(double));
+
+//	int ndopplers = dopplerParsLAF.size();
+	LoSDataLAF.write((char*)&ndopplers, sizeof(int));
+//	LoSDataLAF << ndopplers << endl; 
+        for(int j=0; j<dopplerParsLAF.size(); j++)
+		  LoSDataLAF.write((char*)&dopplerParsLAF[j],sizeof(double));
+//	  	LoSDataLAF << dopplerParsLAF[j] << "	"; 
+//	LoSDataLAF << endl; 
+
+    LoSDataLAF.write((char*)&endmarkLAF, sizeof(double));
+
+//	int ncoldens = columnDensitiesLAF.size();
 	LoSDataLAF.write((char*)&ncoldens, sizeof(int));
+//	LoSDataLAF << ncoldens << endl; 
         for(int j=0; j<columnDensitiesLAF.size(); j++)
-	  LoSDataLAF.write((char*)&columnDensitiesLAF[j], sizeof(double));
+		  LoSDataLAF.write((char*)&columnDensitiesLAF[j], sizeof(double));
+//		LoSDataLAF << columnDensitiesLAF[j] << " "; 
+//	LoSDataLAF << endl;
 
-
+    LoSDataLAF.write((char*)&endmarkLAF, sizeof(double));
+ 
         LoSvectorLAF.push_back(lineOfSight);
         redshiftsLAF.clear();
         dopplerParsLAF.clear();
@@ -217,22 +242,43 @@ int main(int narg, char* arg[]) {
         LineOfSightTrans lineOfSight(redshiftsDLA, dopplerParsDLA, columnDensitiesDLA);
         lineOfSight.setMaxLine(nmax);
         lineOfSight.setLymanAll();
+//		lineOfSight.setLymanSeriesOnly(); 
+
+    double endmarkDLA = -100.0;
 
 	int nredshifts = redshiftsDLA.size();
-	LoSDataDLA.write((char*)&nredshifts, sizeof(int));
-        for(int j=0; j<redshiftsDLA.size(); j++)
-	  LoSDataDLA.write((char*)&redshiftsDLA[j],sizeof(double));
-
 	int ndopplers = dopplerParsDLA.size();
-	LoSDataDLA.write((char*)&ndopplers, sizeof(int));
-        for(int j=0; j<dopplerParsDLA.size(); j++)
-	  LoSDataDLA.write((char*)&dopplerParsDLA[j],sizeof(double));
-
 	int ncoldens = columnDensitiesDLA.size();
-	LoSDataDLA.write((char*)&ncoldens, sizeof(int));
-        for(int j=0; j<columnDensitiesDLA.size(); j++)
-	  LoSDataDLA.write((char*)&columnDensitiesDLA[j], sizeof(double));
 
+//	LoSDataDLA << i << "	" << nredshifts << "	" << ndopplers << "	" << ncoldens << endl; 
+	LoSDataDLA.write((char*)&nredshifts, sizeof(int));
+//	LoSDataDLA << nredshifts << endl; 
+        for(int j=0; j<redshiftsDLA.size(); j++)
+		  LoSDataDLA.write((char*)&redshiftsDLA[j],sizeof(double));
+//		LoSDataDLA << redshiftsDLA[j] << " "; 
+//	LoSDataDLA << endl; 
+
+    LoSDataDLA.write((char*)&endmarkDLA, sizeof(double));
+
+//	int ndopplers = dopplerParsDLA.size();
+	LoSDataDLA.write((char*)&ndopplers, sizeof(int));
+//	LoSDataDLA << ndopplers << endl; 
+        for(int j=0; j<dopplerParsDLA.size(); j++)
+		  LoSDataDLA.write((char*)&dopplerParsDLA[j],sizeof(double));
+//		LoSDataDLA << dopplerParsDLA[j] << " "; 
+//	LoSDataDLA << endl; 
+
+    LoSDataDLA.write((char*)&endmarkDLA, sizeof(double));
+
+//	int ncoldens = columnDensitiesDLA.size();
+	LoSDataDLA.write((char*)&ncoldens, sizeof(int));
+//	LoSDataDLA << ncoldens << endl; 
+        for(int j=0; j<columnDensitiesDLA.size(); j++)
+		  LoSDataDLA.write((char*)&columnDensitiesDLA[j], sizeof(double));
+//	  	LoSDataDLA << columnDensitiesDLA[j] << " "; 
+//	LoSDataDLA << endl; 
+
+    LoSDataDLA.write((char*)&endmarkDLA, sizeof(double));
 
         LoSvectorDLA.push_back(lineOfSight);
         redshiftsDLA.clear();
@@ -286,7 +332,7 @@ int main(int narg, char* arg[]) {
     int lineLength = 0;
 
     for(int k=0; k<nLoS; k++) {
-//      if (k%100 == 0 ) 	cout << "nSequence: " << nSequence << ". Line of Sight: " << k << endl;
+      if (k%100 == 0 ) 	cout << "nSequence: " << nSequence << ". Line of Sight: " << k << endl;
 
       vector<double> transmission;
       for(int i=0; i<wavelengths.size(); i++) {
