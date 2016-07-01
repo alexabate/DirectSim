@@ -153,7 +153,7 @@ protected:
     int nLymanAlpha_;                   /**< starting level of a lyman alpha transition   */
     int nLineMaxMax_;                   /**< maximum Lyman series line possible to use    */
     int nGammaMax_;
-	double R, s; 
+	double R, s; 						//constants for Lyman continuum formula 
 };
 
 
@@ -443,10 +443,10 @@ protected:
     double bmax_;
     double hmin_;
     double hmax_;
-    vector<double> randomVectorLAF, columndensityVectorLAF;
+    vector<double> randomVectorLAF, columndensityVectorLAF;    //act as lookup tables for column density distributions
     vector<double> randomVectorDLA, columndensityVectorDLA;
-	vector<double> zVector, yLAFvector, yDLAvector; 
-	vector<double> cppLAFvector, cppDLAvector; 
+	vector<double> zVector, yLAFvector, yDLAvector; 			//act as lookup tables for redshift distributions 
+	vector<double> cppLAFvector, cppDLAvector; 					//cumulative poisson probability tables
 
 };
                                                   

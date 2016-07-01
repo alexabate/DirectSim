@@ -17,7 +17,7 @@ void AtomicCalcs::setConstants()
     sigmaLymanLimitCM2_ = 6.30e-18;              //In cm^2
     freqLymanLimitInvSec_ = SPEED_OF_LIGHT_MS/WAVE_LYMANLIM_METERS;
     nLymanAlpha_ = 2;
-    nLineMaxMax_ = 40;   //changed to 40 from 32
+    nLineMaxMax_ = 40;   //changed to 40 from 32 to match Inoue's values 
     nGammaMax_ = 40;     //changed to 40 from 24
     R= 1.34;
     s= 2.99;
@@ -51,7 +51,7 @@ double AtomicCalcs::returnWavelengthLymanSeries(int n)
 double AtomicCalcs::returnGamma(int nLine)
 {
   static double gammaSeries_[] = {
-	4.67e8,   //Taken from Inoue's 2008 MC
+	4.67e8,   //Taken from Inoue's 2008 code 
 	9.93e7,
 	3.00e7,
 	1.15e7,
@@ -484,58 +484,25 @@ ProbabilityDistAbsorbers::ProbabilityDistAbsorbers(RandomGeneratorInterface& rg,
 	double dz= zS/nStep; 
 	double z, yLAF, yDLA, pLAF, pDLA;
 	zVector.push_back(0.0);
-//	yLAFvector.push_back(0.0);
 	yDLAvector.push_back(0.0);
+
+//only changing the way DLA absorbers are drawn because it was giving discrepancy in transmission
+//keeping the LAF approach the same as Inoue 2008 paper 
 	
 	for (int i=1; i<nStep; i++)
 	{
 		z = zVector[i-1] + dz;
 		zVector.push_back(z); 
 
-//		cout << i << "	" << zVector[i] << endl; 
-
-//		yLAF = yLAFvector[i-1] + 0.5*dz*absorberZDistLAF_(zVector[i-1]) + 0.5*dz*absorberZDistLAF_(zVector[i]); 
-//		yLAFvector.push_back(yLAF);
-
 		yDLA = yDLAvector[i-1] + 0.5*dz*absorberZDistDLA_(zVector[i-1]) + 0.5*dz*absorberZDistDLA_(zVector[i]); 
 		yDLAvector.push_back(yDLA); 
 	}
 
-//	double NavgLAF= yLAFvector[nStep-1]; 
 	double NavgDLA= yDLAvector[nStep-1];
-
-//	cout << "LAF avg number " << NavgLAF << endl;
-//	cout << "DLA avg number " << NavgDLA << endl;
-
-//	transform(yLAFvector.begin(), yLAFvector.end(), yLAFvector.begin(), bind1st(divides<double>(), NavgLAF)); //divides the whole vector by const
-//	transform(yDLAvector.begin(), yDLAvector.end(), yDLAvector.begin(), bind1st(divides<double>(), NavgDLA));  //using transform, bind1st, divides
-
 	for(int i=0; i<nStep; i++)
 	{
-//		yLAFvector[i] = yLAFvector[i]/NavgLAF;
 		yDLAvector[i] = yDLAvector[i]/NavgDLA;
-//		cout << i << "	" << yLAFvector[i] << "	" << yDLAvector[i] << endl; 
 	}
-
-/*	for (int i=0; i<nMaxLAF; i++)
-	{
-		if(i==0)
-		{
-			pLAF = exp(-NavgLAF);
-			cppLAFvector.push_back(pLAF);
-
-		}
-		
-		else
-		{
-			pLAF = (pLAF*NavgLAF)/i;
-			cppLAFvector.push_back(cppLAFvector[i-1]+pLAF);
-
-		}
-
-		cout << i << "	" << cppLAFvector[i] << endl; 
-	} 
-*/
 
 	for (int i=0; i<nMaxDLA; i++)
 	{
@@ -552,8 +519,6 @@ ProbabilityDistAbsorbers::ProbabilityDistAbsorbers(RandomGeneratorInterface& rg,
 			cppDLAvector.push_back(cppDLAvector[i-1]+pDLA);
 		}
 
-
-//		cout << i << "	" << cppDLAvector[i] << endl; 
 	}
 			
 	
@@ -630,7 +595,7 @@ double ProbabilityDistAbsorbers::drawDeltaZLAF(double zLast)
     return deltaZ;
 };
 
-double ProbabilityDistAbsorbers::drawDeltaZDLA(double zLast)  
+double ProbabilityDistAbsorbers::drawDeltaZDLA(double zLast)  //don't need this function anymore 
 {
     double fz = absorberZDistDLA_(zLast);
     double rn = rg_.Flat01();
@@ -730,7 +695,10 @@ void ProbabilityDistAbsorbers::simulateAbsorberLAF(double zCurrent, double& zNex
 
 
 
-
+/********************************************************/
+// Number of DLA absorbers drawn taken from cumulative probability distribution
+//Searches through relevant lookup tables to find get redshift of absorber
+/********************************************************/
 void ProbabilityDistAbsorbers::simulateLineOfSightDLA(double zStart, double zMax,
                     vector<double>& redshiftsDLA, vector<double>& dopplerParsDLA,
                     vector<double>& columnDensitiesDLA, string outfile)
@@ -760,7 +728,7 @@ void ProbabilityDistAbsorbers::simulateLineOfSightDLA(double zStart, double zMax
 	{
 		ran = rg_.Flat01();
 
-		lowZ= lower_bound(yDLAvector.begin(), yDLAvector.end(), ran);
+		lowZ= lower_bound(yDLAvector.begin(), yDLAvector.end(), ran); //search through vector 
 
 		k= (lowZ-yDLAvector.begin());
 
@@ -803,6 +771,11 @@ void ProbabilityDistAbsorbers::simulateLineOfSightDLA(double zStart, double zMax
     return;
 };
 
+
+/********************************************************/
+// Don't need drawDeltaZDLA anymore since the way to draw 
+// DLA absorbers has been changed to match Inoue 2014 
+/********************************************************/
 void ProbabilityDistAbsorbers::simulateAbsorberDLA(double& bdopp, double& NHI)
 {
 //    zNext = zCurrent + drawDeltaZDLA(zCurrent);
@@ -939,6 +912,12 @@ double OpticalDepth::returnRestFrameOpticalDepth(double freq, double bAbsorber, 
     return restFrameOpticalDepth;
 };
 
+
+/********************************************************/
+// Lyman continuum cross section formula has changed from 
+// Inoue 2008 to Inoue 2014
+// No longer just a simple power law   
+/********************************************************/
 double OpticalDepth::returnLymanContinuumCrossSection(double freq)
 {
     double sigmaLC = 0.0;
@@ -1029,7 +1008,7 @@ double LineOfSightTrans::returnOpticalDepth(double lambda, double zSource)
         double nhi = columnDensities_[i];
         double b = dopplerPars_[i];
 
-        if(z > zSource)
+        if(z > zSource)   //If zabsorber is greater than zsource, then don't include in transmission calculation 
             break;
 
         double tauAbsorber = returnObserverFrameOpticalDepth(lambda, z, nhi, b);

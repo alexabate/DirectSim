@@ -1,3 +1,9 @@
+// ********************************************************************
+// Simulate nLoS lines of sight to a source galaxy at redshift zsource 
+// Uses the Monte Carlo model from Inoue et al 2014
+// absorber distributions defined in igm class  
+// ******************************************************************** 
+
 #include "machdefs.h"
 #include "sopnamsp.h"
 #include <iostream>
@@ -54,7 +60,7 @@ int main(int narg, char* arg[]) {
     // ********************************
 
     int nmax = 40;                                  //Highest Lyman Line to go to
-    int nLoS = 750;                                 //The number of lines of sight to examine for each source redshift
+    int nLoS = 1000;                                 //The number of lines of sight to examine for each source redshift
     double zSource;                           	    //Source galaxy redshift 
     int nSequence = -1;                             //Sequence number for determining multiple runs
 
@@ -107,9 +113,10 @@ int main(int narg, char* arg[]) {
 //    ProbabilityDistAbsorbers pdist(rg, zDistLAF, zDistDLA, colDensityDistLAF, colDensityDistDLA, bDist);
     ProbabilityDistAbsorbers pdist(rg, zSource, zDistLAF, zDistDLA, colDensityDistLAF, colDensityDistDLA, bDist);
 
-    // ********************************
-    // Create some vectors and other Variables
-    // ********************************
+    // *****************************************************
+    // Create some vectors for the 3 parameters of absorbers
+	// Variables concerning wavelength range and file names 
+    // *****************************************************
 
     vector<double> redshiftsLAF, redshiftsDLA;
     vector<double> columnDensitiesLAF, columnDensitiesDLA;
@@ -138,11 +145,11 @@ int main(int narg, char* arg[]) {
     string avgNAbsorbsOutFile = outputPath + "avgNAbsorbers.out";
 
 
-    // ********************************
-    // Simulate nLoS for LAF absorbers AND nLoS for DLA absorbers
+    // **********************************************************
+    // Simulate nLoS for LAF absorbers and nLoS for DLA absorbers
     // simulate as 2 sets of lines of sight
     // record absorbers info to 2 files  
-    // ********************************
+    // **********************************************************
 
     ofstream LoSDataLAF, LoSDataDLA;
 
@@ -153,21 +160,15 @@ int main(int narg, char* arg[]) {
     LoSDataDLA.open(LoSFileNameDLA.c_str(), ofstream::out);
 
     LoSDataLAF.write((char*)&zSource, sizeof(double));
-    LoSDataDLA.write((char*)&zSource, sizeof(double));
-//	LoSDataLAF << zSource << " ";
-//	LoSDataDLA << zSource << " "; 
+    LoSDataDLA.write((char*)&zSource, sizeof(double)); 
 
     LoSDataLAF.write((char*)&nLoS, sizeof(int));
     LoSDataDLA.write((char*)&nLoS, sizeof(int));
+ 
 
-//	LoSDataLAF << nLoS << endl;
-//	LoSDataDLA << nLoS << endl;
-
-  
-
-    // ********************************
+    // **************************************
     //loop to simulate LAF absorbers for nLoS
-    // ********************************
+    // **************************************
 
     for(int i=0; i<nLoS; i++) {
 
@@ -188,31 +189,20 @@ int main(int narg, char* arg[]) {
 	int ncoldens = columnDensitiesLAF.size();
 
 	LoSDataLAF.write((char*)&nredshifts, sizeof(int));
-//	LoSDataLAF << i << "	" << nredshifts << "	" << ndopplers << "	" << ncoldens << endl; 
         for(int j=0; j<redshiftsLAF.size(); j++)
 		  LoSDataLAF.write((char*)&redshiftsLAF[j],sizeof(double));
-//		LoSDataLAF << redshiftsLAF[j] << "	"; 
-//	LoSDataLAF << endl; 
 
     LoSDataLAF.write((char*)&endmarkLAF, sizeof(double));
 
-//	int ndopplers = dopplerParsLAF.size();
 	LoSDataLAF.write((char*)&ndopplers, sizeof(int));
-//	LoSDataLAF << ndopplers << endl; 
         for(int j=0; j<dopplerParsLAF.size(); j++)
-		  LoSDataLAF.write((char*)&dopplerParsLAF[j],sizeof(double));
-//	  	LoSDataLAF << dopplerParsLAF[j] << "	"; 
-//	LoSDataLAF << endl; 
+		  LoSDataLAF.write((char*)&dopplerParsLAF[j],sizeof(double)); 
 
     LoSDataLAF.write((char*)&endmarkLAF, sizeof(double));
 
-//	int ncoldens = columnDensitiesLAF.size();
 	LoSDataLAF.write((char*)&ncoldens, sizeof(int));
-//	LoSDataLAF << ncoldens << endl; 
         for(int j=0; j<columnDensitiesLAF.size(); j++)
 		  LoSDataLAF.write((char*)&columnDensitiesLAF[j], sizeof(double));
-//		LoSDataLAF << columnDensitiesLAF[j] << " "; 
-//	LoSDataLAF << endl;
 
     LoSDataLAF.write((char*)&endmarkLAF, sizeof(double));
  
@@ -227,9 +217,9 @@ int main(int narg, char* arg[]) {
 
 
 
-    // ********************************
+    // **************************************
     //loop to simulate DLA absorbers for nLoS
-    // ********************************
+    // **************************************
 
 
     for(int i=0; i<nLoS; i++) {
@@ -250,33 +240,21 @@ int main(int narg, char* arg[]) {
 	int ndopplers = dopplerParsDLA.size();
 	int ncoldens = columnDensitiesDLA.size();
 
-//	LoSDataDLA << i << "	" << nredshifts << "	" << ndopplers << "	" << ncoldens << endl; 
 	LoSDataDLA.write((char*)&nredshifts, sizeof(int));
-//	LoSDataDLA << nredshifts << endl; 
         for(int j=0; j<redshiftsDLA.size(); j++)
 		  LoSDataDLA.write((char*)&redshiftsDLA[j],sizeof(double));
-//		LoSDataDLA << redshiftsDLA[j] << " "; 
-//	LoSDataDLA << endl; 
 
     LoSDataDLA.write((char*)&endmarkDLA, sizeof(double));
 
-//	int ndopplers = dopplerParsDLA.size();
 	LoSDataDLA.write((char*)&ndopplers, sizeof(int));
-//	LoSDataDLA << ndopplers << endl; 
         for(int j=0; j<dopplerParsDLA.size(); j++)
-		  LoSDataDLA.write((char*)&dopplerParsDLA[j],sizeof(double));
-//		LoSDataDLA << dopplerParsDLA[j] << " "; 
-//	LoSDataDLA << endl; 
+		  LoSDataDLA.write((char*)&dopplerParsDLA[j],sizeof(double)); 
 
     LoSDataDLA.write((char*)&endmarkDLA, sizeof(double));
 
-//	int ncoldens = columnDensitiesDLA.size();
 	LoSDataDLA.write((char*)&ncoldens, sizeof(int));
-//	LoSDataDLA << ncoldens << endl; 
         for(int j=0; j<columnDensitiesDLA.size(); j++)
 		  LoSDataDLA.write((char*)&columnDensitiesDLA[j], sizeof(double));
-//	  	LoSDataDLA << columnDensitiesDLA[j] << " "; 
-//	LoSDataDLA << endl; 
 
     LoSDataDLA.write((char*)&endmarkDLA, sizeof(double));
 
@@ -291,9 +269,9 @@ int main(int narg, char* arg[]) {
 
 
 
-    // ********************************
+    // ************************************
     // Make and write the wavelength vector
-    // ********************************
+    // ************************************
 
     cout << "nSequence: " << nSequence <<  ". Preparing transmission data." << endl;
     ofstream transmissionData;
@@ -321,11 +299,11 @@ int main(int narg, char* arg[]) {
     transmissionData.write((char*)&endmark, sizeof(double));
 
 
-    // ********************************
-    // Calculate the Transmission
+    // ********************************************************
+    // Calculate the transmission
     // Add each LAF line of sight to each DLA line of sight
     // transmission should then be exp(-tau_LAF)*exp(-tau_DLA)
-    // ********************************
+    // *********************************************************
 
 
     cout << "nSequence: " << nSequence << ". Writing transmission data." << endl;
